@@ -1,0 +1,53 @@
+{
+  "skill_name": "html-report",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "audit-findings-report",
+      "prompt": "I just finished auditing our data-pipeline migration. Findings: (1) CRITICAL: promote_pipeline crashes on empty batches, pipeline/promote.py line 141, regression introduced in commit 4f2a91c; (2) CRITICAL: retry loop can double-write ledger rows under concurrent deploys, ledger/writer.py; (3) HIGH: two architecture guard tests were weakened to pass (tests/arch/test_layers.py) \u2014 pre-existing, not a regression; (4) MEDIUM: 4 endpoints missing rate limits; (5) MEDIUM: stale feature flags (7 of them) still referenced. 233 commits audited, 18/18 auth smoke tests pass. Put together a findings report I can review and share with the team.",
+      "expected_output": "A self-contained HTML report (not markdown) with severity taxonomy, evidence-annotated findings (file paths, shas, counts with bases), light+dark theming with a toggle, and some way to act on it (anchors/links/export).",
+      "files": [],
+      "assertions": [
+        "Deliverable is an HTML file, not a markdown document",
+        "Self-contained: no external scripts, stylesheets, or font CDN references (no <script src=http...>, <link href=http...>, @import url(http...))",
+        "Light and dark themes both supported with a manual toggle (data-theme token overrides present in CSS and a toggle control in the page)",
+        "Severity labels match the prompt's taxonomy (Critical/High/Medium) with consistent visual tokens (chips/colors), and the pre-existing finding is distinguished from regressions",
+        "Evidence is inline and specific: file paths, commit sha 4f2a91c, and counts with bases (233 commits, 18/18) all appear in the report",
+        "All embedded <script> blocks pass node --check",
+        "At least one close-the-loop element exists: a copy/export control, a claude-cli:// action link, or anchor ids enabling deep links to individual findings"
+      ]
+    },
+    {
+      "id": 1,
+      "eval_name": "typography-variant-gallery",
+      "prompt": "We need to pick header typography for the internal docs site. Mock up 4 distinct options (vary the face pairing, weight, and letter-spacing approach \u2014 use system-available fonts, no webfont downloads) applied to a realistic docs page header + section headings, and give me something I can look through and pick from.",
+      "expected_output": "An HTML comparison gallery: grid of variants each rendered live (or screenshot+live link), light and dark both viewable, clearly named options so a one-line pick is easy, and a place to record the decision.",
+      "files": [],
+      "assertions": [
+        "Deliverable is an HTML comparison page, not markdown or separate unconnected files",
+        "Exactly 4 clearly named/labeled variants, each rendered live with realistic docs-page header content (no lorem ipsum)",
+        "No webfont downloads: no font CDN links or @import of remote fonts; system/local font stacks only",
+        "Light and dark presentation both available (toggle or stacked light/dark sections)",
+        "A place to record the decision exists (decision callout/pick control), making a one-line verdict easy",
+        "All embedded <script> blocks pass node --check"
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "deploy-events-explorer",
+      "prompt": "Take ~/.agents/skills/html-report-workspace/inputs/deploys.jsonl (30 deploy events: ts, repo, deployer, status, duration_s, sha, note) and give me something I can filter through for the retro \u2014 I want to slice by repo/status/person and pull specific examples out to paste into the retro doc.",
+      "expected_output": "A self-contained HTML explorer with the dataset embedded as JSON, search/filter controls, and a copy-selected-as-prompt (or JSON) export so filtered rows can be pasted back into a Claude conversation.",
+      "files": [
+        "~/.agents/skills/html-report-workspace/inputs/deploys.jsonl"
+      ],
+      "assertions": [
+        "Deliverable is a self-contained HTML file with the full dataset embedded (all 30 events; spot-check several shas from the source jsonl appear)",
+        "No fetch/AJAX for data and no external script/style/font references",
+        "Filter controls exist for repo, status, and deployer (plus optionally free-text search)",
+        "A copy/export mechanism exists to extract selected or filtered rows as paste-ready text or JSON (clipboard API or download)",
+        "All embedded <script> blocks pass node --check",
+        "Light and dark themes both supported with a manual toggle"
+      ]
+    }
+  ]
+}
