@@ -1,0 +1,21 @@
+.agents/plugins/marketplace.json
+  s_79e5f4cf5768f7::t_816dc25de64444 14
+.gitignore
+  s_79e5f4cf5768f7::t_816dc25de64444 1-4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "96c017ec29431f4d93a2aae85e839b9d29d39d04",
+  "prompts": {},
+  "sessions": {
+    "s_79e5f4cf5768f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3e1e-a244-7920-9f6c-a19d2fb4bfc6",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
