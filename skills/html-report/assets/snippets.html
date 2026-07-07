@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>html-report — interactive snippets (working demo)</title>
+<!--
+  Working demo of the close-the-loop building blocks. Open this file to try each one,
+  then lift the relevant <section> into your report. Each section is self-contained.
+  Full rationale: references/interactivity.md
+-->
+<script>
+(function () {
+  var q = new URLSearchParams(location.search).get('theme');
+  var s = null; try { s = localStorage.getItem('theme'); } catch (e) {}
+  var os = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  var t = (q === 'light' || q === 'dark') ? q
+        : (s === 'light' || s === 'dark') ? s : os;
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<style>
+:root {
+  --paper: #eef4f8; --card: #ffffff; --ink: #0d2438; --ink-2: #3a5b76;
+  --line: #d3e1ec; --accent: #1c7aad; --ok: #1e6b45; --ok-bg: #e2f2e9;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #091522; --card: #102338; --ink: #dde8f4; --ink-2: #90a9c4;
+          --line: #20405e; --accent: #38b0e8; --ok: #4fc08d; --ok-bg: #0e2b1f; }
+}
+:root[data-theme="dark"] {
+  --paper: #091522; --card: #102338; --ink: #dde8f4; --ink-2: #90a9c4;
+  --line: #20405e; --accent: #38b0e8; --ok: #4fc08d; --ok-bg: #0e2b1f;
+}
+:root[data-theme="light"] {
+  --paper: #eef4f8; --card: #ffffff; --ink: #0d2438; --ink-2: #3a5b76;
+  --line: #d3e1ec; --accent: #1c7aad; --ok: #1e6b45; --ok-bg: #e2f2e9;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink);
+       font: 15px/1.55 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+main { max-width: 62rem; margin: 0 auto; padding: 24px 32px 72px; }
+h1 { font-size: 22px; }
+h2 { font-size: 17px; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-top: 40px; }
+p { color: var(--ink-2); max-width: 70ch; }
+code { font-family: 'Maple Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.875em; }
+section { margin-top: 8px; }
+button {
+  font: inherit; padding: 6px 14px; border-radius: 5px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:disabled { opacity: 0.45; cursor: default; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+th, td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; font-size: 14px; }
+textarea {
+  width: 100%; min-height: 70px; font: inherit; color: var(--ink);
+  background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 8px;
+}
+.status { font-size: 13px; color: var(--ok); min-height: 1.2em; }
+.flash {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: var(--paper); border-radius: 6px;
+  padding: 8px 18px; font-size: 14px; opacity: 0; transition: opacity 0.2s;
+  pointer-events: none;
+}
+.flash.show { opacity: 1; }
+input[type="text"] { font: inherit; color: var(--ink); background: var(--card);
+  border: 1px solid var(--line); border-radius: 5px; padding: 6px 10px; width: 100%; }
+label { font-size: 13px; color: var(--ink-2); display: block; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Interactive snippets — working demo</h1>
+<p>Four building blocks for reports that hand work back. Try each below; lift the
+matching <code>&lt;section&gt;</code> + script into your page.</p>
+
+<!-- ============ 1. Copy selected as prompt / JSON ============ -->
+<h2>1 · Copy selected as prompt / JSON</h2>
+<section>
+  <p>Filter/select rows, copy paste-ready text for the next Claude turn.
+     Always flash a confirmation — silent clipboard writes read as broken buttons.</p>
+  <table id="pick-table">
+    <thead><tr><th></th><th>Date</th><th>Source</th><th>Item</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <button class="primary" onclick="copySelected(false)">Copy as prompt</button>
+  <button onclick="copySelected(true)">Copy as JSON</button>
+</section>
+
+<!-- ============ 2. URL-hash view state + copy view link ============ -->
+<h2>2 · URL-hash view state + "Copy view link"</h2>
+<section>
+  <p>Filter state lives in <code>location.hash</code> so any view is one copyable URL —
+     the basis for cross-artifact evidence links. Type a filter, watch the URL, copy it,
+     reopen: state restores.</p>
+  <input type="text" id="q" placeholder="filter rows above… (state → #q=…)">
+  <button id="copylink" style="margin-top:8px">🔗 Copy view link</button>
+</section>
+
+<!-- ============ 3. Feedback box: autosave + fetch→catch→Blob export ============ -->
+<h2>3 · Feedback — autosave, server-or-download export</h2>
+<section>
+  <p>Debounced autosave 800 ms after the last keystroke. Export tries
+     <code>POST /api/feedback</code> (live server mode) and falls back to downloading
+     <code>feedback.json</code> when no server is present — one code path, degrades
+     gracefully.</p>
+  <textarea id="fb" placeholder="Feedback on this report…"></textarea>
+  <div class="status" id="fb-status"></div>
+  <button class="primary" onclick="exportFeedback()">Submit feedback</button>
+</section>
+
+<!-- ============ 4. Deep link back into Claude Code ============ -->
+<h2>4 · Deep link — hand it to Claude Code</h2>
+<section>
+  <p><code>claude-cli://open</code> opens a new Claude Code terminal with the prompt
+     pre-filled, never auto-sent. Max 5,000 chars in <code>q</code> — for long runbooks
+     link to a skill: <code>q=/my-skill args</code>. (Stripped on GitHub-rendered pages;
+     fine in local/hosted HTML.)</p>
+  <label>Prompt</label>
+  <input type="text" id="dl-prompt" value="/triage-finding v-pipeline">
+  <label>Working directory</label>
+  <input type="text" id="dl-cwd" value="/path/to/workspace">
+  <p style="margin-top:10px"><a id="dl-link" href="#">Open in Claude Code →</a></p>
+</section>
+
+<div class="flash" id="flash"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* Demo data — in a real report this is your embedded dataset */
+  var DATA = [
+    { date: '2026-07-01', source: 'audit', text: 'promote_pipeline crashes on empty batch' },
+    { date: '2026-07-02', source: 'review', text: 'two architecture guards weakened' },
+    { date: '2026-07-03', source: 'smoke', text: 'auth flows all pass (18/18)' }
+  ];
+
+  function flash(msg) {
+    var el = document.getElementById('flash');
+    el.textContent = msg; el.classList.add('show');
+    setTimeout(function () { el.classList.remove('show'); }, 1600);
+  }
+
+  /* --- 1. render rows + copy-selected (untrusted text → textContent, never innerHTML) --- */
+  var tbody = document.querySelector('#pick-table tbody');
+  DATA.forEach(function (r, i) {
+    var tr = document.createElement('tr');
+    var td0 = document.createElement('td');
+    var cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.className = 'row-pick'; cb.dataset.idx = i;
+    td0.appendChild(cb); tr.appendChild(td0);
+    [r.date, r.source, r.text].forEach(function (v) {
+      var td = document.createElement('td');
+      td.textContent = v;              // untrusted data: textContent, never innerHTML
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  window.copySelected = function (asJson) {
+    var rows = Array.prototype.slice.call(document.querySelectorAll('input.row-pick:checked'))
+      .map(function (cb) { return DATA[Number(cb.dataset.idx)]; });
+    if (!rows.length) { flash('Nothing selected'); return; }
+    var text = asJson
+      ? JSON.stringify(rows, null, 2)
+      : rows.map(function (r) { return '- [' + r.date + '] ' + r.source + ': ' + r.text; }).join('\n');
+    navigator.clipboard.writeText(text).then(function () {
+      flash('Copied ' + rows.length + ' row' + (rows.length > 1 ? 's' : ''));
+    });
+  };
+
+  /* --- 2. URL-hash state + copy view link --- */
+  var q = document.getElementById('q');
+  function applyFilter() {
+    var needle = q.value.toLowerCase();
+    Array.prototype.forEach.call(tbody.rows, function (tr, i) {
+      var hit = !needle || JSON.stringify(DATA[i]).toLowerCase().indexOf(needle) !== -1;
+      tr.style.display = hit ? '' : 'none';
+    });
+  }
+  function writeHash() {
+    var p = new URLSearchParams();
+    if (q.value) p.set('q', q.value);
+    history.replaceState(null, '', p.toString() ? '#' + p.toString() : location.pathname);
+  }
+  function readHash() {
+    var p = new URLSearchParams(location.hash.slice(1));
+    q.value = p.get('q') || '';
+    applyFilter();
+  }
+  q.addEventListener('input', function () { applyFilter(); writeHash(); });
+  addEventListener('hashchange', readHash);
+  readHash();
+  document.getElementById('copylink').addEventListener('click', function () {
+    navigator.clipboard.writeText(location.href).then(function () { flash('View link copied'); });
+  });
+
+  /* --- 3. feedback: debounced autosave + dual-mode export --- */
+  var fb = document.getElementById('fb');
+  var fbStatus = document.getElementById('fb-status');
+  var saveTimer;
+  function setStatus(s) { fbStatus.textContent = s; }
+  fb.addEventListener('input', function () {
+    clearTimeout(saveTimer); setStatus('');
+    saveTimer = setTimeout(function () {
+      try { localStorage.setItem('fb-draft', fb.value); } catch (e) {}
+      setStatus('Draft saved');
+    }, 800);
+  });
+  try { fb.value = localStorage.getItem('fb-draft') || ''; } catch (e) {}
+
+  window.exportFeedback = function () {
+    var payload = JSON.stringify({ feedback: fb.value, page: document.title,
+                                   when: new Date().toISOString() }, null, 2);
+    fetch('/api/feedback', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload
+    })
+    .then(function (r) { if (!r.ok) throw 0; setStatus('Saved to server'); })
+    .catch(function () {               // static mode — download instead
+      var blob = new Blob([payload], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'feedback.json'; a.click();
+      URL.revokeObjectURL(url);
+      setStatus('Downloaded feedback.json');
+    });
+  };
+
+  /* --- 4. deep-link builder --- */
+  var dlPrompt = document.getElementById('dl-prompt');
+  var dlCwd = document.getElementById('dl-cwd');
+  var dlLink = document.getElementById('dl-link');
+  function buildLink() {
+    dlLink.href = 'claude-cli://open?cwd=' + encodeURIComponent(dlCwd.value) +
+                  '&q=' + encodeURIComponent(dlPrompt.value);
+  }
+  dlPrompt.addEventListener('input', buildLink);
+  dlCwd.addEventListener('input', buildLink);
+  buildLink();
+
+  /* --- theme toggle --- */
+  var root = document.documentElement;
+  var btn = document.createElement('button');
+  btn.className = 'theme-toggle'; btn.textContent = '◐';
+  btn.style.cssText = 'position:fixed;bottom:20px;right:20px;width:40px;height:40px;border-radius:50%;font-size:18px;z-index:10';
+  function label() {
+    var d = root.getAttribute('data-theme') === 'dark';
+    btn.setAttribute('aria-label', d ? 'Switch to light theme' : 'Switch to dark theme');
+    btn.title = btn.getAttribute('aria-label');
+  }
+  btn.addEventListener('click', function () {
+    var t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', t);
+    try { localStorage.setItem('theme', t); } catch (e) {}
+    label();
+  });
+  label(); document.body.appendChild(btn);
+})();
+</script>
+</main>
+</body>
+</html>

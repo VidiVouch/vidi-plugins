@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editorial Report — replace title</title>
+<!--
+  Editorial report template — the richer treatment for a synthesis / field guide /
+  landscape / "here's what we found across N things" deliverable that a person will
+  actually sit and read, not just skim for a verdict. Distinct from report.html
+  (utilitarian: audit/sign-off/status). Per the artifact-design skill: an editorial
+  piece may commit to its own visual world — this one runs a teal instrument palette
+  rather than the utilitarian cyanotype default, deliberately.
+
+  Signature moves (keep these — they're what make it read as "finished"):
+   · sticky bar with a brand mark + theme toggle
+   · hero: mono eyebrow, clamp() headline with an accent highlight, lede, a "flow" strip
+   · a stat strip (hairline-gap grid, mono tabular numbers)
+   · numbered sections with a mono accent section number
+   · content embedded as JSON, rendered client-side (cards below demo the pattern)
+   · wire/code samples in a labeled frame
+-->
+<script>
+/* No-flash theme bootstrap: ?theme= wins, then localStorage, then OS. Synchronous. */
+(function () {
+  var q = new URLSearchParams(location.search).get('theme');
+  var s = null; try { s = localStorage.getItem('theme'); } catch (e) {}
+  var os = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  var t = (q === 'light' || q === 'dark') ? q
+        : (s === 'light' || s === 'dark') ? s : os;
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<style>
+/* Self-contained per SKILL.md non-negotiable #1: no CDN fonts. System font
+   stacks below; swap in an inlined @font-face data URI if a display face is wanted. */
+
+/* Token cascade: :root light → @media dark (no-JS fallback) → [data-theme] wins both ways. */
+:root {
+  color-scheme: light;
+  --bg:#e9edf1; --surface:#ffffff; --surface-2:#f3f6f9; --ink:#0f151c; --muted:#5a6673;
+  --line:#d3dae1; --line-soft:#e2e8ee;
+  --accent:#0c7789; --accent-ink:#0a5c6b; --accent-wash:#d7edf1;
+  --warn:#9a6413; --warn-wash:#f6e9d2; --alt:#6b4bd6; --alt-wash:#e6e0fb; --danger:#b03f36;
+  --mono:ui-monospace,'SF Mono',Menlo,Consolas,'JetBrains Mono',monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --maxw:1180px;
+}
+@media (prefers-color-scheme:dark) {
+  :root {
+    --bg:#0b0f15; --surface:#121a23; --surface-2:#0f161e; --ink:#e6edf3; --muted:#8a97a6;
+    --line:#243039; --line-soft:#1a232c;
+    --accent:#34c2da; --accent-ink:#7fdcec; --accent-wash:#0e2730;
+    --warn:#e0a53a; --warn-wash:#2a2213; --alt:#9d84ff; --alt-wash:#1d1836; --danger:#e5675c;
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg:#e9edf1; --surface:#ffffff; --surface-2:#f3f6f9; --ink:#0f151c; --muted:#5a6673;
+  --line:#d3dae1; --line-soft:#e2e8ee;
+  --accent:#0c7789; --accent-ink:#0a5c6b; --accent-wash:#d7edf1;
+  --warn:#9a6413; --warn-wash:#f6e9d2; --alt:#6b4bd6; --alt-wash:#e6e0fb; --danger:#b03f36;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg:#0b0f15; --surface:#121a23; --surface-2:#0f161e; --ink:#e6edf3; --muted:#8a97a6;
+  --line:#243039; --line-soft:#1a232c;
+  --accent:#34c2da; --accent-ink:#7fdcec; --accent-wash:#0e2730;
+  --warn:#e0a53a; --warn-wash:#2a2213; --alt:#9d84ff; --alt-wash:#1d1836; --danger:#e5675c;
+}
+
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+  line-height:1.6; -webkit-font-smoothing:antialiased; font-size:16px; }
+.wrap { max-width:var(--maxw); margin:0 auto; padding:0 24px; }
+a { color:var(--accent-ink); text-decoration:none; }
+a:hover { text-decoration:underline; text-underline-offset:3px; }
+h1, h2, h3 { text-wrap:balance; line-height:1.12; margin:0; }
+.mono { font-family:var(--mono); }
+.eyebrow { font-family:var(--mono); font-size:11.5px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--muted); }
+
+/* sticky bar */
+.bar { position:sticky; top:0; z-index:20;
+  background:color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+.bar .wrap { display:flex; align-items:center; justify-content:space-between; height:52px; }
+.brand { font-family:var(--mono); font-size:13px; letter-spacing:.04em;
+  display:flex; gap:9px; align-items:center; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--accent);
+  box-shadow:0 0 0 4px var(--accent-wash); }
+.toggle { font-family:var(--mono); font-size:12px; color:var(--muted); background:var(--surface);
+  border:1px solid var(--line); border-radius:7px; padding:6px 11px; cursor:pointer; }
+.toggle:hover { color:var(--ink); border-color:var(--accent); }
+.toggle:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+/* hero */
+.hero { padding:72px 0 44px; border-bottom:1px solid var(--line); }
+.hero .eyebrow { margin-bottom:20px; }
+.hero h1 { font-size:clamp(34px,6.2vw,62px); font-weight:680; letter-spacing:-.02em; }
+.hero h1 .hl { color:var(--accent); }
+.hero .lede { max-width:60ch; margin-top:22px; font-size:19px; color:var(--muted); }
+.flow { font-family:var(--mono); font-size:clamp(13px,2.4vw,17px); margin-top:34px;
+  display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; color:var(--ink); }
+.flow b { background:var(--surface); border:1px solid var(--line); border-radius:8px;
+  padding:7px 13px; font-weight:600; }
+.flow .n { color:var(--accent); font-weight:700; }
+.flow .arw { color:var(--muted); }
+
+/* stat strip */
+.stats { display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--line);
+  border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:40px 0; }
+.stat { background:var(--surface); padding:18px 16px; }
+.stat .v { font-family:var(--mono); font-size:26px; font-weight:680;
+  font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+.stat .k { font-size:12.5px; color:var(--muted); margin-top:3px; }
+@media (max-width:720px) { .stats { grid-template-columns:repeat(2,1fr); }
+  .stat:last-child { grid-column:span 2; } }
+
+section { padding:52px 0; border-bottom:1px solid var(--line); }
+.sec-head { display:flex; align-items:baseline; gap:16px; margin-bottom:8px; }
+.sec-head h2 { font-size:clamp(22px,3.5vw,30px); font-weight:660; letter-spacing:-.01em; }
+.sec-num { font-family:var(--mono); color:var(--accent); font-size:14px; font-weight:600; }
+.sec-sub { color:var(--muted); max-width:66ch; margin:0 0 30px; }
+
+/* callout */
+.callout { background:var(--warn-wash);
+  border:1px solid color-mix(in srgb, var(--warn) 34%, transparent);
+  border-radius:12px; padding:18px 20px; margin:28px 0; }
+.callout .h { font-family:var(--mono); font-size:11px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--warn); font-weight:700; }
+.callout p { margin:8px 0 0; font-size:15px; }
+.callout code { font-family:var(--mono); font-size:13px;
+  background:color-mix(in srgb, var(--warn) 12%, transparent); padding:1px 5px; border-radius:4px; }
+
+/* cards (rendered from embedded JSON below) */
+.cards { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+@media (max-width:860px) { .cards { grid-template-columns:1fr; } }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:14px;
+  padding:20px 20px 22px; display:flex; flex-direction:column; gap:13px; }
+.card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.card h3 { font-size:17.5px; font-weight:640; letter-spacing:-.01em; }
+.card .idx { font-family:var(--mono); font-size:12px; color:var(--muted); }
+.chips { display:flex; flex-wrap:wrap; gap:6px; }
+.chip { font-family:var(--mono); font-size:11px; padding:2px 8px; border-radius:20px;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--muted); }
+.kv { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13.5px; }
+.kv dt { font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--muted); padding-top:2px; }
+.kv dd { margin:0; }
+
+/* wire / code sample */
+.wire { border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface-2); }
+.wire .lab { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--muted); padding:7px 12px; border-bottom:1px solid var(--line-soft);
+  display:flex; justify-content:space-between; }
+.wire .lab .verb { color:var(--accent-ink); font-weight:700; }
+pre { margin:0; padding:12px; overflow-x:auto; font-family:var(--mono); font-size:12.5px; line-height:1.55; }
+pre code { font-family:inherit; }
+/* json highlight tokens */
+.tk { color:var(--accent-ink); } .tv-s { color:var(--ink); } .tv-n { color:var(--warn); }
+.tv-b { color:var(--alt); font-weight:600; } .tv-null { color:var(--muted); }
+.cmt { color:var(--muted); font-style:italic; }
+
+/* step ladder */
+.ladder { display:flex; flex-direction:column; border:1px solid var(--line); border-radius:12px;
+  overflow:hidden; background:var(--surface); }
+.rung { display:grid; grid-template-columns:44px 1fr; border-bottom:1px solid var(--line-soft); }
+.rung:last-child { border-bottom:none; }
+.rung .no { font-family:var(--mono); font-weight:700; color:var(--accent); display:flex;
+  align-items:center; justify-content:center; background:var(--surface-2);
+  border-right:1px solid var(--line-soft); font-size:14px; }
+.rung .body { padding:13px 16px; }
+.rung .body .t { font-weight:600; font-size:14.5px; }
+.rung .body .d { font-size:13px; color:var(--muted); margin-top:2px; }
+.rung .body code { font-family:var(--mono); font-size:12px; background:var(--surface-2);
+  padding:1px 5px; border-radius:4px; color:var(--ink); }
+
+/* two-col panels */
+.two { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+@media (max-width:860px) { .two { grid-template-columns:1fr; } }
+.panel { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px; }
+.panel h3 { font-size:16px; font-weight:640; margin-bottom:12px; }
+ul.tight { margin:0; padding-left:18px; font-size:14px; }
+ul.tight li { margin:6px 0; }
+.prio { font-family:var(--mono); font-size:10.5px; font-weight:700; padding:1px 6px;
+  border-radius:4px; margin-right:6px; }
+.p0 { background:var(--danger); color:#fff; } .p1 { background:var(--warn-wash); color:var(--warn); }
+
+footer { padding:44px 0 70px; color:var(--muted); font-size:13.5px; }
+footer .files { font-family:var(--mono); font-size:12.5px; margin-top:14px;
+  display:flex; flex-direction:column; gap:5px; }
+footer .files span { color:var(--ink); }
+@media (prefers-reduced-motion:reduce) { * { animation:none !important; transition:none !important; } }
+@media print { .bar { display:none; } body { background:#fff; } section { break-inside:avoid; } }
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <div class="brand"><span class="dot"></span>REPORT&nbsp;NAME</div>
+  <button class="toggle" id="tgl" aria-label="Switch color theme">◐ theme</button>
+</div></div>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">Context line · what this is · 2026-07-06</div>
+  <h1>The one-sentence thesis, with the <span class="hl">key number</span> highlighted.</h1>
+  <p class="lede">The lede earns the reader: one paragraph that says what was examined, how, and
+    what it collapses to. Concrete, not throat-clearing.</p>
+  <div class="flow">
+    <b>147 inputs</b><span class="arw">→</span><b><span class="n">13</span> shapes</b>
+    <span class="arw">→</span><b>1 model</b><span class="arw">→</span><b>outcome</b>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><div class="v">121</div><div class="k">things audited</div></div>
+    <div class="stat"><div class="v">147</div><div class="k">captures analyzed</div></div>
+    <div class="stat"><div class="v">104</div><div class="k">yielded signal</div></div>
+    <div class="stat"><div class="v">269</div><div class="k">agents · 0 errors</div></div>
+    <div class="stat"><div class="v">13</div><div class="k">patterns</div></div>
+  </div>
+</div>
+
+<div class="callout wrap" style="max-width:calc(var(--maxw) - 48px)">
+  <div class="h">The one rule that generalizes</div>
+  <p><strong>Lead with the load-bearing insight.</strong> The callout is for the single takeaway a
+    reader should leave with — the thing every downstream decision hinges on. Everything else is support.</p>
+</div>
+
+<section><div class="wrap">
+  <div class="sec-head"><span class="sec-num">01</span><h2>The shapes at a glance</h2></div>
+  <p class="sec-sub">A short frame for the section. Data is embedded as JSON and rendered below —
+    no external fetch. This cards block is the pattern to copy for any itemized set.</p>
+  <div class="cards" id="cards"></div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-head"><span class="sec-num">02</span><h2>One item, in depth</h2></div>
+  <p class="sec-sub">Where a single case deserves the wire-level view: a labeled sample frame with
+    syntax-highlighted body. Real values from the evidence; IDs illustrative.</p>
+  <div class="two">
+    <div class="panel">
+      <h3>Request</h3>
+      <div class="wire"><div class="lab"><span class="verb">GET</span><span class="mono">example.api</span></div>
+<pre class="req"><code>GET /v1/items?cursor=eyJvIjo0MH0&amp;limit=20</code></pre></div>
+    </div>
+    <div class="panel">
+      <h3>Response</h3>
+      <div class="wire"><div class="lab"><span>200 · application/json</span><span class="mono">items.list</span></div>
+<pre><code>{
+  <span class="tk">"next_cursor"</span>: <span class="tv-s">"eyJvIjo2MH0"</span>,
+  <span class="tk">"has_more"</span>: <span class="tv-b">true</span>,
+  <span class="tk">"items"</span>: [ { <span class="tk">"id"</span>: <span class="tv-n">4821</span> } ]
+}</code></pre></div>
+    </div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <div class="sec-head"><span class="sec-num">03</span><h2>The procedure, one ladder</h2></div>
+  <p class="sec-sub">When the report explains a process, a numbered ladder reads better than prose —
+    each rung is a decision or step, first-match-wins.</p>
+  <div class="ladder">
+    <div class="rung"><div class="no">1</div><div class="body">
+      <div class="t">Detect</div><div class="d">Classify the input by its <code>shape</code>.</div></div></div>
+    <div class="rung"><div class="no">2</div><div class="body">
+      <div class="t">Derive</div><div class="d">Compute the next step from the current state.</div></div></div>
+    <div class="rung"><div class="no">3</div><div class="body">
+      <div class="t">Stop</div><div class="d">Halt on the authoritative signal, not a guessed total.</div></div></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="eyebrow">How it was built</div>
+  <p style="max-width:70ch;margin-top:10px">One honest paragraph on method and cost — what produced
+    this, how much it took. Grounds the numbers above in a real process.</p>
+  <div class="files">
+    <span>path/to/source-a.md</span>
+    <span>path/to/source-b.py &nbsp;— runnable, self-tested</span>
+  </div>
+</div></footer>
+
+<script>
+/* Content embedded as JSON — render client-side, no fetch. Untrusted strings go in via
+   textContent, never innerHTML string concatenation. */
+var CARDS = [
+  { name:"Pattern A", idx:"01", chips:["wire","common"],
+    kv:{ "detect":"top-level {count,next,results[]}", "stop":"next == null" } },
+  { name:"Pattern B", idx:"02", chips:["inferred"],
+    kv:{ "detect":"page[number] + meta.total_pages", "stop":"page ≥ total_pages" } }
+];
+
+(function () {
+  var host = document.getElementById('cards');
+  CARDS.forEach(function (c) {
+    var card = document.createElement('div'); card.className = 'card';
+    var top = document.createElement('div'); top.className = 'card-top';
+    var h = document.createElement('h3'); h.textContent = c.name;
+    var idx = document.createElement('span'); idx.className = 'idx'; idx.textContent = c.idx;
+    top.appendChild(h); top.appendChild(idx); card.appendChild(top);
+    if (c.chips && c.chips.length) {
+      var chips = document.createElement('div'); chips.className = 'chips';
+      c.chips.forEach(function (t) {
+        var s = document.createElement('span'); s.className = 'chip'; s.textContent = t; chips.appendChild(s);
+      });
+      card.appendChild(chips);
+    }
+    var dl = document.createElement('dl'); dl.className = 'kv';
+    Object.keys(c.kv).forEach(function (k) {
+      var dt = document.createElement('dt'); dt.textContent = k;
+      var dd = document.createElement('dd'); dd.textContent = c.kv[k];
+      dl.appendChild(dt); dl.appendChild(dd);
+    });
+    card.appendChild(dl);
+    host.appendChild(card);
+  });
+
+  /* theme toggle — persists to localStorage, updates aria-label */
+  var root = document.documentElement, tgl = document.getElementById('tgl');
+  function label() {
+    var d = root.getAttribute('data-theme') === 'dark';
+    tgl.setAttribute('aria-label', d ? 'Switch to light theme' : 'Switch to dark theme');
+  }
+  tgl.addEventListener('click', function () {
+    var t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', t);
+    try { localStorage.setItem('theme', t); } catch (e) {}
+    label();
+  });
+  label();
+  matchMedia('(prefers-color-scheme:dark)').addEventListener('change', function (e) {
+    var s = null; try { s = localStorage.getItem('theme'); } catch (err) {}
+    if (!s) { root.setAttribute('data-theme', e.matches ? 'dark' : 'light'); label(); }
+  });
+})();
+</script>
+</body>
+</html>

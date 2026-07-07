@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Variant Gallery — replace title</title>
+<!-- No-flash theme bootstrap (?theme= wins so a URL can pin the gallery's own chrome) -->
+<script>
+(function () {
+  var q = new URLSearchParams(location.search).get('theme');
+  var s = null; try { s = localStorage.getItem('theme'); } catch (e) {}
+  var os = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  var t = (q === 'light' || q === 'dark') ? q
+        : (s === 'light' || s === 'dark') ? s : os;
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<style>
+:root {
+  --paper: #eef4f8; --card: #ffffff; --ink: #0d2438; --ink-2: #3a5b76;
+  --line: #d3e1ec; --accent: #1c7aad;
+  --ok: #1e6b45; --ok-bg: #e2f2e9; --warn: #8a5a00; --warn-bg: #fdf3e0;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #091522; --card: #102338; --ink: #dde8f4; --ink-2: #90a9c4;
+          --line: #20405e; --accent: #38b0e8;
+          --ok: #4fc08d; --ok-bg: #0e2b1f; --warn: #e6b23e; --warn-bg: #2d2410; }
+}
+:root[data-theme="dark"] {
+  --paper: #091522; --card: #102338; --ink: #dde8f4; --ink-2: #90a9c4;
+  --line: #20405e; --accent: #38b0e8;
+  --ok: #4fc08d; --ok-bg: #0e2b1f; --warn: #e6b23e; --warn-bg: #2d2410;
+}
+:root[data-theme="light"] {
+  --paper: #eef4f8; --card: #ffffff; --ink: #0d2438; --ink-2: #3a5b76;
+  --line: #d3e1ec; --accent: #1c7aad;
+  --ok: #1e6b45; --ok-bg: #e2f2e9; --warn: #8a5a00; --warn-bg: #fdf3e0;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink);
+       font: 15px/1.55 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+main { max-width: 96rem; margin: 0 auto; padding: 24px 32px 72px; }
+h1 { font-size: 24px; text-wrap: balance; }
+h2 { font-size: 18px; border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-top: 40px; }
+.sub { color: var(--ink-2); max-width: 70ch; }
+a { color: var(--accent); }
+
+/* The core pattern: grid of figures, each = screenshot + caption + LIVE link.
+   Screenshots are for scanning; the live link is for close inspection. */
+.grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 20px; margin-top: 16px;
+}
+figure {
+  margin: 0; background: var(--card); border: 1px solid var(--line);
+  border-radius: 6px; overflow: hidden;
+}
+figure img { display: block; width: 100%; height: auto; }
+figcaption { padding: 10px 14px 12px; }
+figcaption .name { font-weight: 650; }
+figcaption .desc { color: var(--ink-2); font-size: 13.5px; margin-top: 2px; }
+figcaption .links { margin-top: 6px; font-size: 13px; }
+
+/* Light/dark pair grid — use inside a variant's card when showing both themes side by side */
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--line); }
+.pair img { width: 100%; display: block; }
+
+.chip { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 1px 10px; }
+.chip.ok   { color: var(--ok); background: var(--ok-bg); }
+.chip.warn { color: var(--warn); background: var(--warn-bg); }
+
+/* Decision callout — where the one-line pick lands after review */
+.decision {
+  background: var(--card); border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); border-radius: 4px;
+  padding: 12px 16px; margin: 20px 0; max-width: 70ch;
+}
+.decision .who { font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Side-by-side reviewer verdicts (independent critics reviewed the variants) */
+.side-by-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.lens { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; }
+.lens .reviewer { font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.theme-toggle {
+  position: fixed; bottom: 20px; right: 20px; z-index: 10;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  font-size: 18px; cursor: pointer;
+}
+.theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media print { .theme-toggle { display: none; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Background texture — 4 candidates</h1>
+<p class="sub">Each card: static screenshot for scanning + a live link that opens the real
+page with the variant pinned via query params (<code>?bg=wash&amp;theme=dark</code>).
+Light and dark are separate stacked sections when reviewing many variants at once —
+easier to scan than per-card toggles.</p>
+
+<h2>Light</h2>
+<div class="grid">
+  <figure>
+    <img src="shots/wash-light.png" alt="Variant: wash, light theme">
+    <figcaption>
+      <div class="name">wash <span class="chip ok">recommended</span></div>
+      <div class="desc">Single radial wash, no texture. Calmest under dense content.</div>
+      <div class="links"><a href="http://localhost:8089/page?bg=wash&theme=light">live ↗</a></div>
+    </figcaption>
+  </figure>
+  <figure>
+    <img src="shots/hex-light.png" alt="Variant: hex grid, light theme">
+    <figcaption>
+      <div class="name">hex</div>
+      <div class="desc">Hex lattice, 12% opacity, spaced (per earlier feedback: gaps between cells).</div>
+      <div class="links"><a href="http://localhost:8089/page?bg=hex&theme=light">live ↗</a></div>
+    </figcaption>
+  </figure>
+</div>
+
+<h2>Dark</h2>
+<div class="grid">
+  <figure>
+    <img src="shots/wash-dark.png" alt="Variant: wash, dark theme">
+    <figcaption>
+      <div class="name">wash</div>
+      <div class="links"><a href="http://localhost:8089/page?bg=wash&theme=dark">live ↗</a></div>
+    </figcaption>
+  </figure>
+  <figure>
+    <img src="shots/hex-dark.png" alt="Variant: hex grid, dark theme">
+    <figcaption>
+      <div class="name">hex <span class="chip warn">moiré at 90% zoom</span></div>
+      <div class="links"><a href="http://localhost:8089/page?bg=hex&theme=dark">live ↗</a></div>
+    </figcaption>
+  </figure>
+</div>
+
+<h2>Reviewer verdicts</h2>
+<div class="side-by-side">
+  <div class="lens">
+    <div class="reviewer">design judge</div>
+    <p>wash — hex competes with data-dense tables; wash recedes.</p>
+  </div>
+  <div class="lens">
+    <div class="reviewer">brand expert</div>
+    <p>Either works; hex needs the accent-hue tint, not neutral grey.</p>
+  </div>
+</div>
+
+<div class="decision">
+  <div class="who">Pick · pending</div>
+  Record the one-line decision here once made, then this doc is the durable record of
+  what was considered and why the winner won.
+</div>
+
+</main>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.createElement('button');
+  btn.className = 'theme-toggle'; btn.textContent = '◐';
+  function label() {
+    var d = root.getAttribute('data-theme') === 'dark';
+    btn.setAttribute('aria-label', d ? 'Switch to light theme' : 'Switch to dark theme');
+    btn.title = btn.getAttribute('aria-label');
+  }
+  btn.addEventListener('click', function () {
+    var t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', t);
+    try { localStorage.setItem('theme', t); } catch (e) {}
+    label();
+  });
+  label(); document.body.appendChild(btn);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+    var s = null; try { s = localStorage.getItem('theme'); } catch (err) {}
+    if (!s) { root.setAttribute('data-theme', e.matches ? 'dark' : 'light'); label(); }
+  });
+})();
+</script>
+</body>
+</html>

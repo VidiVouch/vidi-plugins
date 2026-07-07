@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "title": "Data-pipeline migration — findings",
+    "flavor": "editorial",
+    "cwd": "/path/to/workspace",
+    "theme": "auto"
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "eyebrow": "Migration audit · 2026-07-06",
+      "title": "233 commits audited; two ship-blockers found.",
+      "highlight": "two ship-blockers",
+      "lede": "The data-pipeline migration is sound except for two critical defects in the promote and ledger paths. Everything else is non-blocking.",
+      "flow": ["233 commits", "5 findings", "2 critical", "hold ship"]
+    },
+    {
+      "type": "stat-strip",
+      "stats": [
+        { "v": "233", "k": "commits audited", "evidence": "git log v1..v2" },
+        { "v": "2", "k": "critical", "evidence": "F-1, F-2" },
+        { "v": "1", "k": "high", "evidence": "F-3 (pre-existing)" },
+        { "v": "18/18", "k": "auth smoke", "evidence": "all pass" }
+      ]
+    },
+    {
+      "type": "callout",
+      "tone": "crit",
+      "heading": "Ship gate",
+      "md": "**Do not ship** until F-1 and F-2 are fixed. Both are new regressions, not inherited debt."
+    },
+    {
+      "type": "section",
+      "id": "critical",
+      "num": "01",
+      "title": "Critical findings",
+      "sub": "Each carries file, line, and the commit that introduced it. Click **Explain further** to have a subagent expand any finding in place.",
+      "body": [
+        {
+          "type": "verdict-item",
+          "id": "F-1",
+          "title": "promote_pipeline crashes on empty batch",
+          "meta": "pipeline/promote.py:141 · regression vs 4f2a91c",
+          "body": [
+            { "type": "prose", "md": "An empty batch reaches the reducer unguarded and raises `IndexError`. Any scheduled run with no new rows takes down the promote step." }
+          ],
+          "verbs": [
+            { "k": "affirm", "label": "Affirm", "bucket": "affirm" },
+            { "k": "revise", "label": "Revise…", "bucket": "revise", "note": true }
+          ],
+          "actions": [
+            { "kind": "expand", "label": "Explain further", "agent": "sonnet", "swap": "append", "response": "block" },
+            { "kind": "handoff", "label": "Fix in Codex", "target": "codex", "cwd": "/path/to/workspace", "prompt": "In pipeline/promote.py around line 141, promote_pipeline() raises IndexError on an empty batch. Guard the empty case and add a regression test. Full context: this is a migration regression introduced in commit 4f2a91c; the reducer assumes at least one row." }
+          ]
+        },
+        {
+          "type": "verdict-item",
+          "id": "F-2",
+          "title": "retry loop can double-write ledger rows",
+          "meta": "ledger/writer.py · concurrent deploys",
+          "body": [
+            { "type": "prose", "md": "The retry path has no idempotency key, so two concurrent deploys can each commit the same ledger row." }
+          ],
+          "verbs": [
+            { "k": "affirm", "label": "Affirm", "bucket": "affirm" },
+            { "k": "revise", "label": "Revise…", "bucket": "revise", "note": true }
+          ],
+          "actions": [
+            { "kind": "expand", "label": "Explain further", "agent": "sonnet", "response": "block" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "id": "evidence",
+      "num": "02",
+      "title": "Evidence table",
+      "body": [
+        {
+          "type": "table",
+          "columns": ["ID", "Severity", "Location", "Regression?"],
+          "rows": [
+            ["F-1", "Critical", "`pipeline/promote.py:141`", "yes — `4f2a91c`"],
+            ["F-2", "Critical", "`ledger/writer.py`", "yes"],
+            ["F-3", "High", "`tests/arch/test_layers.py`", "no — pre-existing"]
+          ]
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "id": "viz",
+      "num": "03",
+      "title": "A shape the spec can't hold",
+      "sub": "When content falls outside the block vocabulary, a subagent returns an HTMX-style fragment. It is sandboxed and carries a text fallback for static/markdown export.",
+      "body": [
+        {
+          "type": "fragment",
+          "sandbox": true,
+          "height": 90,
+          "fallback": "Severity mix: 2 critical, 1 high, 0 medium.",
+          "html": "<div style=\"display:flex;gap:6px;align-items:flex-end;height:60px\"><div style=\"width:40px;height:100%;background:#b3243c;border-radius:4px\"></div><div style=\"width:40px;height:50%;background:#e6b23e;border-radius:4px\"></div><div style=\"width:40px;height:8%;background:#38b0e8;border-radius:4px\"></div></div>"
+        }
+      ]
+    }
+  ]
+}

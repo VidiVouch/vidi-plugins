@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review Walkthrough — replace title</title>
+<!--
+  Verdict-collection walkthrough — the interactive tier of the skill. Use when the
+  deliverable isn't "here's what I found" but "decide on each of these": a
+  ratification/sign-off pass over N findings, a triage queue, an accept/revise/drop
+  review. The reader walks the set one item at a time, records a verdict + note per
+  item, and at the end the tool COMPILES the decisions into a prompt and hands them
+  back to Claude Code via a deep link — closing the loop the skill exists for.
+
+  Load-bearing behaviors (keep these — they're why the pattern works):
+   · autosave every decision to localStorage; resume at the first undecided item
+   · UNDECIDED ≠ ACCEPTED — pending items are never treated as affirmed, and the
+     carry-on prompt tells the agent so explicitly. This is the honesty guarantee.
+   · compile → download ledger JSON + assemble a carry-on prompt + deep-link back
+   · untrusted strings interpolated via escapeHtml, never raw innerHTML
+
+  Replace DATA with your items. Everything else is reusable as-is.
+-->
+<script>
+(function () {
+  var q = new URLSearchParams(location.search).get('theme');
+  var s = null; try { s = localStorage.getItem('theme'); } catch (e) {}
+  var os = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  var t = (q === 'light' || q === 'dark') ? q : (s === 'light' || s === 'dark') ? s : os;
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<style>
+/* Self-contained per SKILL.md non-negotiable #1: no CDN fonts. System font
+   stacks below; swap in an inlined @font-face data URI if a display face is wanted. */
+
+:root {
+  color-scheme: light;
+  --paper:#eef4f8; --surface:#ffffff; --ink:#0d2438; --ink-2:#3a5b76; --ink-3:#6f93ad;
+  --line:#d3e1ec; --line-2:#bcd2e2; --pb-100:#e8f0f8; --pb-500:#1f5a94; --pb-700:#123a63; --pb-900:#0b1d33;
+  --chrome:#0b1d33; --chrome-ink:#eaf2fa;
+  --iris:#38b0e8; --iris-deep:#1c7aad;
+  --ok:#1e6b45; --ok-bg:#e2f2e9; --warn:#8a5a00; --warn-bg:#fdf3e0; --warn-deep:#6b4700;
+  --red:#b3243c; --red-bg:#fdeaee; --red-deep:#8a1a2e;
+  --mono:ui-monospace,'SF Mono',Menlo,'JetBrains Mono',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark) {
+  :root { --paper:#091522; --surface:#102338; --ink:#dde8f4; --ink-2:#90a9c4; --ink-3:#647e98;
+    --line:#20405e; --line-2:#2a557e; --pb-100:#14293f; --pb-500:#5b96c8; --pb-700:#a8c9e6; --pb-900:#e6eef8;
+    --iris:#5cc8f5; --iris-deep:#38b0e8;
+    --ok:#4fc08d; --ok-bg:#0e2b1f; --warn:#e6b23e; --warn-bg:#2d2410; --warn-deep:#eec66f;
+    --red:#f0808f; --red-bg:#331520; --red-deep:#f59aab; }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --paper:#eef4f8; --surface:#ffffff; --ink:#0d2438; --ink-2:#3a5b76; --ink-3:#6f93ad;
+  --line:#d3e1ec; --line-2:#bcd2e2; --pb-100:#e8f0f8; --pb-500:#1f5a94; --pb-700:#123a63; --pb-900:#0b1d33;
+  --iris:#38b0e8; --iris-deep:#1c7aad;
+  --ok:#1e6b45; --ok-bg:#e2f2e9; --warn:#8a5a00; --warn-bg:#fdf3e0; --warn-deep:#6b4700;
+  --red:#b3243c; --red-bg:#fdeaee; --red-deep:#8a1a2e;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper:#091522; --surface:#102338; --ink:#dde8f4; --ink-2:#90a9c4; --ink-3:#647e98;
+  --line:#20405e; --line-2:#2a557e; --pb-100:#14293f; --pb-500:#5b96c8; --pb-700:#a8c9e6; --pb-900:#e6eef8;
+  --iris:#5cc8f5; --iris-deep:#38b0e8;
+  --ok:#4fc08d; --ok-bg:#0e2b1f; --warn:#e6b23e; --warn-bg:#2d2410; --warn-deep:#eec66f;
+  --red:#f0808f; --red-bg:#331520; --red-deep:#f59aab;
+}
+
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.55 var(--sans); }
+#app { max-width:900px; margin:0 auto; padding:0 24px 120px; }
+code { font-family:var(--mono); font-size:12.5px; background:var(--pb-100); color:var(--pb-700); padding:1px 5px; border-radius:4px; }
+
+/* sticky progress bar */
+.bar { position:sticky; top:0; z-index:10; background:var(--chrome); color:var(--chrome-ink); padding:12px 0; margin-bottom:22px; }
+.bar .inner { max-width:900px; margin:0 auto; padding:0 24px; }
+.bar h1 { font-size:15px; margin:0 0 8px; font-weight:600; }
+.bar .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.prog { flex:1; height:8px; background:#173553; border-radius:5px; overflow:hidden; min-width:160px; }
+.prog > i { display:block; height:100%; background:linear-gradient(90deg,var(--iris),var(--ok)); width:0; transition:width .25s; }
+.count { font-size:12px; color:#9db8d4; font-family:var(--mono); }
+.bar button { font:inherit; font-size:12.5px; color:#bcd6ee; background:none; border:1px solid #3a6f9e; border-radius:5px; padding:4px 11px; cursor:pointer; }
+.bar button:hover { background:#173553; }
+.bar button.go { background:var(--iris-deep); color:#fff; border-color:var(--iris-deep); }
+
+.screen { animation:fade .2s; }
+@keyframes fade { from { opacity:0; transform:translateY(4px); } to { opacity:1; } }
+.sec-badge { display:inline-block; font-size:11.5px; color:var(--pb-500); border:1px solid var(--pb-100); background:var(--pb-100); border-radius:10px; padding:2px 10px; margin-bottom:12px; }
+.card2 { border:1px solid var(--line); border-left:4px solid var(--iris); border-radius:8px; background:var(--surface); padding:20px 24px; }
+.card2 h2 { margin:0 0 4px; font-size:18px; color:var(--pb-900); }
+.card2 .meta { font-size:12.5px; color:var(--ink-3); margin-bottom:14px; font-family:var(--mono); }
+.card2 .body { color:var(--ink-2); font-size:14px; }
+.verbs { display:flex; gap:9px; flex-wrap:wrap; margin:18px 0 4px; }
+.verbs button { font:inherit; font-size:13.5px; padding:7px 15px; border-radius:6px; border:1.5px solid var(--line-2); background:var(--surface); color:var(--ink-2); cursor:pointer; }
+.verbs button:hover { border-color:var(--iris); }
+.verbs button.sel { border-color:var(--iris-deep); background:var(--iris-deep); color:#fff; font-weight:600; }
+.verbs button.sel.warn { background:var(--warn-deep); border-color:var(--warn-deep); }
+.verbs button.sel.bad { background:var(--red-deep); border-color:var(--red-deep); }
+textarea.note { width:100%; margin-top:11px; font:inherit; font-size:13.5px; padding:9px 11px; border:1px solid var(--line-2); border-radius:6px; background:var(--surface); color:var(--ink); min-height:60px; display:none; }
+textarea.note.show { display:block; }
+.nav { display:flex; justify-content:space-between; margin-top:22px; gap:10px; }
+.nav button { font:inherit; font-size:14px; padding:9px 20px; border-radius:7px; border:1px solid var(--pb-500); background:var(--surface); color:var(--pb-500); cursor:pointer; }
+.nav button:hover:not(:disabled) { background:var(--pb-100); }
+.nav button.primary { background:var(--pb-500); color:#fff; }
+.nav button:disabled { opacity:.4; cursor:default; }
+.intro ol { font-size:14.5px; line-height:1.7; }
+.hint { font-size:12.5px; color:var(--ink-3); }
+
+.summary .b { display:inline-block; min-width:110px; padding:14px 18px; border-radius:8px; margin:6px 10px 6px 0; text-align:center; vertical-align:top; }
+.summary .b .n { font-size:26px; font-weight:700; display:block; }
+.summary .b.affirm { background:var(--ok-bg); color:var(--ok); }
+.summary .b.revise { background:var(--warn-bg); color:var(--warn-deep); }
+.summary .b.drop { background:var(--red-bg); color:var(--red-deep); }
+.summary .b.pending { background:var(--warn-bg); color:var(--warn-deep); }
+.compiled { border:1px solid var(--line); border-radius:8px; background:var(--surface); padding:6px 18px; margin:14px 0; }
+.compiled h3 { color:var(--pb-700); font-size:14px; margin:16px 0 6px; }
+.compiled li { font-size:13.3px; margin:5px 0; }
+.actions { display:flex; gap:12px; flex-wrap:wrap; margin:20px 0; }
+.actions button { font:inherit; font-size:14px; padding:11px 20px; border-radius:8px; border:1px solid var(--pb-500); background:var(--surface); color:var(--pb-500); cursor:pointer; }
+.actions button.primary { background:var(--iris-deep); color:#fff; border-color:var(--iris-deep); }
+.bulkrow { margin:4px 0 0; }
+.bulkrow button { font:inherit; font-size:12.5px; font-weight:600; padding:6px 14px; border-radius:6px; border:1px solid var(--ok); background:var(--ok-bg); color:var(--ok); cursor:pointer; }
+.theme-toggle { position:fixed; right:16px; bottom:16px; z-index:99; width:38px; height:38px; border-radius:50%;
+  display:grid; place-items:center; font:16px/1 var(--mono); color:var(--ink-2); background:var(--surface); border:1px solid var(--line-2); cursor:pointer; }
+.theme-toggle:hover { color:var(--iris-deep); border-color:var(--iris-deep); }
+@media print { .theme-toggle, .bar { display:none; } }
+@media (prefers-reduced-motion:reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="bar"><div class="inner">
+  <h1>Review title — guided walkthrough</h1>
+  <div class="row">
+    <div class="prog"><i id="pfill"></i></div>
+    <span class="count" id="pcount"></span>
+    <button onclick="jump('start')">Intro</button>
+    <button onclick="jump('resume')" title="Jump to the first item you haven't decided">Resume ▸</button>
+    <button onclick="resetAll()">Reset</button>
+    <button class="go" onclick="jump('compile')">Compile ▸</button>
+  </div>
+</div></div>
+<div id="app"></div>
+
+<script>
+/* ---- CONTENT: replace with your items. Each verb has a bucket; verbs with note:true
+   reveal a required-context textarea. `default` is the pre-highlighted (not auto-applied)
+   suggestion. ------------------------------------------------------------------------ */
+var DATA = {
+  title: "Example review",
+  cwd: "/path/to/workspace",               // deep-link working dir for carry-on
+  verbs: [
+    { k:"affirm", label:"Affirm",  bucket:"affirm" },
+    { k:"revise", label:"Revise…", bucket:"revise", note:true },
+    { k:"drop",   label:"Drop…",   bucket:"drop",   note:true }
+  ],
+  items: [
+    { key:"F-1", title:"promote_pipeline crashes on empty batch", meta:"pipeline/promote.py:141 · regression vs 4f2a91c",
+      body:"<p>Empty batch reaches the reducer unguarded. Ship-blocker.</p>" },
+    { key:"F-2", title:"retry loop can double-write ledger rows", meta:"ledger/writer.py · concurrent deploys",
+      body:"<p>No idempotency key on the retry path.</p>" },
+    { key:"F-3", title:"two architecture guards weakened to pass", meta:"tests/arch/test_layers.py · pre-existing",
+      body:"<p>Not a regression — inherited. Decide whether to carry it forward as debt.</p>" }
+  ]
+};
+
+var LSK = 'review-' + (DATA.title || 'walkthrough').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+var state = load();
+function load() { try { var s = JSON.parse(localStorage.getItem(LSK)) || {}; s.decisions = s.decisions || {}; return s; } catch (e) { return { decisions:{} }; } }
+function save() { state.updated = new Date().toISOString(); localStorage.setItem(LSK, JSON.stringify(state)); paint(); }
+function dec(key) { return state.decisions[key]; }
+
+var screens = [{ type:'intro' }];
+DATA.items.forEach(function (it) { screens.push({ type:'card', it:it }); });
+screens.push({ type:'compile' });
+var keys = DATA.items.map(function (i) { return i.key; });
+
+function firstUndecided() { for (var i=0;i<screens.length;i++){ var s=screens[i]; if (s.type==='card' && !dec(s.it.key)) return i; } return screens.length-1; }
+var idx = Object.keys(state.decisions).length ? firstUndecided() : 0;
+
+function jump(where) {
+  if (where==='start') idx=0;
+  else if (where==='resume') idx=firstUndecided();
+  else if (where==='compile') idx=screens.length-1;
+  render(); scrollTo(0,0);
+}
+function go(d) { idx=Math.max(0,Math.min(screens.length-1, idx+d)); render(); scrollTo(0,0); }
+function resetAll() { if (confirm('Clear ALL decisions and start over?')) { state={decisions:{}}; localStorage.removeItem(LSK); idx=0; render(); } }
+
+function pick(key, verb, bucket, hasNote, btn) {
+  var prev = dec(key);
+  state.decisions[key] = { verb:verb, bucket:bucket, note:(prev&&prev.note)||'' };
+  save();
+  var group = btn.parentNode.querySelectorAll('button');
+  for (var i=0;i<group.length;i++) group[i].className = group[i].className.replace(/\s*sel\s*/g,' ').trim();
+  btn.classList.add('sel');
+  if (bucket==='revise') btn.classList.add('warn'); if (bucket==='drop') btn.classList.add('bad');
+  var ta = document.getElementById('note-'+key);
+  if (ta) ta.classList.toggle('show', !!hasNote);
+}
+function noteIn(key, el) { var c = dec(key) || { verb:'', bucket:'' }; c.note = el.value; state.decisions[key] = c; save(); }
+function acceptRest() {
+  DATA.items.forEach(function (it) { if (!dec(it.key)) state.decisions[it.key] = { verb:DATA.verbs[0].k, bucket:DATA.verbs[0].bucket, note:'' }; });
+  save(); render();
+}
+
+function paint() {
+  var done = keys.filter(function (k) { return dec(k); }).length;
+  document.getElementById('pfill').style.width = (100*done/keys.length) + '%';
+  document.getElementById('pcount').textContent = done + ' / ' + keys.length + ' decided';
+}
+
+function render() {
+  var s = screens[idx], html;
+  if (s.type==='intro') html = renderIntro();
+  else if (s.type==='card') html = renderCard(s.it);
+  else html = renderCompile();
+  document.getElementById('app').innerHTML = '<div class="screen">' + html + '</div>';
+  paint();
+}
+
+function renderIntro() {
+  return '<span class="sec-badge">Start</span><div class="card2"><h2>' + escapeHtml(DATA.title) + '</h2>' +
+    '<div class="intro"><ol>' +
+    '<li>Walk each item; pick a verdict. Decisions autosave — close and resume anytime.</li>' +
+    '<li><b>Not deciding an item is not the same as affirming it.</b> Undecided items are carried back as explicitly un-accepted.</li>' +
+    '<li>At the end, Compile downloads your ledger and hands the decisions to Claude Code.</li>' +
+    '</ol></div>' +
+    '<div class="bulkrow"><button onclick="acceptRest()">Affirm all remaining</button></div>' +
+    '<div class="nav"><span></span><button class="primary" onclick="go(1)">Begin ▸</button></div></div>';
+}
+
+function renderCard(it) {
+  var c = dec(it.key);
+  var verbs = DATA.verbs.map(function (v) {
+    var sel = c && c.verb===v.k;
+    var extra = sel ? (v.bucket==='revise'?' sel warn':v.bucket==='drop'?' sel bad':' sel') : '';
+    return '<button class="' + (v.k===DATA.default?'sug':'') + extra + '" ' +
+      'onclick="pick(\'' + it.key + '\',\'' + v.k + '\',\'' + v.bucket + '\',' + (v.note?'true':'false') + ',this)">' +
+      escapeHtml(v.label) + '</button>';
+  }).join('');
+  var noteShow = c && DATA.verbs.some(function (v) { return v.k===c.verb && v.note; });
+  return '<span class="sec-badge">Item ' + (idx) + ' / ' + keys.length + '</span>' +
+    '<div class="card2"><h2>' + escapeHtml(it.title) + '</h2>' +
+    '<div class="meta">' + escapeHtml(it.key) + (it.meta?' · '+escapeHtml(it.meta):'') + '</div>' +
+    '<div class="body">' + (it.body||'') + '</div>' +   /* body is author-trusted template HTML */
+    '<div class="verbs">' + verbs + '</div>' +
+    '<textarea class="note' + (noteShow?' show':'') + '" id="note-' + it.key + '" placeholder="Context for this decision (carried into the prompt)…" ' +
+      'oninput="noteIn(\'' + it.key + '\',this)">' + escapeHtml(c&&c.note||'') + '</textarea>' +
+    '<div class="nav"><button onclick="go(-1)"' + (idx<=1?' disabled':'') + '>◀ Back</button>' +
+    '<button class="primary" onclick="go(1)">' + (dec(it.key)?'Next ▸':'Skip ▸') + '</button></div></div>';
+}
+
+function compile() {
+  var out = { affirm:[], revise:[], drop:[], hold:[], pending:[] };
+  keys.forEach(function (k) {
+    var c = dec(k);
+    if (!c) { out.pending.push({ id:k, title:titleOf(k) }); return; }   // undecided ≠ accepted
+    (out[c.bucket] || out.affirm).push({ id:k, title:titleOf(k), verb:c.verb, note:c.note||'' });
+  });
+  return out;
+}
+function titleOf(key) { var it = DATA.items.find(function (i) { return i.key===key; }); return it ? it.title : key; }
+
+function renderCompile() {
+  var c = compile();
+  var box = function (b,l) { return '<span class="b '+b+'"><span class="n">'+c[b].length+'</span>'+l+'</span>'; };
+  var list = function (b,l) { return c[b].length ? '<h3>'+l+'</h3><ul>'+c[b].map(function (x) {
+    return '<li><code>'+escapeHtml(x.id)+'</code> — '+escapeHtml(x.title)+(x.note?' — <i>'+escapeHtml(x.note)+'</i>':'')+'</li>'; }).join('')+'</ul>' : ''; };
+  var pend = c.pending.length
+    ? '<b>'+c.pending.length+' item(s) not reviewed</b> — carried back as NOT accepted. <a href="#" onclick="jump(\'resume\');return false">Resume ▸</a>'
+    : 'All '+keys.length+' items decided.';
+  return '<span class="sec-badge">Compile &amp; carry on</span><div class="card2"><h2>Compiled review</h2>' +
+    '<p class="hint">'+pend+'</p>' +
+    '<div class="summary">'+box('affirm','affirmed')+box('revise','revised')+box('drop','dropped')+
+      (c.pending.length?'<span class="b pending"><span class="n">'+c.pending.length+'</span>not reviewed</span>':'')+'</div>' +
+    '<div class="compiled">'+list('revise','Revised — apply as new constraints')+list('drop','Dropped — do not carry forward')+
+      (c.pending.length?'<h3>⚠ Not reviewed — NOT accepted</h3><ul>'+c.pending.map(function (x) { return '<li><code>'+escapeHtml(x.id)+'</code> — '+escapeHtml(x.title)+'</li>'; }).join('')+'</ul>':'')+'</div>' +
+    '<div class="actions"><button class="primary" onclick="carryOn()">▸ Carry on — hand decisions to Claude Code</button>' +
+    '<button onclick="downloadJSON()">⭳ Download decisions.json</button>' +
+    '<button onclick="copyPrompt()">⧉ Copy carry-on prompt</button></div>' +
+    '<p class="hint">Carry on downloads the ledger and opens Claude Code pre-filled with a prompt built from your decisions — you review it before sending, it is never auto-sent. Deep links are stripped on GitHub; this is a local file, so they work here.</p>' +
+    '<div class="nav"><button onclick="go(-1)">◀ Back</button><button onclick="jump(\'start\')">Restart</button></div></div>';
+}
+
+/* ---- the loop back to the agent ---- */
+function carryPrompt() {
+  var c = compile();
+  var p = 'Review complete — my decisions (full ledger downloaded to decisions.json). Apply them:\n\n';
+  p += 'AFFIRMED: ' + c.affirm.length + ' items proceed as-is.\n';
+  if (c.revise.length) p += '\nREVISED — apply as new constraints:\n' + c.revise.map(function (x) { return ' - ' + x.id + ': ' + (x.note||'(see ledger)'); }).join('\n') + '\n';
+  if (c.drop.length)   p += '\nDROPPED — do NOT carry forward:\n' + c.drop.map(function (x) { return ' - ' + x.id + ': ' + (x.note||''); }).join('\n') + '\n';
+  if (c.pending.length) p += '\nNOT REVIEWED (' + c.pending.length + ' items — I have NOT accepted these; ask me before relying on them):\n' + c.pending.map(function (x) { return ' - ' + x.id; }).join('\n') + '\n';
+  return p;
+}
+function downloadJSON() {
+  var c = compile();
+  var payload = { review:DATA.title, date:new Date().toISOString(),
+    summary:{ affirm:c.affirm.length, revise:c.revise.length, drop:c.drop.length, pending:c.pending.length },
+    pending:c.pending.map(function (x) { return x.id; }), decisions:state.decisions };
+  var blob = new Blob([JSON.stringify(payload, null, 1)], { type:'application/json' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'decisions.json'; a.click();
+}
+function copyPrompt() { navigator.clipboard.writeText(carryPrompt()).then(function () { alert('Carry-on prompt copied.'); }); }
+function carryOn() {
+  downloadJSON();
+  location.href = 'claude-cli://open?cwd=' + encodeURIComponent(DATA.cwd || '') +
+    '&q=' + encodeURIComponent(carryPrompt().slice(0, 4800));   // stay under the 5000-char cap
+}
+
+function escapeHtml(s) { return String(s==null?'':s).replace(/[&<>"]/g, function (m) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]; }); }
+
+/* theme toggle */
+(function () {
+  var root = document.documentElement, btn = document.createElement('button');
+  btn.className = 'theme-toggle'; btn.textContent = '◐';
+  function label() { var d = root.getAttribute('data-theme')==='dark'; btn.setAttribute('aria-label', d?'Switch to light theme':'Switch to dark theme'); btn.title = btn.getAttribute('aria-label'); }
+  btn.addEventListener('click', function () { var t = root.getAttribute('data-theme')==='dark'?'light':'dark'; root.setAttribute('data-theme', t); try { localStorage.setItem('theme', t); } catch (e) {} label(); });
+  label(); document.body.appendChild(btn);
+  matchMedia('(prefers-color-scheme:dark)').addEventListener('change', function (e) { var s=null; try { s=localStorage.getItem('theme'); } catch (err) {} if (!s) { root.setAttribute('data-theme', e.matches?'dark':'light'); label(); } });
+})();
+
+render();
+</script>
+</body>
+</html>

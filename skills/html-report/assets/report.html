@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report Template — replace title</title>
+<!-- No-flash theme bootstrap: synchronous, ?theme= param wins, then localStorage, then OS. -->
+<script>
+(function () {
+  var q = new URLSearchParams(location.search).get('theme');
+  var s = null; try { s = localStorage.getItem('theme'); } catch (e) {}
+  var os = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  var t = (q === 'light' || q === 'dark') ? q
+        : (s === 'light' || s === 'dark') ? s : os;
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<style>
+/* ============================================================
+   Tokens — cyanotype: blueprint on paper / dark instrument.
+   Prussian-blue ink, azure accent, calm cooled status ramp
+   (amber caution, never orange; no LLM-purple, no warm cream).
+   Swap for the project's own token file if one exists.
+   Fonts are referenced by name and fall back to system faces —
+   inline an @font-face data URI if fidelity matters off-machine.
+   ============================================================ */
+:root {
+  --paper: #eef4f8;        /* page background */
+  --card: #ffffff;         /* raised surfaces */
+  --ink: #0d2438;          /* primary text */
+  --ink-2: #3a5b76;        /* secondary text */
+  --line: #d3e1ec;         /* hairlines */
+  --accent: #1c7aad;       /* links, emphasis */
+  --chrome-bg: #0b1d33;    /* header banner — constant across themes */
+  --chrome-ink: #eaf2fa;
+  --ok: #1e6b45;  --warn: #8a5a00;  --crit: #b3243c;  --neutral: #3a5b76;
+  --ok-bg: #e2f2e9; --warn-bg: #fdf3e0; --crit-bg: #fdeaee; --neutral-bg: #eaf1f6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #091522; --card: #102338; --ink: #dde8f4; --ink-2: #90a9c4;
+    --line: #20405e; --accent: #38b0e8;
+    --ok: #4fc08d; --warn: #e6b23e; --crit: #f0808f; --neutral: #90a9c4;
+    --ok-bg: #0e2b1f; --warn-bg: #2d2410; --crit-bg: #331520; --neutral-bg: #152736;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #091522; --card: #102338; --ink: #dde8f4; --ink-2: #90a9c4;
+  --line: #20405e; --accent: #38b0e8;
+  --ok: #4fc08d; --warn: #e6b23e; --crit: #f0808f; --neutral: #90a9c4;
+  --ok-bg: #0e2b1f; --warn-bg: #2d2410; --crit-bg: #331520; --neutral-bg: #152736;
+}
+:root[data-theme="light"] {
+  --paper: #eef4f8; --card: #ffffff; --ink: #0d2438; --ink-2: #3a5b76;
+  --line: #d3e1ec; --accent: #1c7aad;
+  --ok: #1e6b45; --warn: #8a5a00; --crit: #b3243c; --neutral: #3a5b76;
+  --ok-bg: #e2f2e9; --warn-bg: #fdf3e0; --crit-bg: #fdeaee; --neutral-bg: #eaf1f6;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 16px/1.6 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+code, .mono {
+  font-family: 'Maple Mono', 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.875em; background: var(--neutral-bg);
+  padding: 0.1em 0.35em; border-radius: 3px;
+}
+
+/* Header chrome — dark banner in BOTH themes, deliberately */
+header.doc {
+  background: var(--chrome-bg); color: var(--chrome-ink);
+  padding: 28px 32px;
+}
+header.doc .crumbs { font-size: 13px; opacity: 0.75; letter-spacing: 0.04em; }
+header.doc h1 { margin: 6px 0 4px; font-size: 26px; line-height: 1.25; text-wrap: balance; }
+header.doc .meta { font-size: 13px; opacity: 0.75; }
+header.doc a { color: inherit; }
+
+main { max-width: 62rem; margin: 0 auto; padding: 24px 32px 72px; }
+section { margin-top: 40px; }
+h2 { font-size: 19px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+h2 .num { color: var(--ink-2); margin-right: 0.5em; }
+a { color: var(--accent); }
+p { max-width: 65ch; }
+
+/* Stat-card grid for headline counts — every number cites its base */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 16px; }
+.stat {
+  background: var(--card); border: 1px solid var(--line); border-radius: 6px;
+  padding: 14px 16px;
+}
+.stat .n { font-size: 28px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.stat .label { font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
+.stat .evidence { font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+
+/* Verdict / findings table */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); }
+th, td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td { font-size: 14.5px; }
+
+/* Severity/status chips — same taxonomy as the chat findings, one token each */
+.chip {
+  display: inline-block; font-size: 12px; font-weight: 600; border-radius: 999px;
+  padding: 1px 10px; white-space: nowrap;
+}
+.chip.ok      { color: var(--ok);      background: var(--ok-bg); }
+.chip.warn    { color: var(--warn);    background: var(--warn-bg); }
+.chip.crit    { color: var(--crit);    background: var(--crit-bg); }
+.chip.neutral { color: var(--neutral); background: var(--neutral-bg); }
+
+/* Decision / ruling callout — distinct from descriptive prose */
+.decision {
+  background: var(--card); border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); border-radius: 4px;
+  padding: 12px 16px; margin: 16px 0;
+}
+.decision .who { font-size: 12px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.theme-toggle {
+  position: fixed; bottom: 20px; right: 20px; z-index: 10;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+  font-size: 18px; cursor: pointer;
+}
+.theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media print {
+  :root, :root[data-theme="dark"] {
+    --paper: #ffffff; --card: #ffffff; --ink: #0d2438; --ink-2: #3a5b76;
+    --line: #d3e1ec; --accent: #1c7aad;
+  }
+  .theme-toggle { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="doc">
+  <div class="crumbs">PROJECT · REPORTS · <a href="#">SOURCE DOC</a></div>
+  <h1>Report title — one line stating the outcome</h1>
+  <div class="meta">2026-07-06 · scope: what was examined · by: who/what produced this</div>
+</header>
+
+<main>
+
+<section id="headline">
+  <h2><span class="num">1 ·</span> Headline</h2>
+  <p>Lead with the verdict in two or three sentences. Concrete evidence inline:
+     <code>abc1234</code>, <code>src/pipeline/promote.py</code>, counts with bases.</p>
+  <div class="stats">
+    <div class="stat"><div class="n">233</div><div class="label">Commits audited</div><div class="evidence">git log v1..v2</div></div>
+    <div class="stat"><div class="n">3</div><div class="label">Critical findings</div><div class="evidence">sections 3.1–3.3</div></div>
+    <div class="stat"><div class="n">14/17</div><div class="label">Repos reporting</div><div class="evidence">capture: git-ai · self-asserted</div></div>
+  </div>
+</section>
+
+<section id="verdicts">
+  <h2><span class="num">2 ·</span> Verdicts</h2>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Item</th><th>Status</th><th>Evidence</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr id="v-pipeline">
+        <td>promote_pipeline</td>
+        <td><span class="chip crit">Critical</span></td>
+        <td><code>pipeline/promote.py:141</code></td>
+        <td>Crashes on empty batch; regression against <code>abc1234</code>.</td>
+      </tr>
+      <tr id="v-guards">
+        <td>architecture guards</td>
+        <td><span class="chip warn">Medium</span></td>
+        <td><code>tests/arch/test_layers.py</code></td>
+        <td>2 guards weakened; pre-existing, not a regression.</td>
+      </tr>
+      <tr id="v-auth">
+        <td>auth flows</td>
+        <td><span class="chip ok">Pass</span></td>
+        <td>18/18 smoke-clicked</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section id="decision">
+  <h2><span class="num">3 ·</span> Ruling</h2>
+  <div class="decision">
+    <div class="who">Decision · 2026-07-06</div>
+    Ship with the pipeline fix; guard weakening tracked separately as pre-existing debt.
+  </div>
+  <p>Descriptive prose stays outside the callout. The callout is only for the ruling itself.</p>
+</section>
+
+<section id="next">
+  <h2><span class="num">4 ·</span> Next</h2>
+  <p>Numbered, owned, verifiable next steps — each one links to its evidence above
+     (<a href="#v-pipeline">§2 promote_pipeline</a>).</p>
+</section>
+
+</main>
+
+<!-- Theme toggle: follows OS only until the user explicitly chooses -->
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.createElement('button');
+  btn.className = 'theme-toggle'; btn.textContent = '◐';
+  function label() {
+    var d = root.getAttribute('data-theme') === 'dark';
+    btn.setAttribute('aria-label', d ? 'Switch to light theme' : 'Switch to dark theme');
+    btn.title = btn.getAttribute('aria-label');
+  }
+  btn.addEventListener('click', function () {
+    var t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', t);
+    try { localStorage.setItem('theme', t); } catch (e) {}
+    label();
+  });
+  label(); document.body.appendChild(btn);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+    var s = null; try { s = localStorage.getItem('theme'); } catch (err) {}
+    if (!s) { root.setAttribute('data-theme', e.matches ? 'dark' : 'light'); label(); }
+  });
+})();
+</script>
+</body>
+</html>
