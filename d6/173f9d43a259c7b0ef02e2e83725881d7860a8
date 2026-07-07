@@ -1,0 +1,23 @@
+LICENSE.md
+  s_79e5f4cf5768f7::t_c0f85aca2078a3 1,10-13
+.claude-plugin/plugin.json
+  s_79e5f4cf5768f7::t_c0f85aca2078a3 8
+.codex-plugin/plugin.json
+  s_79e5f4cf5768f7::t_c0f85aca2078a3 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "d6173f9d43a259c7b0ef02e2e83725881d7860a8",
+  "prompts": {},
+  "sessions": {
+    "s_79e5f4cf5768f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3e1e-a244-7920-9f6c-a19d2fb4bfc6",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
