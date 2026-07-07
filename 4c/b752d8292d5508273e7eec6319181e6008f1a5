@@ -1,0 +1,25 @@
+skills/html-report/assets/report-editorial.html
+  s_edca729f73c086::t_9033dd8f2c528f 35-36,45-46
+skills/html-report/assets/review-walkthrough.html
+  s_edca729f73c086::t_828cae33dcc542 34-35,45-46
+skills/html-report/scripts/render_note.py
+  s_edca729f73c086::t_68e330027250a0 507
+skills/html-report/scripts/serve_note.py
+  s_edca729f73c086::t_b9e4a9f5faff85 29,151,265-274,292-293
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4cb752d8292d5508273e7eec6319181e6008f1a5",
+  "prompts": {},
+  "sessions": {
+    "s_edca729f73c086": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "988fb0a3-fb38-4f9d-ad29-af98d3ff835f",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
