@@ -1,0 +1,115 @@
+<title>deep-review → vidi: Review-Attestation Seam</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#fff; --ink:#161a1f; --ink2:#4a5560; --ink3:#7a8794;
+    --line:#e2e7ec; --line2:#cdd6de; --accent:#2f6f9f; --accent-bg:#e8f2fa;
+    --ok:#1f7a4d; --ok-bg:#e5f4ec; --warn:#8a5a00; --warn-bg:#fbf1dd; --crit:#b3243c; --crit-bg:#fbe9ed;
+    --mono:'SF Mono',ui-monospace,Menlo,monospace; --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0d1218; --card:#141b23; --ink:#e6edf3; --ink2:#9fb0be; --ink3:#697787;
+    --line:#233040; --line2:#31465a; --accent:#5aa9dc; --accent-bg:#12283a;
+    --ok:#4fc08d; --ok-bg:#0e2b1f; --warn:#e6b23e; --warn-bg:#2c2410; --crit:#f0808f; --crit-bg:#331520;
+  }}
+  :root[data-theme="light"]{--bg:#f7f8fa;--card:#fff;--ink:#161a1f;--ink2:#4a5560;--ink3:#7a8794;--line:#e2e7ec;--line2:#cdd6de;--accent:#2f6f9f;--accent-bg:#e8f2fa;--ok:#1f7a4d;--ok-bg:#e5f4ec;--warn:#8a5a00;--warn-bg:#fbf1dd;--crit:#b3243c;--crit-bg:#fbe9ed;}
+  :root[data-theme="dark"]{--bg:#0d1218;--card:#141b23;--ink:#e6edf3;--ink2:#9fb0be;--ink3:#697787;--line:#233040;--line2:#31465a;--accent:#5aa9dc;--accent-bg:#12283a;--ok:#4fc08d;--ok-bg:#0e2b1f;--warn:#e6b23e;--warn-bg:#2c2410;--crit:#f0808f;--crit-bg:#331520;}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 24px 90px}
+  h1{font-size:27px;letter-spacing:-.02em;margin:0 0 4px} .sub{color:var(--ink2);font-size:15px;margin:0 0 6px}
+  .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink3);letter-spacing:.02em;margin-bottom:26px}
+  h2{font-size:19px;letter-spacing:-.01em;margin:34px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
+  h3{font-size:15px;margin:20px 0 6px}
+  p{max-width:70ch;color:var(--ink)} .lead{font-size:16px;color:var(--ink2)}
+  code{font-family:var(--mono);font-size:.86em;background:var(--accent-bg);color:var(--accent);padding:.06em .36em;border-radius:4px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:14px 0}
+  .verdict{border-left:4px solid var(--accent);background:var(--accent-bg)}
+  .tag{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:2px 8px;border-radius:20px;margin-right:6px}
+  .t-ok{background:var(--ok-bg);color:var(--ok)} .t-warn{background:var(--warn-bg);color:var(--warn)} .t-crit{background:var(--crit-bg);color:var(--crit)} .t-acc{background:var(--accent-bg);color:var(--accent)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;margin:12px 0}
+  th{text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);border-bottom:1px solid var(--line2);padding:7px 10px}
+  td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:12px 0}
+  ol,ul{max-width:70ch} li{margin:5px 0}
+  pre{margin:12px 0;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.5;color:var(--ink)}
+  .k{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+  .foot{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);color:var(--ink3);font-size:12.5px}
+</style>
+
+<div class="wrap">
+
+<h1>deep-review → vidi: the review-attestation seam</h1>
+<p class="sub">How the deep-review CLI reports "reviewed-clean" back to vidi — part 2 of the attestation matrix.</p>
+<p class="meta">DESIGN RECOMMENDATION · opus synthesis of a gpt-5.5 review cohort (vid codebase · git-ai · ~110 vidi transcripts) + adversary · 2026-07-07</p>
+
+<div class="card verdict">
+<p style="margin:0 0 8px"><span class="tag t-acc">verdict</span> <strong>Buildable on deep-review's side; blocked on two vidi-core changes that aren't deep-review's to make.</strong></p>
+<p style="margin:0">vidi already has the record, ledger, gate, and the <code>ToolReviewV2</code> predicate — this is <em>not</em> a from-scratch build. deep-review emits one unsigned <code>ToolReviewV2</code> statement per reviewed unit through <code>vidi&nbsp;review</code> (never <code>vouch</code>/<code>sign</code>). But it <strong>cannot do so today</strong>: <code>ReviewArgs</code> has no non-interactive flags (blocking prerequisite), and anything above the self-asserted A0 floor needs a <code>Lane::Tool</code> that does not yet exist (roadmap). Recommend a <strong>phased path</strong>: honest A0 transparency-floor now → signed tool lane later.</p>
+</div>
+
+<h2>1 · What's actually there (dispelling "stubbed")</h2>
+<p>Only <code>vidi-cli</code>'s <em>verbs</em> are <code>println!</code> stubs. <code>vidi-core</code> is real and load-bearing:</p>
+<ul>
+<li><strong>Record model</strong> — <code>Predicate::Review</code> + <code>AttesterIdentity::Tool{tool,model,…}</code> already mints <code>PredicateType::ToolReviewV2</code> at <code>Statement::new</code>. No new predicate needed.</li>
+<li><strong>Units are content-addressed</strong> — <code>Address = path::qualpath</code>; <code>scan_file → Unit{address, content_hash, line_span, grade}</code>. <code>content_hash</code> is blake3 over an <em>alpha-normalized</em> atom sequence (<code>normalize.rs</code>).</li>
+<li><strong>Staleness is automatic + pure</strong> — <code>staleness::resolve_gate_state</code> is exact-hash equality vs the reviewed hash. Any byte change → <code>STALE</code>. No churn formula involved.</li>
+<li><strong>Normative boundary</strong> — ratified pin <code>agent-sign-boundary</code> (D2/D8, 2026-07-03): <em>"Agents cannot sign; signing requires a human."</em> The presence-gate wall below is by design, not incidental.</li>
+</ul>
+
+<h2>2 · The design</h2>
+
+<h3>Data shape — reuse <code>ToolReviewV2</code>, add nothing</h3>
+<p>Per reviewed unit, one statement:</p>
+<pre>subject   : { name: Address(path::qualpath), digest: &lt;resolved by vidi, NOT by deep-review&gt; }
+predicate : { attesterIdentity: Tool{ tool:"deep-review", model:&lt;"gpt-5.5"|"claude-opus-4-8"|…&gt;, harness:"claude-code" },
+              criteria, rigor, verdict, claimTimestamp,
+              similarityMultiset, profileVersion, scopeModelVersion, invarianceGrade }
+              // NO authorship field — composition is a read-time join (§Matrix), never embedded payload</pre>
+
+<h3>Unit mapping — deep-review's glue</h3>
+<p>No diff-to-unit API exists anywhere in vidi (confirmed independently by two reviewers). deep-review maps its frozen-worktree diff hunks → units by intersecting changed line-ranges against each post-image <code>line_span</code> from <code>scan_file</code>. This glue is deep-review's to write.</p>
+<div class="card"><span class="tag t-warn">single-verifier constraint</span> deep-review must <strong>never compute a unit's blake3 itself</strong> and pass it as <code>--digest</code> — that would be a second hasher outside <code>normalize.rs</code>, violating the ratified "exactly one canonicalize/content_id/verify reachable from every consumer" pin. deep-review supplies <em>identity + verdict + rigor by address</em>; <code>vidi review</code> resolves and hashes the current unit content itself.</div>
+
+<h3>Transport — a <em>new</em> agent verb, never <code>vouch</code>/<code>sign</code>, and <em>not</em> <code>review</code></h3>
+<div class="tw"><table>
+<tr><th>Path</th><th>Gate</th><th>For deep-review</th></tr>
+<tr><td><code>vidi vouch</code> / <code>sign</code></td><td><code>presence_gate</code> refuses when <code>CLAUDECODE</code>/<code>CODEX</code> markers set or no-TTY</td><td class="k">✗ unusable — that's exactly deep-review's runtime; and it's a human act by design</td></tr>
+<tr><td><code>vidi review &lt;unit&gt;</code> <span class="k">(reuse)</span></td><td>no presence gate today</td><td class="k">✗ <strong>rejected on adversarial review</strong> — <code>review</code> is the human <em>interactive</em> verb (sibling of <code>vouch</code>). Reusing it makes identical invocations mean different predicates by caller context; a human running it inside an agent terminal silently gets the machine path.</td></tr>
+<tr><td><strong><code>vidi attest --tool …</code></strong> <span class="k">(new)</span></td><td>no presence gate; distinct verb; appends <code>ToolReviewV2</code> to <code>.vidi/reviews.jsonl</code></td><td class="k">✓ recommended — a dedicated machine-attestation entrypoint, unambiguous vs the human verbs</td></tr>
+</table></div>
+<div class="card"><span class="tag t-crit">honesty — do not oversell</span> The A0 line is an <strong>honor-system convention, not a control.</strong> The "same F1 floor everyone reads" framing is a rationalization: that floor was never cryptographic — it was bounded by a human's willingness to lie under a <em>registered</em> <code>Person{id}</code> (checked against <code>[reviewers]</code>). At A0, <code>ledger::append()</code> checks only that <code>.vidi/</code> exists (zero identity/auth), <code>Tool{tool,model}</code> is free text with <strong>no registry check</strong> (anyone can claim <code>model:"claude-opus-4-8"</code>), and <code>.gitattributes merge=union</code> makes a hand-crafted line survive merges by default. Auto-minting also removes the friction that implicitly bounded the floor, on two axes: <em>volume</em> (thousands of lines/hr → craters signal-to-noise) and <em>attribution</em> (no tool identity is verified). So the writeup must say plainly: <strong>this is transparency-by-plain-file, not integrity.</strong> Real integrity arrives only with the tool lane below.</div>
+
+<h3>Invariants deep-review owns (these are the whole point)</h3>
+<ul>
+<li><span class="tag t-crit">hard gate</span><strong>Never mint from a degraded reviewer.</strong> vidi has no "degraded" concept — <code>Verdict</code> is <code>Approved|Rejected</code>. The workflow already tracks <code>status[r.key] = 'ok' | 'degraded:…'</code>; the mint gate must check <em>that per-reviewer status directly</em>, not "is the confirmed list empty" (a crashed reviewer reports zero findings — which must never read as clean). Needs an explicit test: no mint call reachable when <code>degraded=true</code>.</li>
+<li><span class="tag t-crit">hard gate</span><strong>Derive rigor from observed scope.</strong> Mint only when the reviewer's actual diff scope covered the <em>full unit body</em> — a reviewer that saw one hunk of a function must not attest the whole unit's hash. Never let the wrapper self-assert rigor.</li>
+<li><span class="tag t-warn">dedup</span>Pre-mint check: skip re-appending an <em>identical</em> already-approved line (unbounded ledger growth on re-runs). Harmless to gating, but wasteful.</li>
+</ul>
+
+<h3>Rename handling — fail closed, don't oversell <code>invarianceGrade:code</code></h3>
+<p>Because <code>content_hash</code> is alpha-normalized, renaming a unit's own name/params doesn't change its hash — <em>but</em> <code>Address</code> embeds the literal name, so a rename is a <strong>new address with no review history</strong> → reads <code>UNREVIEWED</code> until an opt-in, never-automatic <code>reconcile_offer</code> (16-atom floor + exact-hash match at the new address) is surfaced and accepted. deep-review must not advertise code-grade as "silently survives a rename" — it fails closed by design. Either skip minting on renamed units or explicitly surface the reconcile path.</p>
+
+<h3>Matrix composition — a read-time join, never a stored field</h3>
+<p><strong>Two incompatible invalidation clocks.</strong> vidi's review key is content-hash — commit-independent, staying <code>FRESH</code> across many later commits. git-ai's authorship key is commit+file+line-range — it rotates on essentially every commit that touches the file. An authorship reference frozen into a review record therefore goes stale the commit <em>after</em> mint, while the review itself is still validly fresh; embedding it would splice the two clocks and corrupt the record by design. There's no schema slot for it anyway — <code>ReviewPredicate</code> has no authorship field, and D2's authorship pin is explicitly <em>"code-free, current-state, advisory-only"</em> (re-resolve on demand, never carry as payload). Nor is there a stable per-commit git-ai artifact to freeze correctly: resolving "who wrote this" is blame-style backward-walking, inherently a query-time operation.</p>
+<p><strong>So compose at read time.</strong> A report/query command — <em>not</em> the mint path — resolves a unit's <em>current</em> <code>line_span</code> against git-ai's <em>current</em> blame/note at HEAD, independent of when the <code>ToolReviewV2</code> line was minted. The matrix row ("who wrote U × who reviewed U clean") is <strong>computed on demand, never stored</strong>. And don't mirror a <code>refs/notes/review</code> channel: authorship is advisory (a git-note side channel is fine), but review must <em>gate</em> — it needs vidi's ledger-lane + policy axis, which git-notes has no equivalent of.</p>
+<div class="card"><span class="tag t-warn">availability gap</span> git-ai migrates authorship across rebases via a <code>post-rewrite</code> hook — but only where <code>git-ai install-hooks</code> registered it. In a CI runner or fresh clone without hooks, a rebased/amended commit gets <em>no note at all</em> (absent, not stale), with no backfill path — precisely the environments where vidi's gate runs. So the read-time join must <strong>detect-and-flag missing authorship, never assume-stale</strong>, and vidi-gate environments should ensure git-ai hooks are installed. A deployment gap, not a flaw in git-ai's rewrite tracking (correct when hooks are present).</div>
+
+<h2>3 · Blocking + roadmap</h2>
+<div class="tw"><table>
+<tr><th>Item</th><th>Owner</th><th>Status</th></tr>
+<tr><td>Real non-interactive <code>ReviewArgs</code> (<code>--tool --model --rigor --verdict --criteria --json</code>; <em>no</em> <code>--digest</code>)</td><td>vidi-cli</td><td><span class="tag t-crit">blocking</span> deep-review can't call the seam until this exists</td></tr>
+<tr><td>deep-review: diff→unit glue + mint gate (degraded/coverage/dedup)</td><td>deep-review</td><td><span class="tag t-ok">buildable now</span> once the CLI contract lands</td></tr>
+<tr><td><code>Lane::Tool</code> + <code>(Tool,Blake3)</code> row, CI/webhook-HMAC-authenticated like the App lane</td><td>vidi-core roadmap</td><td><span class="tag t-warn">later</span> the only way a per-unit tool review becomes <em>signed</em> vs A0</td></tr>
+</table></div>
+
+<h2>4 · Corrections to the original brief</h2>
+<ul>
+<li><strong>No "significance × churn" gate exists or was proposed.</strong> Significance and severity are both <em>advisory</em>, feeding only <code>vidi queue</code> ordering (D2). Drop that framing.</li>
+<li><strong>This is first-cut design.</strong> The "part-1 solved / part-2 unsolved" split originates in this session's brief, not prior ratified art — so treat the above as a proposal to ratify, not a synthesis of settled decisions.</li>
+</ul>
+
+<h2>5 · Recommended next step</h2>
+<p>Land the A0 phase: (1) give <code>vidi review</code> the non-interactive flag contract above; (2) build deep-review's diff→unit mapper + the three mint invariants (degraded/coverage/dedup) with the degraded test; (3) label every emitted line honestly as A0/self-asserted. Defer <code>Lane::Tool</code> signing to the vid roadmap. That ships a working, honest review-attestation seam without overstating its cryptographic strength.</p>
+
+<p class="foot">Cohort: gpt55-vidcode (vid codebase, coordinator) · gpt55-gitai (git-ai) · gpt55-chat (transcripts, ratified D2/D8) · adversary — all gpt-5.5-driven except the adversary. Independent convergence across two codebases + the ratified docs on the same landing spot. Adversarial second pass folded in (it overturned the verb choice → distinct <code>attest --tool</code>, and surfaced the revocation-race gate); matrix composition resolved to a read-time join after gpt55-gitai's self-retraction of embedded authorship_refs. Opus judged.</p>
+
+</div>
