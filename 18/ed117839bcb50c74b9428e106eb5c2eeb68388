@@ -1,7 +1,11 @@
 skills/deep-review/SKILL.md
   s_005fe2a112e4e9::t_d6744ac374b08d 277-285,324
+  s_e306f165440259::t_8a0f4d0b7c8db7 277-285
+  s_e306f165440259::t_e01b93aaf80457 324
 skills/deep-review/reviewers/codex-native.md
   s_005fe2a112e4e9::t_4cdb197a680316 6-11,18-19,25-34,36-44
+  s_e306f165440259::t_ed7b397d456b68 6-11,18-19,25-34,42-44
+  s_e306f165440259::t_75805e78bba075 36-41
 ---
 {
   "schema_version": "authorship/3.0.0",
@@ -14,6 +18,14 @@ skills/deep-review/reviewers/codex-native.md
         "tool": "claude",
         "id": "b7f57092-cc3d-4999-ba0e-99d8a9d2b066",
         "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_e306f165440259": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "311aa3a6-29d6-4f7f-9db9-60d5edff1579",
+        "model": "claude-opus-4-8"
       },
       "human_author": "Tom Price <tom@tomprice.ca>"
     }
