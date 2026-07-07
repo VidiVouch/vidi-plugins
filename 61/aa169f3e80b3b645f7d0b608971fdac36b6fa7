@@ -1,0 +1,44 @@
+skills/deep-review/reviewers/codex-native.md
+  s_e306f165440259::t_ed7b397d456b68 6-11,18-19,25-34,42-44
+  s_e306f165440259::t_75805e78bba075 36-41
+skills/html-report/assets/report-editorial.html
+  s_e306f165440259::t_3664d082181a4a 35-36
+  s_e306f165440259::t_512c12b3f3b28a 45-46
+skills/html-report/assets/review-walkthrough.html
+  s_005fe2a112e4e9::t_447aba7a33b023 34-35
+  s_005fe2a112e4e9::t_293705d8e0cbf9 45-46
+skills/deep-review/SKILL.md
+  s_e306f165440259::t_8a0f4d0b7c8db7 277-285
+  s_e306f165440259::t_e01b93aaf80457 324
+skills/html-report/scripts/render_note.py
+  s_e306f165440259::t_bdc4a6913527a9 507
+skills/html-report/scripts/serve_note.py
+  s_e306f165440259::t_c9b2d0eb08557b 151
+  s_e306f165440259::t_bfc7cad0702638 29
+  s_e306f165440259::t_2443540e50871e 265-274
+  s_e306f165440259::t_192d7ce370b08f 292-293
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "61aa169f3e80b3b645f7d0b608971fdac36b6fa7",
+  "prompts": {},
+  "sessions": {
+    "s_005fe2a112e4e9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7f57092-cc3d-4999-ba0e-99d8a9d2b066",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_e306f165440259": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "311aa3a6-29d6-4f7f-9db9-60d5edff1579",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
