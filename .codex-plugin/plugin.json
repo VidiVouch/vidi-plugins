@@ -1,0 +1,39 @@
+{
+  "name": "vidi-skills",
+  "version": "0.1.0",
+  "description": "Vidi workflow skills for Codex and Claude Code.",
+  "author": {
+    "name": "Vidi",
+    "url": "https://vidivouch.com"
+  },
+  "homepage": "https://vidivouch.com",
+  "repository": "https://github.com/VidiVouch/vidi-plugins",
+  "license": "MIT",
+  "keywords": [
+    "vidi",
+    "skills",
+    "attestation",
+    "review",
+    "coverage",
+    "codex",
+    "claude-code"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Vidi Skills",
+    "shortDescription": "Review, attestation, reporting, and coverage skills.",
+    "longDescription": "Vidi Skills packages reusable agent workflows for Codex and Claude Code, including local review, deep review, review attestation design, HTML reporting, coverage checks, and Codex delegation workflows.",
+    "developerName": "Vidi",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Review my local changes",
+      "Design Vidi review attestation",
+      "Create an HTML findings report"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

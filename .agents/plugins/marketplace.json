@@ -1,0 +1,21 @@
+{
+  "name": "vidi",
+  "interface": {
+    "displayName": "Vidi"
+  },
+  "plugins": [
+    {
+      "name": "vidi-skills",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/VidiVouch/vidi-plugins.git",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "INSTALLED_BY_DEFAULT",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

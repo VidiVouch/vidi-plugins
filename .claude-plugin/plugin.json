@@ -1,0 +1,21 @@
+{
+  "name": "vidi-skills",
+  "version": "0.1.0",
+  "description": "Vidi workflow skills for Claude Code and Codex.",
+  "author": {
+    "name": "Vidi",
+    "url": "https://vidivouch.com"
+  },
+  "homepage": "https://vidivouch.com",
+  "repository": "https://github.com/VidiVouch/vidi-plugins",
+  "license": "MIT",
+  "keywords": [
+    "vidi",
+    "skills",
+    "attestation",
+    "review",
+    "coverage",
+    "codex",
+    "claude-code"
+  ]
+}

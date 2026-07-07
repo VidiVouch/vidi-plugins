@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "vidi",
+  "description": "Vidi workflow skills for AI-driven development, reviews, reports, coverage, and attestation.",
+  "owner": {
+    "name": "Vidi",
+    "url": "https://vidivouch.com"
+  },
+  "plugins": [
+    {
+      "name": "vidi-skills",
+      "source": "./",
+      "description": "Vidi review, attestation, reporting, coverage, and Codex delegation skills.",
+      "category": "productivity"
+    }
+  ]
+}
