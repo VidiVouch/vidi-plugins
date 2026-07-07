@@ -1,0 +1,22 @@
+skills/check-coverage/SKILL.md
+  s_79e5f4cf5768f7::t_596720671974c0 74-81
+skills/deep-review/SKILL.md
+  s_79e5f4cf5768f7::t_f9d7b14aad8afe 5
+  s_79e5f4cf5768f7::t_cefaebf12c7624 30,180-194,203
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "65a67fe747915ab1e3f2e9e9df2431c25360f3e4",
+  "prompts": {},
+  "sessions": {
+    "s_79e5f4cf5768f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3e1e-a244-7920-9f6c-a19d2fb4bfc6",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
