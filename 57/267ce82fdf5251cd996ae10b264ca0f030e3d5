@@ -1,0 +1,61 @@
+.agents/plugins/marketplace.json
+  s_79e5f4cf5768f7::t_816dc25de64444 14
+.gitignore
+  s_79e5f4cf5768f7::t_816dc25de64444 1-4
+skills/deep-review/SKILL.md
+  s_005fe2a112e4e9::t_d6744ac374b08d 277-285,324
+  s_e306f165440259::t_8a0f4d0b7c8db7 277-285
+  s_e306f165440259::t_e01b93aaf80457 324
+skills/deep-review/reviewers/codex-native.md
+  s_005fe2a112e4e9::t_4cdb197a680316 6-11,18-19,25-34,36-44
+  s_e306f165440259::t_ed7b397d456b68 6-11,18-19,25-34,42-44
+  s_e306f165440259::t_75805e78bba075 36-41
+skills/html-report/assets/report-editorial.html
+  s_edca729f73c086::t_9033dd8f2c528f 35-36,45-46
+skills/html-report/assets/review-walkthrough.html
+  s_edca729f73c086::t_828cae33dcc542 34-35,45-46
+skills/html-report/scripts/render_note.py
+  s_edca729f73c086::t_68e330027250a0 507
+skills/html-report/scripts/serve_note.py
+  s_edca729f73c086::t_b9e4a9f5faff85 29,151,265-274,292-293
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "57267ce82fdf5251cd996ae10b264ca0f030e3d5",
+  "prompts": {},
+  "sessions": {
+    "s_005fe2a112e4e9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7f57092-cc3d-4999-ba0e-99d8a9d2b066",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_79e5f4cf5768f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3e1e-a244-7920-9f6c-a19d2fb4bfc6",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_e306f165440259": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "311aa3a6-29d6-4f7f-9db9-60d5edff1579",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_edca729f73c086": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "988fb0a3-fb38-4f9d-ad29-af98d3ff835f",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
