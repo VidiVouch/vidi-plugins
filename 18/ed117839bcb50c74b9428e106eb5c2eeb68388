@@ -1,0 +1,21 @@
+skills/deep-review/SKILL.md
+  s_005fe2a112e4e9::t_d6744ac374b08d 277-285,324
+skills/deep-review/reviewers/codex-native.md
+  s_005fe2a112e4e9::t_4cdb197a680316 6-11,18-19,25-34,36-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "18ed117839bcb50c74b9428e106eb5c2eeb68388",
+  "prompts": {},
+  "sessions": {
+    "s_005fe2a112e4e9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7f57092-cc3d-4999-ba0e-99d8a9d2b066",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
