@@ -13,6 +13,7 @@
     "vidi",
     "skills",
     "attestation",
+    "evals",
     "review",
     "coverage",
     "codex",
@@ -21,8 +22,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Vidi Skills",
-    "shortDescription": "Review, attestation, reporting, and coverage skills.",
-    "longDescription": "Vidi Skills packages reusable agent workflows for Codex and Claude Code, including local review, deep review, review attestation design, HTML reporting, coverage checks, and Codex delegation workflows.",
+    "shortDescription": "Review, eval, attestation, reporting, and coverage skills.",
+    "longDescription": "Vidi Skills packages reusable agent workflows for Codex and Claude Code, including local review, deep review, deep eval, review attestation design, HTML reporting, coverage checks, and Codex delegation workflows.",
     "developerName": "Vidi",
     "category": "Productivity",
     "capabilities": [
@@ -31,6 +32,7 @@
     ],
     "defaultPrompt": [
       "Review my local changes",
+      "Evaluate whether a skill improves outputs",
       "Design Vidi review attestation",
       "Create an HTML findings report"
     ],

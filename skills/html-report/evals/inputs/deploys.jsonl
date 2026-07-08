@@ -1,0 +1,30 @@
+{"ts": "2026-06-01T02:28:00Z", "repo": "auth-svc", "deployer": "chris", "status": "failed", "duration_s": 749, "sha": "8ef786e4", "note": "scheduled"}
+{"ts": "2026-06-04T02:16:00Z", "repo": "auth-svc", "deployer": "tom", "status": "failed", "duration_s": 837, "sha": "584d8c4f", "note": "config-only"}
+{"ts": "2026-06-04T03:54:00Z", "repo": "billing", "deployer": "patrick", "status": "success", "duration_s": 531, "sha": "f9243a8f", "note": "config-only"}
+{"ts": "2026-06-04T12:28:00Z", "repo": "auth-svc", "deployer": "tom", "status": "failed", "duration_s": 727, "sha": "7d26934b", "note": ""}
+{"ts": "2026-06-04T15:40:00Z", "repo": "billing", "deployer": "tom", "status": "success", "duration_s": 235, "sha": "26e53a13", "note": ""}
+{"ts": "2026-06-05T17:09:00Z", "repo": "scraper", "deployer": "tom", "status": "success", "duration_s": 490, "sha": "50454f31", "note": "hotfix"}
+{"ts": "2026-06-06T06:59:00Z", "repo": "auth-svc", "deployer": "ethan", "status": "rolled_back", "duration_s": 583, "sha": "69e58b08", "note": ""}
+{"ts": "2026-06-06T08:18:00Z", "repo": "portal", "deployer": "chris", "status": "success", "duration_s": 469, "sha": "ba41eccc", "note": "scheduled"}
+{"ts": "2026-06-06T16:01:00Z", "repo": "pipeline", "deployer": "ethan", "status": "success", "duration_s": 190, "sha": "0928b5b7", "note": "manual retry"}
+{"ts": "2026-06-07T09:08:00Z", "repo": "pipeline", "deployer": "patrick", "status": "success", "duration_s": 440, "sha": "f25ec84d", "note": "manual retry"}
+{"ts": "2026-06-07T15:39:00Z", "repo": "scraper", "deployer": "tom", "status": "success", "duration_s": 530, "sha": "b23c6f5d", "note": "config-only"}
+{"ts": "2026-06-08T02:35:00Z", "repo": "billing", "deployer": "tom", "status": "success", "duration_s": 886, "sha": "371c1714", "note": "hotfix"}
+{"ts": "2026-06-09T04:29:00Z", "repo": "pipeline", "deployer": "tom", "status": "failed", "duration_s": 447, "sha": "f575dcad", "note": ""}
+{"ts": "2026-06-09T06:18:00Z", "repo": "scraper", "deployer": "chris", "status": "success", "duration_s": 822, "sha": "a8d41bed", "note": "manual retry"}
+{"ts": "2026-06-09T22:26:00Z", "repo": "auth-svc", "deployer": "patrick", "status": "success", "duration_s": 276, "sha": "4254770f", "note": "manual retry"}
+{"ts": "2026-06-11T02:17:00Z", "repo": "portal", "deployer": "chris", "status": "rolled_back", "duration_s": 475, "sha": "28028272", "note": "hotfix"}
+{"ts": "2026-06-11T02:51:00Z", "repo": "billing", "deployer": "patrick", "status": "success", "duration_s": 451, "sha": "255404e4", "note": "manual retry"}
+{"ts": "2026-06-11T04:25:00Z", "repo": "portal", "deployer": "tom", "status": "success", "duration_s": 880, "sha": "3b1612dd", "note": ""}
+{"ts": "2026-06-12T10:05:00Z", "repo": "auth-svc", "deployer": "tom", "status": "failed", "duration_s": 386, "sha": "ee0ca923", "note": ""}
+{"ts": "2026-06-14T04:34:00Z", "repo": "portal", "deployer": "ethan", "status": "success", "duration_s": 613, "sha": "536b3216", "note": "scheduled"}
+{"ts": "2026-06-16T08:12:00Z", "repo": "scraper", "deployer": "ethan", "status": "success", "duration_s": 497, "sha": "bb2737f6", "note": "hotfix"}
+{"ts": "2026-06-16T10:46:00Z", "repo": "billing", "deployer": "ethan", "status": "success", "duration_s": 663, "sha": "23d5a4fd", "note": ""}
+{"ts": "2026-06-18T16:21:00Z", "repo": "pipeline", "deployer": "chris", "status": "success", "duration_s": 865, "sha": "7c76fb00", "note": "hotfix"}
+{"ts": "2026-06-19T04:34:00Z", "repo": "portal", "deployer": "ethan", "status": "success", "duration_s": 668, "sha": "026c48bb", "note": "scheduled"}
+{"ts": "2026-06-22T02:48:00Z", "repo": "scraper", "deployer": "ethan", "status": "success", "duration_s": 388, "sha": "bfe228f2", "note": ""}
+{"ts": "2026-06-22T16:33:00Z", "repo": "scraper", "deployer": "patrick", "status": "success", "duration_s": 843, "sha": "3176813e", "note": "manual retry"}
+{"ts": "2026-06-22T17:27:00Z", "repo": "auth-svc", "deployer": "patrick", "status": "success", "duration_s": 639, "sha": "eb975729", "note": "manual retry"}
+{"ts": "2026-06-24T22:19:00Z", "repo": "scraper", "deployer": "patrick", "status": "success", "duration_s": 331, "sha": "cb0eb53f", "note": ""}
+{"ts": "2026-06-27T19:30:00Z", "repo": "auth-svc", "deployer": "chris", "status": "success", "duration_s": 601, "sha": "40034d66", "note": ""}
+{"ts": "2026-06-28T03:29:00Z", "repo": "portal", "deployer": "ethan", "status": "rolled_back", "duration_s": 606, "sha": "d8417358", "note": ""}

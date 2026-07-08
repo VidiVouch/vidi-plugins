@@ -8,6 +8,7 @@ Lean plugin repo for Vidi's AI-driven development workflows across Claude Code a
 - `codex-cli`
 - `codex-computer-use`
 - `codex-review`
+- `deep-eval`
 - `deep-review`
 - `html-report`
 - `local-review`

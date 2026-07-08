@@ -6,3 +6,5 @@ __pycache__/
 .review-cache/
 .ruff_cache/
 .venv/
+skills/*/evals/iteration-*/
+skills/*/evals/**/feedback.json
