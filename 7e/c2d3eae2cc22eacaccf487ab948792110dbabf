@@ -1,0 +1,19 @@
+.claude-plugin/marketplace.json
+  s_b146664f6fca49::t_6b571d7053bffa 2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "7ec2d3eae2cc22eacaccf487ab948792110dbabf",
+  "prompts": {},
+  "sessions": {
+    "s_b146664f6fca49": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "4f0ce528-82dc-47b5-9e57-07cfbe055efd",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
