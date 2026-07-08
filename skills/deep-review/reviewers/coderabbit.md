@@ -30,7 +30,7 @@ The workflow runs this reviewer with the prompt below:
 > - `--range <a>..<b>` mode: CodeRabbit's `--base-commit` reviews from the given
 >   commit up to HEAD, not up to a specific upper bound. Use the same
 >   detached-HEAD-safe checkout dance as the codex/cubic reviewers, in ONE
->   chained Bash call: `cd "<REPO_ROOT>" && ORIG=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --verify HEAD) && git checkout <b> && coderabbit review --agent --dir "<REPO_ROOT>" --base-commit <a>; git checkout "$ORIG"`
+>   chained Bash call: `cd "<REPO_ROOT>" && ORIG=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --verify HEAD) && git checkout <b> && (coderabbit review --agent --dir "<REPO_ROOT>" --base-commit <a>); rc=$?; git checkout "$ORIG"; exit $rc`
 >
 > Return the raw NDJSON stdout verbatim (plus stderr and the exit code) — do not
 > parse, summarise, or reformat beyond mapping into the findings schema below.

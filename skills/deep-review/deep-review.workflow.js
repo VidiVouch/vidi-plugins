@@ -432,7 +432,7 @@ while (round < MAX_ROUNDS) {
   fixedLastRound = false
   await parallel(
     buckets.map((bucket, i) => () =>
-      agent(fixBucketPrompt(bucket), { label: `fix:bucket${i + 1}/${buckets.length}#${round}`, phase: 'Fix', agentType: 'fixer' }),
+      agent(fixBucketPrompt(bucket), { label: `fix:bucket${i + 1}/${buckets.length}#${round}`, phase: 'Fix', agentType: 'fixer' }).catch(() => null),
     ),
   )
   fixedLastRound = true

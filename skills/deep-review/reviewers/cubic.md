@@ -15,7 +15,7 @@ Launch a background general-purpose Agent with prompt:
 > - `--base main` mode (default): `cd "<REPO_ROOT>" && CUBIC_DISABLE_AUTOUPDATE=1 cubic review --json --base <base>`
 > - `--uncommitted` mode: `cd "<REPO_ROOT>" && CUBIC_DISABLE_AUTOUPDATE=1 cubic review --json` — uncommitted changes are cubic's default scope when no targeting flag is passed, and that scope includes untracked files natively (no extra fetch needed).
 > - `--commit <sha>` mode: `cd "<REPO_ROOT>" && CUBIC_DISABLE_AUTOUPDATE=1 cubic review --json --commit <sha>`
-> - `--range <a>..<b>` mode: cubic's `--base` reviews from the given ref up to the current tree, so use the same checkout dance as Agents B/C in one chained Bash call: `cd "<REPO_ROOT>" && ORIG=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --verify HEAD) && git checkout <b> && CUBIC_DISABLE_AUTOUPDATE=1 cubic review --json --base <a>; git checkout "$ORIG"`.
+> - `--range <a>..<b>` mode: cubic's `--base` reviews from the given ref up to the current tree, so use the same checkout dance as Agents B/C in one chained Bash call: `cd "<REPO_ROOT>" && ORIG=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --verify HEAD) && git checkout <b> && (CUBIC_DISABLE_AUTOUPDATE=1 cubic review --json --base <a>); rc=$?; git checkout "$ORIG"; exit $rc`.
 >
 > If `--focus` was provided, append `--prompt "<focus text>"` in `--base`, `--uncommitted`, and `--range` modes — per `cubic review --help` (v1.7.0), `--prompt` can be used alone or combined with `--base`. Omit it in `--commit` mode; the help text does not promise `--prompt` combines with `--commit`.
 >

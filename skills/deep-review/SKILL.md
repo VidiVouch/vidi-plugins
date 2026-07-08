@@ -165,7 +165,8 @@ review work starts. Every other mode hashes committed state, which preflight
 cannot change; write immediately as above.
 
 (Default `--base main`: the injected **Cache verdict** already computed the hash;
-on `MISS`, write it to `.review-cache/main.hash` here at the start, same as above.)
+on `MISS`, run `mkdir -p .review-cache`, then write it to `.review-cache/main.hash`
+here at the start, same as above.)
 
 **Tradeoff — `--force` is the escape hatch.** Writing at the start means a run
 that *degraded* (a reviewer crashed / rate-limited / hung) is still recorded as
@@ -284,7 +285,12 @@ if [ "$MODE" = "uncommitted" ]; then
         exit 1
     fi
     git -C "$PROJ" ls-files --others --exclude-standard -z | while IFS= read -r -d '' f; do
-        mkdir -p "$WT/$(dirname "$f")"; cp -a "$PROJ/$f" "$WT/$f" 2>/dev/null || true
+        mkdir -p "$WT/$(dirname "$f")"
+        if ! cp -a "$PROJ/$f" "$WT/$f" 2>/dev/null; then
+            echo "FATAL: could not reproduce untracked file '$f' in the frozen worktree — aborting review" >&2
+            git -C "$PROJ" worktree remove --force "$WT"; git -C "$PROJ" worktree prune
+            exit 1
+        fi
     done
 fi
 

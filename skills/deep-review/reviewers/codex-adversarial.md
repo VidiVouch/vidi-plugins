@@ -13,7 +13,7 @@ Launch a background general-purpose Agent with prompt:
 > - `--base main` mode (default): `node "$CODEX_COMPANION" adversarial-review --cwd "<REPO_ROOT>" --json --base <base> <focus>`
 > - `--uncommitted` mode: `node "$CODEX_COMPANION" adversarial-review --cwd "<REPO_ROOT>" --json --scope working-tree <focus>`
 > - `--commit <sha>` mode: `node "$CODEX_COMPANION" adversarial-review --cwd "<REPO_ROOT>" --json --commit <sha> <focus>`
-> - `--range <a>..<b>` mode: the companion's `--base` flag reviews from that commit to HEAD, not to a specific upper bound. Perform the checkout dance inside the target worktree in a single chained Bash call: `cd "<REPO_ROOT>" && ORIG=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --verify HEAD) && git checkout <b> && node "$CODEX_COMPANION" adversarial-review --cwd "<REPO_ROOT>" --json --base <a> <focus>; git checkout "$ORIG"`.
+> - `--range <a>..<b>` mode: the companion's `--base` flag reviews from that commit to HEAD, not to a specific upper bound. Perform the checkout dance inside the target worktree in a single chained Bash call: `cd "<REPO_ROOT>" && ORIG=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --verify HEAD) && git checkout <b> && (node "$CODEX_COMPANION" adversarial-review --cwd "<REPO_ROOT>" --json --base <a> <focus>); rc=$?; git checkout "$ORIG"; exit $rc`.
 >
 > Include `<focus>` text only if `--focus` was provided; omit otherwise. Return the raw JSON stdout verbatim — the companion's envelope with `result.parsed.findings` carrying the structured findings.
 >
