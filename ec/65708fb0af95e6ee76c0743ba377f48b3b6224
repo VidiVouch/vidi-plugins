@@ -1,0 +1,70 @@
+.codex-plugin/plugin.json
+  s_79e5f4cf5768f7::t_2bcaf6bcf73476 16,25-26,35
+skills/html-report/evals/grade.py
+  s_79e5f4cf5768f7::t_4218e327509c8d 123
+  s_edca729f73c086::t_a530fe14f649eb 1,7,22-23,25-31,36-40,50-54,63-66,76-79,81-93,103-105,107-118,120,126,129,144-159,164-165,178,189-190
+  s_79e5f4cf5768f7::t_faabb732340c3b 2-6,8-21,24,32-35,41-49,55-62,67-75,80,94-102,106,119,121-122,124-125,127-128,130-143,160-163,166-177,179-188,191-247
+  s_79e5f4cf5768f7::t_f2c985bf78ed9d 248-262
+skills/html-report/evals/eval-viewer/viewer.html
+  s_79e5f4cf5768f7::t_fa14ee4b1c41c5 40-41,875,877-885
+  s_edca729f73c086::t_a530fe14f649eb 1-39,42-874,876,886-1403
+skills/deep-eval/SKILL.md
+  s_79e5f4cf5768f7::t_faabb732340c3b 1-60
+.gitignore
+  s_79e5f4cf5768f7::t_faabb732340c3b 9-10
+skills/html-report/evals/eval-viewer/generate_review.py
+  s_edca729f73c086::t_a530fe14f649eb 1-283,294-390,392-426,428-440,443-452
+  s_79e5f4cf5768f7::t_faabb732340c3b 284-293,391,427,441-442
+  s_79e5f4cf5768f7::t_fe2095701e6ae1 453-482
+tests/test_deep_eval_harness.py
+  s_79e5f4cf5768f7::t_7ad0a30e7445de 1-89
+skills/html-report/evals/inputs/deploys.jsonl
+  s_edca729f73c086::t_a530fe14f649eb 1-30
+.claude-plugin/plugin.json
+  s_79e5f4cf5768f7::t_2bcaf6bcf73476 16
+README.md
+  s_79e5f4cf5768f7::t_faabb732340c3b 11
+skills/deep-review/SKILL.md
+  s_edca729f73c086::t_086f40117623a1 158-166
+  s_edca729f73c086::t_996ac0ee75f279 279-285
+skills/deep-review/deep-review.workflow.js
+  s_edca729f73c086::t_b791e032d382e1 395-396
+  s_edca729f73c086::t_0ff8a6459d9691 333,338
+  s_edca729f73c086::t_4b6087f72e2af7 418-423
+  s_005fe2a112e4e9::t_0030aea0c6a38f 443-447
+  s_edca729f73c086::t_65251116ebaedc 290-294,299-304,315,318
+  s_edca729f73c086::t_86e8cc05e810d6 156-160,176-177,185-186,194-195
+  s_79e5f4cf5768f7::t_d6ab588c4549f7 424
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "ec65708fb0af95e6ee76c0743ba377f48b3b6224",
+  "prompts": {},
+  "sessions": {
+    "s_005fe2a112e4e9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b7f57092-cc3d-4999-ba0e-99d8a9d2b066",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_79e5f4cf5768f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3e1e-a244-7920-9f6c-a19d2fb4bfc6",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_edca729f73c086": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "988fb0a3-fb38-4f9d-ad29-af98d3ff835f",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
