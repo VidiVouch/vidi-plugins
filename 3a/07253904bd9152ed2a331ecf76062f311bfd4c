@@ -1,0 +1,31 @@
+.gitignore
+  s_79e5f4cf5768f7::t_b97ecadf4fa0ba 1-8
+.agents/plugins/marketplace.json
+  s_79e5f4cf5768f7::t_18420470e811f2 1-21
+.claude-plugin/marketplace.json
+  s_79e5f4cf5768f7::t_08c2b851b4f636 1-17
+.claude-plugin/plugin.json
+  s_79e5f4cf5768f7::t_881ebe1b3c4b31 1-21
+.codex-plugin/plugin.json
+  s_79e5f4cf5768f7::t_2ff83c115c6f7d 1-39
+LICENSE.md
+  s_79e5f4cf5768f7::t_c0aef2ac2a94a8 1-21
+README.md
+  s_79e5f4cf5768f7::t_e15f8469f14b72 1-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3a07253904bd9152ed2a331ecf76062f311bfd4c",
+  "prompts": {},
+  "sessions": {
+    "s_79e5f4cf5768f7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f3e1e-a244-7920-9f6c-a19d2fb4bfc6",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
