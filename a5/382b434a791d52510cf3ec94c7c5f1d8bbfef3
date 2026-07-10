@@ -1,0 +1,109 @@
+skills/html-report/assets/report.html
+  s_ed3547fef91ec6::t_69d586fa020329 133-136
+  s_ed3547fef91ec6::t_0bc5825c0ae5e0 131-132,137-150
+  s_ed3547fef91ec6::t_e79fcc3ca71cd6 191-194,197-200,203-206
+skills/deep-review/reviewers/codex-adversarial.md
+  s_fd39c5d4f69b65::t_4351f72dada584 18
+  s_fd39c5d4f69b65::t_60546f37c671e2 22-23
+  s_fd39c5d4f69b65::t_36316c77678d9a 9
+  s_fd39c5d4f69b65::t_e02b6a4ce5a77e 28
+  s_fd39c5d4f69b65::t_f4c18a5c95c645 51
+  s_fd39c5d4f69b65::t_c1df690562382c 64
+skills/deep-review/deep-review.workflow.js
+  s_7ff0b014d5020c::t_cddcf30cf197fb 285
+  s_7ff0b014d5020c::t_7ae50e74856b10 41
+  s_7ff0b014d5020c::t_cb7a29f1ad4410 67-68
+  s_7ff0b014d5020c::t_fb95f92803d213 70-72
+skills/html-report/scripts/render_note.py
+  s_ed3547fef91ec6::t_03ecd0f97c2751 348-355
+  s_ed3547fef91ec6::t_09f7f110dc3865 109-115,125-126
+  s_ed3547fef91ec6::t_77dbce094972a2 107-108,116-124
+  s_ed3547fef91ec6::t_f93a11a2fe9cd3 356
+  s_ed3547fef91ec6::t_d9c87ab3375a32 358
+.codex-plugin/plugin.json
+  s_9da4e882e31514::t_154b18f309e68a 3
+skills/deep-review/SKILL.md
+  s_7ff0b014d5020c::t_f80ad69c2552af 288-291,298
+  s_7ff0b014d5020c::t_07247e4ad947f6 61
+  s_7ff0b014d5020c::t_46596ac15c265f 368
+  s_7ff0b014d5020c::t_fc981df93d34d6 5
+  s_7ff0b014d5020c::t_11cdbd2d3fc3ee 34
+.claude-plugin/plugin.json
+  s_9da4e882e31514::t_94a44a993cb0ac 3
+skills/html-report/SKILL.md
+  s_ed3547fef91ec6::t_bbd55d91d9ed88 86-87
+  s_ed3547fef91ec6::t_6875e98921b692 88-92
+skills/codex-review/SKILL.md
+  s_fd39c5d4f69b65::t_b236e66681003a 16
+  s_7ff0b014d5020c::t_185851981da3c8 3
+  s_7ff0b014d5020c::t_ffa2d573915cca 17-22,27-28,30-44
+skills/deep-review/reviewers/grok.md
+  s_7ff0b014d5020c::t_2afb86b32fbb7c 54-60,63-64
+  s_7ff0b014d5020c::t_30a34f4150d88d 2-53,61-62,65-70
+  s_7ff0b014d5020c::t_e3db4da5585003 1
+skills/codex-cli/SKILL.md
+  s_7ff0b014d5020c::t_b594eda43f5831 81
+  s_7ff0b014d5020c::t_a49ec09ca33100 103-104
+  s_7ff0b014d5020c::t_730415ffbd8024 3
+  s_7ff0b014d5020c::t_a6dd9853167ef1 99-102
+  s_7ff0b014d5020c::t_368753a8d44ba1 8-10
+skills/codex-computer-use/SKILL.md
+  s_7ff0b014d5020c::t_74ec88a912c379 3
+agents/fixer.md
+  s_8fb9623ecacf13::t_ffa6d4812d0638 1-38
+skills/deep-eval/SKILL.md
+  s_7ff0b014d5020c::t_751285d7b47c07 25-28,33-36,40-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a5382b434a791d52510cf3ec94c7c5f1d8bbfef3",
+  "prompts": {},
+  "humans": {
+    "h_795c5e33ecc5af": {
+      "author": "Tom Price <tom@tomprice.ca>"
+    }
+  },
+  "sessions": {
+    "s_7ff0b014d5020c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5ba35751-a6e1-4524-b541-f6ca2ff18300",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_8fb9623ecacf13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2f931446-0816-4e3e-b506-a0b0f76a8a67",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_9da4e882e31514": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "b77f0307-0de9-412b-a069-e6989b79a100",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_ed3547fef91ec6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9436c404-346e-493f-8f56-7624fc642e56",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_fd39c5d4f69b65": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "542295b3-f896-4044-b32c-44dd131af3a7",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
