@@ -1,0 +1,33 @@
+skills/epoch-review/SKILL.md
+  s_ffc72d680b46e8::t_72d0b1a95dd096 330-332
+  s_ffc72d680b46e8::t_f0935c4fc076ad 254-259
+  s_ffc72d680b46e8::t_c028cdb1626b29 93-96
+  s_ffc72d680b46e8::t_e2599792a6594d 136-147,150-151
+  s_ffc72d680b46e8::t_6972cf4c33e27c 236-239
+  s_ffc72d680b46e8::t_8164f13e2d9510 1-41,45-92,97-135,148-149,152-162,164-235,240-253,260-307,311-329,333
+  s_ffc72d680b46e8::t_b541f1cf977c36 42-44
+  s_ffc72d680b46e8::t_399fd938995797 163
+  s_ffc72d680b46e8::t_933bec830d34bb 308-310
+README.md
+  s_ffc72d680b46e8::t_43fba1fed83597 13
+.codex-plugin/plugin.json
+  s_ffc72d680b46e8::t_4e8a31ce24d3b0 3
+.claude-plugin/plugin.json
+  s_ffc72d680b46e8::t_4e8a31ce24d3b0 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "2a0e862676910049ecf6bd884a7592079bd18e54",
+  "prompts": {},
+  "sessions": {
+    "s_ffc72d680b46e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bd986806-262e-47d9-8524-4869dfa40dcb",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
