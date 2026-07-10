@@ -1,0 +1,34 @@
+skills/epoch-review/SKILL.md
+  s_ffc72d680b46e8::t_b541f1cf977c36 42-44
+  s_ffc72d680b46e8::t_c028cdb1626b29 93-96
+  s_ffc72d680b46e8::t_47f982a644f6b3 147-152
+  s_ffc72d680b46e8::t_399fd938995797 169
+  s_ffc72d680b46e8::t_933bec830d34bb 314-316
+  s_ffc72d680b46e8::t_72d0b1a95dd096 336-338
+  s_ffc72d680b46e8::t_f0935c4fc076ad 260-265
+  s_ffc72d680b46e8::t_8164f13e2d9510 1-41,45-92,97-135,154-155,158-168,170-241,246-259,266-313,317-335,339
+  s_ffc72d680b46e8::t_6972cf4c33e27c 242-245
+  s_ffc72d680b46e8::t_e2599792a6594d 136-146,153,156-157
+.claude-plugin/plugin.json
+  s_ffc72d680b46e8::t_4e8a31ce24d3b0 3
+README.md
+  s_ffc72d680b46e8::t_43fba1fed83597 13
+.codex-plugin/plugin.json
+  s_ffc72d680b46e8::t_4e8a31ce24d3b0 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "968571c9223ea6bef7d4028ddc1d52897478ee40",
+  "prompts": {},
+  "sessions": {
+    "s_ffc72d680b46e8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bd986806-262e-47d9-8524-4869dfa40dcb",
+        "model": "claude-fable-5"
+      },
+      "human_author": null
+    }
+  }
+}
