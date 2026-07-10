@@ -104,6 +104,26 @@ th{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.06em;t
   background:var(--surface-2);padding:9px 12px;border-bottom:1px solid var(--line-2)}
 td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
 tbody tr:last-child td{border-bottom:none}
+/* Narrow viewports: stack rows into labeled cards — embedded viewers clip instead of
+   scrolling. .wide (>=5 columns) stacks earlier because it needs more room to fit. */
+@media (max-width:760px){
+  .tablewrap{overflow-x:visible;border:none;border-radius:0}
+  .tablewrap thead{display:none}
+  .tablewrap table,.tablewrap tbody,.tablewrap tr,.tablewrap td{display:block;background:none}
+  .tablewrap tr{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 14px;margin-top:10px}
+  .tablewrap td{border:none;padding:6px 0;overflow-wrap:anywhere}
+  .tablewrap td[data-th]::before{content:attr(data-th);display:block;font-family:var(--mono);font-size:10.5px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+}
+@media (max-width:1100px){
+  .tablewrap.wide{overflow-x:visible;border:none;border-radius:0}
+  .tablewrap.wide thead{display:none}
+  .tablewrap.wide table,.tablewrap.wide tbody,.tablewrap.wide tr,.tablewrap.wide td{display:block;background:none}
+  .tablewrap.wide tr{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 14px;margin-top:10px}
+  .tablewrap.wide td{border:none;padding:6px 0;overflow-wrap:anywhere}
+  .tablewrap.wide td[data-th]::before{content:attr(data-th);display:block;font-family:var(--mono);font-size:10.5px;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+}
 
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin:16px 0}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 18px 20px;display:flex;flex-direction:column;gap:11px}
@@ -325,10 +345,17 @@ def r_callout(b, live):
 
 
 def r_table(b, live):
-    head = "".join(f"<th>{esc(c)}</th>" for c in b.get("columns", []))
-    rows = "".join("<tr>" + "".join(f"<td>{md_inline(c)}</td>" for c in row) + "</tr>" for row in b.get("rows", []))
+    cols = b.get("columns", [])
+    head = "".join(f"<th>{esc(c)}</th>" for c in cols)
+
+    def cell(i, c):
+        th = f' data-th="{esc(cols[i])}"' if i < len(cols) else ""
+        return f"<td{th}>{md_inline(c)}</td>"
+
+    rows = "".join("<tr>" + "".join(cell(i, c) for i, c in enumerate(row)) + "</tr>" for row in b.get("rows", []))
+    wide = " wide" if len(cols) >= 5 else ""
     cap = f"<caption>{esc(b['caption'])}</caption>" if b.get("caption") else ""
-    return f'<div class="tablewrap"><table>{cap}<thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table></div>'
+    return f'<div class="tablewrap{wide}"><table>{cap}<thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table></div>'
 
 
 def r_cards(b, live):

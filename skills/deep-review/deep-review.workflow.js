@@ -38,7 +38,7 @@ export const meta = {
 //   boss        : string[] — arbiter model(s). [] = one boss inheriting the
 //                 session model. ['codex'] = gpt-5.x via codex exec. Two entries
 //                 = [logicBoss, tasteBoss], domain-authoritative merge.
-//   tools       : { codex, codexAdversarial, cubic, codexCompanion }
+//   tools       : { codex, codexAdversarial, cubic, coderabbit, grok, codexCompanion }
 // ---------------------------------------------------------------------------
 const A = typeof args === 'string' ? JSON.parse(args) : args || {}
 if (!A.repoRoot || !A.mode) {
@@ -64,9 +64,12 @@ const REGISTRY = [
   { key: 'claude-bugs',        always: true,             serialInRange: false, external: false, model: 'opus',   effort: 'high',   label: 'claude-bugs' },
   { key: 'claude-conventions', always: true,             serialInRange: false, external: false, model: 'sonnet', effort: 'medium', label: 'claude-conv' },
   { key: 'coderabbit',         need: 'coderabbit',       serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: 'coderabbit' },
-  { key: 'codex-native',       need: 'codex',            serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: 'gpt-5.5:codex-native' },
-  { key: 'codex-adversarial',  need: 'codexAdversarial', serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: 'gpt-5.5:codex-adv' },
+  { key: 'codex-native',       need: 'codex',            serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: 'gpt-5.6-sol:codex-native' },
+  { key: 'codex-adversarial',  need: 'codexAdversarial', serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: 'gpt-5.6-sol:codex-adv' },
   { key: 'cubic',              need: 'cubic',            serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: 'cubic' },
+  // grok runs read-only-sandboxed with an explicit --cwd and diffs <a>..<b>
+  // directly (worktree HEAD is already <b>), so it has no checkout dance to race.
+  { key: 'grok',               need: 'grok',             serialInRange: false, external: true,  model: 'sonnet', effort: 'low',    label: 'grok-4.5' },
 ]
 
 // ---- schemas -------------------------------------------------------------
@@ -279,7 +282,7 @@ async function runBoss(findings, model, roundNo) {
       `JUDGING PROMPT >>>\n${bossPrompt(findings)}\n<<<`,
       `Return ONLY the arbiter's JSON verbatim: {"rulings":[...], "summary":"..."}.`,
     ].join('\n\n')
-    return agent(wrapper, { label: `gpt-5.5:boss:${slot}#${roundNo}`, phase: 'Judge', schema: BOSS_OUT, model: 'sonnet', effort: 'low' }).catch(() => null)
+    return agent(wrapper, { label: `gpt-5.6:boss:${slot}#${roundNo}`, phase: 'Judge', schema: BOSS_OUT, model: 'sonnet', effort: 'low' }).catch(() => null)
   }
   const opts = { label: `boss:${slot}#${roundNo}`, phase: 'Judge', schema: BOSS_OUT }
   if (model) opts.model = model // else inherit the session model

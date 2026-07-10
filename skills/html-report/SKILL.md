@@ -83,6 +83,13 @@ just checked.
    local file, never a hosted artifact. Redact obvious PII patterns (card numbers,
    tokens) programmatically before embedding raw export data. Untrusted strings go in
    via `textContent`, never `innerHTML` concatenation.
+7. **Tables must survive narrow viewports.** Embedded viewers (Claude Code side panel,
+   phones) clip wide tables instead of scrolling — `overflow-x: auto` alone is not
+   enough. Below the width the table actually needs to fit (760px for 3–4 columns,
+   ~1100px for 6 columns with a prose column), stack each row into a labeled card:
+   `data-th="Column"` on every `<td>` plus the media-query block in
+   `assets/report.html`. `scripts/render_note.py` emits both automatically and widens
+   the breakpoint for tables with ≥5 columns.
 
 ## Build
 

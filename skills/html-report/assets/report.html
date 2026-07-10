@@ -128,6 +128,26 @@ td { font-size: 14.5px; }
 }
 .theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* Narrow viewports (side panels, phones): stack each table row into a labeled card.
+   Horizontal scroll is unreliable in embedded viewers — they clip instead of scrolling.
+   Give every <td> a data-th="Column name"; it renders as the label above the value.
+   Set the breakpoint to the width the table actually NEEDS to fit — 760px suits this
+   4-column example; a 6-column table with a prose column needs ~1100px. If tables
+   differ, scope a wider media query to that table's section id. */
+@media (max-width: 760px) {
+  header.doc { padding: 22px 20px; }
+  main { padding: 20px 20px 64px; }
+  .tablewrap { overflow-x: visible; }
+  .tablewrap thead { display: none; }
+  .tablewrap table, .tablewrap tbody, .tablewrap tr, .tablewrap td { display: block; }
+  .tablewrap tr { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 8px 14px; margin-top: 12px; }
+  .tablewrap td { border: none; padding: 6px 0; overflow-wrap: anywhere; }
+  .tablewrap td[data-th]::before {
+    content: attr(data-th); display: block; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2);
+  }
+}
+
 @media print {
   :root, :root[data-theme="dark"] {
     --paper: #ffffff; --card: #ffffff; --ink: #0d2438; --ink-2: #3a5b76;
@@ -168,22 +188,22 @@ td { font-size: 14.5px; }
     <thead><tr><th>Item</th><th>Status</th><th>Evidence</th><th>Notes</th></tr></thead>
     <tbody>
       <tr id="v-pipeline">
-        <td>promote_pipeline</td>
-        <td><span class="chip crit">Critical</span></td>
-        <td><code>pipeline/promote.py:141</code></td>
-        <td>Crashes on empty batch; regression against <code>abc1234</code>.</td>
+        <td data-th="Item">promote_pipeline</td>
+        <td data-th="Status"><span class="chip crit">Critical</span></td>
+        <td data-th="Evidence"><code>pipeline/promote.py:141</code></td>
+        <td data-th="Notes">Crashes on empty batch; regression against <code>abc1234</code>.</td>
       </tr>
       <tr id="v-guards">
-        <td>architecture guards</td>
-        <td><span class="chip warn">Medium</span></td>
-        <td><code>tests/arch/test_layers.py</code></td>
-        <td>2 guards weakened; pre-existing, not a regression.</td>
+        <td data-th="Item">architecture guards</td>
+        <td data-th="Status"><span class="chip warn">Medium</span></td>
+        <td data-th="Evidence"><code>tests/arch/test_layers.py</code></td>
+        <td data-th="Notes">2 guards weakened; pre-existing, not a regression.</td>
       </tr>
       <tr id="v-auth">
-        <td>auth flows</td>
-        <td><span class="chip ok">Pass</span></td>
-        <td>18/18 smoke-clicked</td>
-        <td>—</td>
+        <td data-th="Item">auth flows</td>
+        <td data-th="Status"><span class="chip ok">Pass</span></td>
+        <td data-th="Evidence">18/18 smoke-clicked</td>
+        <td data-th="Notes">—</td>
       </tr>
     </tbody>
   </table>

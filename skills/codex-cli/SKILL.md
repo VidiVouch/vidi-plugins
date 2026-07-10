@@ -1,12 +1,13 @@
 ---
 name: codex-cli
-description: Shared mechanics for invoking the Codex CLI (gpt-5.5) reliably — repo targeting, JSONL output parsing, timeouts, sandboxing, and failure-vs-clean detection. Read this before running any `codex` command; the codex-review and codex-computer-use skills build on it.
+description: Shared mechanics for invoking the Codex CLI (gpt-5.6-terra, or gpt-5.6-sol for bigger tasks) reliably — repo targeting, JSONL output parsing, timeouts, sandboxing, and failure-vs-clean detection. Read this before running any `codex` command; the codex-review and codex-computer-use skills build on it.
 ---
 
 # Codex CLI mechanics
 
-gpt-5.5 is only reachable through the Codex CLI (`~/.codex/config.toml` defaults
-to gpt-5.5). Three invocation paths:
+gpt-5.6 is only reachable through the Codex CLI (`~/.codex/config.toml` defaults
+to gpt-5.6-sol; pass `--model gpt-5.6-terra` for routine work, keep sol for
+bigger tasks). Three invocation paths:
 
 - `codex exec` — non-interactive agent run with a self-contained prompt
   (implementation, investigation, data analysis). Use `-s read-only` for
@@ -77,7 +78,7 @@ in the shared checkout. Read-only runs can share a checkout.
 
 The Agent/Workflow `model` parameter only takes Claude models, so codex runs
 inside workflows go through a thin Claude wrapper agent — see the "Using
-gpt-5.5 inside workflows and subagents" section of CLAUDE.md for the wrapper
+gpt-5.6 inside workflows and subagents" section of CLAUDE.md for the wrapper
 pattern, labeling convention, and budget caveats.
 
 ## Verified behaviors
@@ -95,3 +96,9 @@ examples are how broken invocations creep in.
 - **codex-cli 0.142.5**: both `codex review` and `codex exec review` exist and
   are non-interactive; this repo standardizes on `codex exec review --json`
   (the battle-tested shape from deep-review).
+- **codex-cli 0.144.1** (2026-07-10): `--model gpt-5.6-terra` and
+  `--model gpt-5.6-sol` both verified working (`codex exec -s read-only --model
+  <m> --json` returned a clean `turn.completed`). On 0.142.5 the same names were
+  rejected server-side (400: "requires a newer version of Codex") — if either
+  model errors that way, run `codex update` first (the real subcommand —
+  `codex upgrade` does not exist).

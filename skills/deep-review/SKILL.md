@@ -2,7 +2,7 @@
 name: deep-review
 description: Orchestrated multi-tool code review — a deterministic workflow (review → boss-arbitrated judgment → fix → reconverge)
 argument-hint: "[ --base <branch> ] [ --uncommitted ] [ --commit <sha> ] [ --range <a>..<b> ] [ --nofix ] [ --max-rounds <n> ] [ --boss <model[,model2]> ] [ --in-place ] [ --nofix-preflight ] [ --skip-preflight ] [ --focus <text> ] [ --force ]"
-allowed-tools: Bash(uv run *), Bash(uv lock *), Bash(cargo *), Bash(git diff *), Bash(git log *), Bash(git ls-files *), Bash(git checkout *), Bash(git symbolic-ref *), Bash(git rev-parse *), Bash(git rev-list *), Bash(git hash-object *), Bash(git worktree *), Bash(git fetch *), Bash(git apply *), Bash(git add *), Bash(git write-tree *), Bash(git reset *), Bash(shasum *), Bash(mkdir *), Bash(echo *), Bash(ls *), Bash(cat *), Bash(cp *), Bash(find *), Bash(grep *), Bash(sed *), Bash(paste *), Bash(readlink *), Bash(dirname *), Bash(printf *), Bash(sort *), Bash(tail *), Bash(cut *), Bash(tr *), Bash(command *), Bash(test *), Bash(codex *), Bash(cubic *), Bash(coderabbit *), Bash(node *), Workflow, Agent, Read, Glob, Grep, TaskCreate, TaskUpdate, TaskList
+allowed-tools: Bash(uv run *), Bash(uv lock *), Bash(cargo *), Bash(git diff *), Bash(git log *), Bash(git ls-files *), Bash(git checkout *), Bash(git symbolic-ref *), Bash(git rev-parse *), Bash(git rev-list *), Bash(git hash-object *), Bash(git worktree *), Bash(git fetch *), Bash(git apply *), Bash(git add *), Bash(git write-tree *), Bash(git reset *), Bash(shasum *), Bash(mkdir *), Bash(echo *), Bash(ls *), Bash(cat *), Bash(cp *), Bash(find *), Bash(grep *), Bash(sed *), Bash(paste *), Bash(readlink *), Bash(dirname *), Bash(printf *), Bash(sort *), Bash(tail *), Bash(cut *), Bash(tr *), Bash(command *), Bash(test *), Bash(codex *), Bash(cubic *), Bash(coderabbit *), Bash(grok *), Bash(node *), Workflow, Agent, Read, Glob, Grep, TaskCreate, TaskUpdate, TaskList
 ---
 
 # Deep Review
@@ -31,6 +31,7 @@ this skill loads — do NOT re-probe them with your own Bash calls:
 - codex CLI: !`command -v codex >/dev/null 2>&1 && echo yes || echo no`
 - cubic CLI: !`command -v cubic >/dev/null 2>&1 && echo yes || echo no`
 - coderabbit CLI: !`command -v coderabbit >/dev/null 2>&1 && echo yes || echo no`
+- grok CLI: !`command -v grok >/dev/null 2>&1 && echo yes || echo no`
 - codex companion: !`C=$(ls "$HOME/.claude/plugins/cache/openai-codex/codex/"*/scripts/codex-companion.mjs 2>/dev/null | sort -V | tail -1); if [ -z "$C" ]; then echo absent; elif ! node --check "$C" 2>/dev/null; then echo "unloadable $C"; else echo "ok $C"; fi`
 - Cached reviews: !`R=$(find .review-cache -maxdepth 1 -name '*.hash' 2>/dev/null | sed 's#.*/##;s/\.hash$//' | paste -sd' ' -); echo "${R:-(none)}"`
 - Cache verdict (default `--base main` only): !`H=$(git diff main...HEAD 2>/dev/null | shasum -a 256 | cut -d' ' -f1); C=$(cat .review-cache/main.hash 2>/dev/null || true); P=$(test -f .review-cache/main.fixes.patch && echo " (prior fixes: .review-cache/main.fixes.patch)"); if [ -n "$H" ] && [ "$H" = "$C" ]; then echo "MATCH ${H} — no changes since last review; STOP unless --force${P}"; else echo "MISS ${H:-<no-diff>} — changed or never reviewed; proceed"; fi`
@@ -57,7 +58,7 @@ flags, output envelope): that can't be done without invoking it, and a static
 guess would cry wolf on a working reviewer. Contract drift is caught where it is
 actually observable — at run time (a rejected flag/subcommand exits with an
 arg-parse error) and post-run (the `codex-adversarial` reviewer spec validates
-the `.result.parsed.findings` envelope and returns a loud `CONTRACT-DRIFT`
+the `.result.findings` envelope and returns a loud `CONTRACT-DRIFT`
 marker instead of a false clean pass). The `codexCompanion` path (the token
 after `ok`) and `repoRoot` are threaded into the workflow `args` so each
 external-tool reviewer targets the frozen worktree (the Bash tool spawns a fresh
@@ -284,14 +285,17 @@ if [ "$MODE" = "uncommitted" ]; then
         git -C "$PROJ" worktree remove --force "$WT"; git -C "$PROJ" worktree prune
         exit 1
     fi
-    git -C "$PROJ" ls-files --others --exclude-standard -z | while IFS= read -r -d '' f; do
+    # Feed the loop via process substitution, NOT a pipeline — a piped `while`
+    # runs in a subshell, where `exit 1` kills only the subshell and the parent
+    # continues fail-OPEN with a tree missing untracked files.
+    while IFS= read -r -d '' f; do
         mkdir -p "$WT/$(dirname "$f")"
         if ! cp -a "$PROJ/$f" "$WT/$f" 2>/dev/null; then
             echo "FATAL: could not reproduce untracked file '$f' in the frozen worktree — aborting review" >&2
             git -C "$PROJ" worktree remove --force "$WT"; git -C "$PROJ" worktree prune
             exit 1
         fi
-    done
+    done < <(git -C "$PROJ" ls-files --others --exclude-standard -z)
 fi
 
 # Copy live tooling into the frozen-code worktree so reviewers + the boss find
@@ -361,6 +365,7 @@ Workflow({
       codexAdversarial: <codex yes AND companion vet started with "ok ">,
       cubic:            <injected cubic CLI == yes>,
       coderabbit:       <injected coderabbit CLI == yes>,
+      grok:             <injected grok CLI == yes>,
       codexCompanion:   "<companion vet path: the token AFTER "ok " — NOT the literal "ok "/"absent"/"unloadable …"; "" if not ok>",
     },
   },

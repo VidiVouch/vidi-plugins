@@ -22,27 +22,27 @@ mechanical checks, artifacts, or explicit human notes.
    - `without_skill`: ask for the same deliverable without invoking the skill.
 3. Save each run as:
 
-```text
-<workspace>/<eval-slug>/<configuration>/outputs/<artifact files>
-<workspace>/<eval-slug>/eval_metadata.json
-```
+    ```text
+    <workspace>/<eval-slug>/<configuration>/outputs/<artifact files>
+    <workspace>/<eval-slug>/eval_metadata.json
+    ```
 
 4. Run the deterministic grader for suites that have one. For the bundled
    `html-report` suite:
 
-```bash
-uv run python skills/html-report/evals/grade.py <workspace> \
-  --inputs-dir skills/html-report/evals/inputs
-```
+    ```bash
+    uv run python skills/html-report/evals/grade.py <workspace> \
+      --inputs-dir skills/html-report/evals/inputs
+    ```
 
 5. Generate a review page:
 
-```bash
-uv run python skills/html-report/evals/eval-viewer/generate_review.py <workspace> \
-  --skill-name html-report \
-  --benchmark <workspace>/benchmark.json \
-  --static <workspace>/review.html
-```
+    ```bash
+    uv run python skills/html-report/evals/eval-viewer/generate_review.py <workspace> \
+      --skill-name html-report \
+      --benchmark <workspace>/benchmark.json \
+      --static <workspace>/review.html
+    ```
 
 6. Review the generated page. Treat heuristic assertions as prompts for human
    verification, not proof. Add human feedback in the viewer or as notes next

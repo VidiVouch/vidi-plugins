@@ -1,6 +1,6 @@
 ---
 name: codex-review
-description: Ask Codex CLI (gpt-5.5) for an independent code review of uncommitted changes, branch diff, a commit, or a specific implementation. This is how gpt-5.5 is invoked for review work. Use when the user asks Claude to have Codex or gpt-5.5 review work, when the model-selection rubric calls for a gpt-5.5 review perspective, or when Codex should audit a diff, find bugs or regressions, or compare Claude's implementation against requirements. For a review by Claude itself, use the normal review process instead.
+description: Ask Codex CLI (gpt-5.6-terra, or gpt-5.6-sol for bigger tasks) for an independent code review of uncommitted changes, branch diff, a commit, or a specific implementation. This is how gpt-5.6 is invoked for review work. Use when the user asks Claude to have Codex or gpt-5.6 review work, when the model-selection rubric calls for a gpt-5.6 review perspective, or when Codex should audit a diff, find bugs or regressions, or compare Claude's implementation against requirements. For a review by Claude itself, use the normal review process instead.
 ---
 
 # Codex Review
@@ -13,17 +13,35 @@ Prefer Claude's normal review process for small local checks. Do not delegate re
 3. Run `codex review` with a focused review prompt.
 4. Read Codex's report and verify important claims against the code before presenting them.
 
-Use one of these command shapes:
+Use one of these command shapes. Note: codex-cli rejects combining `--uncommitted` or
+`--base <branch>` with a custom `[PROMPT]` ("the argument `--uncommitted` cannot be
+used with `[PROMPT]`", verified on 0.144.1) — and bare `codex review` with a prompt
+does NOT default to the uncommitted diff; it enters free-form custom-instructions
+mode with no diff selected. So: use the native targeting flags with the baked-in
+review prompt when the stock stance is enough, and embed the diff explicitly via
+`codex exec` when you need the custom stance.
 
 ```bash
 ARTIFACT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/codex-review.XXXXXX")"
 REPORT="$ARTIFACT_DIR/report.md"
-PROMPT="$ARTIFACT_DIR/prompt.md"
+PROMPT="$ARTIFACT_DIR/prompt.md"   # the review-stance text below
+BASE="main"                        # or the caller-selected base branch
 
-# Review staged, unstaged, and untracked changes.
-codex -C "$PWD" review --uncommitted - < "$PROMPT" > "$REPORT"
-# Review current branch against a base branch.
-codex -C "$PWD" review --base main - < "$PROMPT" > "$REPORT"
+# Stock review stance → use the native targeting flags (baked-in review prompt).
+codex -C "$PWD" exec review --uncommitted > "$REPORT"     # or: --base "$BASE"
+
+# Custom review stance → codex exec, read-only, prompt + diff on stdin.
+# `exec -` reads the whole prompt from stdin (no shell word-splitting), and the
+# diff is embedded after the stance so the review target is explicit.
+# Uncommitted (include untracked files — `git diff HEAD` alone misses them):
+{ cat "$PROMPT"; echo; echo "DIFF UNDER REVIEW:"; git diff HEAD; \
+  git ls-files --others --exclude-standard | while IFS= read -r f; do \
+    printf '\n--- untracked: %s ---\n' "$f"; cat "$f"; done; } \
+  | codex -C "$PWD" exec -s read-only - > "$REPORT"
+
+# Base-branch:
+{ cat "$PROMPT"; echo; echo "DIFF UNDER REVIEW:"; git diff "$BASE"...HEAD; } \
+  | codex -C "$PWD" exec -s read-only - > "$REPORT"
 ```
 
 Ask codex to use a code-review stance:
