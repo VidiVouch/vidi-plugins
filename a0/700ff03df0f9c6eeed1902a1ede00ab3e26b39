@@ -1,0 +1,25 @@
+skills/codex-cli/SKILL.md
+  s_7ff0b014d5020c::t_8a241606093bca 101-113
+skills/codex-review/SKILL.md
+  s_7ff0b014d5020c::t_2b2570c534d4b5 61-78,83,85
+skills/local-review/SKILL.md
+  s_7ff0b014d5020c::t_027cc2ba28b1c9 62-67
+skills/codex-computer-use/SKILL.md
+  s_7ff0b014d5020c::t_91417fa0126070 13-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.12",
+  "base_commit_sha": "a0700ff03df0f9c6eeed1902a1ede00ab3e26b39",
+  "prompts": {},
+  "sessions": {
+    "s_7ff0b014d5020c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5ba35751-a6e1-4524-b541-f6ca2ff18300",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
