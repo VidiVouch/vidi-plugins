@@ -58,10 +58,28 @@ If there are no substantive findings, say so and name any residual test gaps.
 
 Add task-specific context when useful: requirements, risky areas, expected behavior, relevant tests, or files Claude is unsure about.
 
+## Failure is not a clean pass
+
+The command shapes above redirect stdout to `$REPORT`, so a codex run that
+crashed, rate-limited, or died mid-stream leaves a truncated or empty report
+that reads exactly like "codex found nothing." An empty report is only a clean
+pass if the run itself completed. Before treating any report as review data,
+verify per the codex-cli skill's degradation ladder:
+
+1. The codex command exited 0.
+2. stderr contains no error (app-server init failure, quota/rate-limit
+   keywords, auth prompts).
+3. `$REPORT` is non-empty and reads as a review (a verdict or findings), not a
+   crash trace or a truncated fragment.
+
+Any miss → the run is **degraded**: report the error verbatim and offer to
+review the changes directly instead. Never present a degraded run's empty
+output as "no findings."
+
 ## Reporting Back
 
 Before relaying a Codex finding, inspect the cited code or diff enough to decide whether the finding is real. In the user-facing response, separate confirmed issues from Codex suggestions you did not verify.
 
-If Codex finds nothing, say that clearly and mention what review target it inspected.
+If Codex finds nothing (from a run that passed the checks above), say that clearly and mention what review target it inspected.
 
-If `codex` is not installed or the command fails, report the error and offer to review the changes directly instead.
+If `codex` is not installed, say so and offer to review the changes directly instead.

@@ -98,7 +98,16 @@ examples are how broken invocations creep in.
   (the battle-tested shape from deep-review).
 - **codex-cli 0.144.1** (2026-07-10): `--model gpt-5.6-terra` and
   `--model gpt-5.6-sol` both verified working (`codex exec -s read-only --model
-  <m> --json` returned a clean `turn.completed`). On 0.142.5 the same names were
-  rejected server-side (400: "requires a newer version of Codex") — if either
-  model errors that way, run `codex update` first (the real subcommand —
-  `codex upgrade` does not exist).
+  <m> --json` returned a clean `turn.completed`; workspace-write also verified
+  for sol). On 0.142.5 the same names were rejected server-side (400: "requires
+  a newer version of Codex") — if either model errors that way, run
+  `codex update` first (the real subcommand — `codex upgrade` does not exist).
+- **Environment-dependent failure** (observed 2026-07-11 on another machine,
+  NOT reproducible on this one at 0.144.1): `codex exec -m gpt-5.6-sol` can die
+  with `failed to initialize in-process app-server client: Operation not
+  permitted` under the codex sandbox — the gpt-5.6 models are served via an
+  in-process app-server that some sandbox configurations block. This is a
+  degraded run (no data), never a clean pass. Recovery order: `codex update`;
+  retry; if it persists, fall back to the CLI default model or have the user
+  run the command unsandboxed themselves — do NOT reach for
+  `--dangerously-bypass-approvals-and-sandbox`.

@@ -59,6 +59,12 @@ table). Also run a stat summary using the same diff scope, e.g. `git
 diff <scope> --stat` (`<scope>` is the same range expression used for
 the full diff). The stat output anchors the review header counts.
 
+If the diff comes back empty (and, in `--uncommitted` mode, there are no
+untracked files either), do NOT report "no findings" — an empty diff
+usually means a wrong base/ref or an already-merged branch, not clean
+code. Stop and tell the user the selected scope produced no diff, naming
+the exact scope expression used, so they can correct the target.
+
 For `--uncommitted` mode, additionally:
 
 ```bash
