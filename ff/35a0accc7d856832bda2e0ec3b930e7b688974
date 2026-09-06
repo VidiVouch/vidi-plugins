@@ -1,0 +1,27 @@
+skills/codex-cli/SKILL.md
+  s_c8b7fd27e2f361::t_9f205a914da3da 102
+  h_795c5e33ecc5af 3,84,103,113,115
+  s_c8b7fd27e2f361::t_55fa63c65695f0 108-111
+  s_c8b7fd27e2f361::t_3c02811490529f 8-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "ff35a0accc7d856832bda2e0ec3b930e7b688974",
+  "prompts": {},
+  "humans": {
+    "h_795c5e33ecc5af": {
+      "author": "Tom Price <tom@tomprice.ca>"
+    }
+  },
+  "sessions": {
+    "s_c8b7fd27e2f361": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "729264da-7968-4560-9db1-bec826146a35",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
