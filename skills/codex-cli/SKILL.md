@@ -1,13 +1,16 @@
 ---
 name: codex-cli
-description: Shared mechanics for invoking the Codex CLI (gpt-5.6-terra, or gpt-5.6-sol for bigger tasks) reliably — repo targeting, JSONL output parsing, timeouts, sandboxing, and failure-vs-clean detection. Read this before running any `codex` command; the codex-review and codex-computer-use skills build on it.
+description: Shared mechanics for invoking the Codex CLI (gpt-5.6-terra, gpt-5.6-sol, or gpt-6-astra for critical design work and decisions) reliably — repo targeting, JSONL output parsing, timeouts, sandboxing, and failure-vs-clean detection. Read this before running any `codex` command; the codex-review and codex-computer-use skills build on it.
 ---
 
 # Codex CLI mechanics
 
-gpt-5.6 is only reachable through the Codex CLI (`~/.codex/config.toml` defaults
-to gpt-5.6-sol; pass `--model gpt-5.6-terra` for routine work, keep sol for
-bigger tasks). Three invocation paths:
+gpt-6 and gpt-5.6 are only reachable through the Codex CLI
+(`~/.codex/config.toml` sets `model = "gpt-6"`, i.e. gpt-6-astra). Pass
+`--model gpt-5.6-terra` for routine work, `--model gpt-5.6-sol` for bigger
+tasks, and keep gpt-6-astra for critical design work and decisions. There is
+no `gpt-6-terra` or `gpt-6-sol`; terra and sol only exist on the 5.6 line.
+Three invocation paths:
 
 - `codex exec` — non-interactive agent run with a self-contained prompt
   (implementation, investigation, data analysis). Use `-s read-only` for
@@ -78,7 +81,7 @@ in the shared checkout. Read-only runs can share a checkout.
 
 The Agent/Workflow `model` parameter only takes Claude models, so codex runs
 inside workflows go through a thin Claude wrapper agent — see the "Using
-gpt-5.6 inside workflows and subagents" section of CLAUDE.md for the wrapper
+gpt-6 and gpt-5.6 inside workflows and subagents" section of CLAUDE.md for the wrapper
 pattern, labeling convention, and budget caveats.
 
 ## Verified behaviors
@@ -96,16 +99,20 @@ examples are how broken invocations creep in.
 - **codex-cli 0.142.5**: both `codex review` and `codex exec review` exist and
   are non-interactive; this repo standardizes on `codex exec review --json`
   (the battle-tested shape from deep-review).
-- **codex-cli 0.144.1** (2026-07-10): `--model gpt-5.6-terra` and
-  `--model gpt-5.6-sol` both verified working (`codex exec -s read-only --model
+- **codex-cli 0.153.4** (2026-09-06): `--model gpt-6-astra`, `--model gpt-5.6-terra`, and
+  `--model gpt-5.6-sol` all verified working (`codex exec -s read-only --model
   <m> --json` returned a clean `turn.completed`; workspace-write also verified
   for sol). On 0.142.5 the same names were rejected server-side (400: "requires
   a newer version of Codex") — if either model errors that way, run
   `codex update` first (the real subcommand — `codex upgrade` does not exist).
+- **codex-cli 0.153.4** (2026-09-06): `gpt-6-terra` and `gpt-6-sol` do not
+  exist. Both emit a "Model metadata for `<name>` not found" item and then fail
+  with HTTP 400 "The '<name>' model is not supported when using Codex with a
+  ChatGPT account". `gpt-6-astra` is the only gpt-6 name that resolves.
 - **Environment-dependent failure** (observed 2026-07-11 on another machine,
-  NOT reproducible on this one at 0.144.1): `codex exec -m gpt-5.6-sol` can die
+  NOT reproducible on this one at 0.144.1): `codex exec -m gpt-6-astra` can die
   with `failed to initialize in-process app-server client: Operation not
-  permitted` under the codex sandbox — the gpt-5.6 models are served via an
+  permitted` under the codex sandbox — the gpt-6 and gpt-5.6 models are served via an
   in-process app-server that some sandbox configurations block. This is a
   degraded run (no data), never a clean pass. Recovery order: `codex update`;
   retry; if it persists, fall back to the CLI default model or have the user
