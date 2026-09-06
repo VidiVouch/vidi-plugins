@@ -1,0 +1,114 @@
+skills/rebuild/SKILL.md
+  s_a2429f3aabd6b1::t_b78645ebb461d7 30-31
+  s_a2429f3aabd6b1::t_35d7033c32c110 280-286
+  s_aec8ccccc7fcad::t_92f913dbc223a2 1-29,32-110,116,121,125,129-132,142-147,150,153-159,168-176,180-181,187-189,195-213,218,221-222,229,231-243,248-251,258-279,287-349
+  s_a2429f3aabd6b1::t_374e4e439b7bd0 214-217,219-220,223-228,230
+  s_a2429f3aabd6b1::t_da1f12b6a58910 111-115,117-120,122-124,126-128,133-141
+  s_a2429f3aabd6b1::t_e6442131c88c8c 244-247,252-257
+  s_a2429f3aabd6b1::t_ff36744157327d 177-179,182-186,190-194
+  s_a2429f3aabd6b1::t_6b1b1a6628a77e 148-149,151-152,160-167
+.codex-plugin/plugin.json
+  s_a2429f3aabd6b1::t_84f5d0621187c5 3
+  s_a2429f3aabd6b1::t_546e42fe5b831a 25-26
+.claude-plugin/plugin.json
+  s_a2429f3aabd6b1::t_b90477bd414aaa 3
+skills/rebuild-epoch/SKILL.md
+  s_a2429f3aabd6b1::t_98fbc391c8f8c8 5
+  s_99dcda38415784::t_dec8c435b3c988 1-4,6-75,82,85-92,105-177,180,190-217,227-229,234-242,246-272,278-306
+  s_a2429f3aabd6b1::t_8644fdedb39f5a 218-226,230-233
+  s_a2429f3aabd6b1::t_476e8ee03c181d 178-179,181-189
+  s_a2429f3aabd6b1::t_5e95a91043b1de 76-81,83-84
+  s_a2429f3aabd6b1::t_71a7e41eb6b080 243-245
+  s_a2429f3aabd6b1::t_ddcd2b382f53ae 273-277
+  s_a2429f3aabd6b1::t_ca313785f2a525 93-104
+skills/rebuild-epoch/scripts/rebuild-gate.sh
+  s_a2429f3aabd6b1::t_2a17d67dfa83cd 96,113-114,116-117
+  s_a2429f3aabd6b1::t_d024a9fbf076a5 321-325,338-348,356
+  s_99dcda38415784::t_47fc4bb41116ce 579-582
+  s_a2429f3aabd6b1::t_c3ceeb965a1f00 375,383-390,396,401
+  s_a2429f3aabd6b1::t_9c6af7354c4576 161-163,166-168
+  s_99dcda38415784::t_70440e3bed6a0e 1-73,86-95,97-103,105-112,115,118-160,164-165,169-320,326-337,349-355,357-374,376-382,391-395,397-400,402-470,480-496,506,515-578,583-594,599,603-653
+  s_99dcda38415784::t_16c71f9ebd3dc2 104
+  s_a2429f3aabd6b1::t_f501748a7abcaf 595-598,600-602
+  s_a2429f3aabd6b1::t_453034d7e19e5e 74-85
+  s_a2429f3aabd6b1::t_5fcb868519c9bc 471-479,497-505,507-514
+skills/rebuild-examine/SKILL.md
+  s_a2429f3aabd6b1::t_245e108fad8b6f 185-192
+  s_a2429f3aabd6b1::t_5795407add8f8d 331-337
+  s_a2429f3aabd6b1::t_e506f448d9374f 369-375
+  s_a2429f3aabd6b1::t_73faa115530353 59-63
+  s_a2429f3aabd6b1::t_8fc96237ce4bf0 394-399
+  s_a2429f3aabd6b1::t_acf25106dc6942 118-119
+  s_a2429f3aabd6b1::t_3437d889ddcf79 127-133,140-149
+  s_a2429f3aabd6b1::t_7e37a441d7e6c6 346-348
+  s_a2429f3aabd6b1::t_89fb71e2749ca2 5
+  s_e763f4a082f8e4::t_3e7100b24a96e8 1-4,6-58,64-81,86-117,120-126,134-139,150-184,193-330,338-345,349-368,376-393,400-418
+  s_a2429f3aabd6b1::t_252ce07f8d281e 82-85
+skills/rebuild-plan/SKILL.md
+  s_a2429f3aabd6b1::t_1d4005371fbd07 160-166
+  s_a2429f3aabd6b1::t_aba4a1fc33d5b5 124-125
+  s_4e98f83f57b22f::t_13bc1158c7ff2c 1-123,135-142,147,157-159,167-189,217-419
+  s_a2429f3aabd6b1::t_01ecaeb3bfde70 143-146,148-156
+  s_a2429f3aabd6b1::t_ba64f1981c7c08 126-134
+  s_a2429f3aabd6b1::t_d0cb6358079048 190-216
+.claude-plugin/marketplace.json
+  s_a2429f3aabd6b1::t_648d9294487e43 4
+  s_a2429f3aabd6b1::t_c1fb1031ce432d 13
+README.md
+  s_a2429f3aabd6b1::t_ec97a322a90d80 16-19
+tests/test_rebuild_skills.py
+  s_a2429f3aabd6b1::t_195adc154a1dd3 1-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "8cd3e17e94b2503eee67bb64e4fe846913ececd6",
+  "prompts": {},
+  "humans": {
+    "h_795c5e33ecc5af": {
+      "author": "Tom Price <tom@tomprice.ca>"
+    }
+  },
+  "sessions": {
+    "s_4e98f83f57b22f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e33b2169-1239-4fe7-b244-1378314d8749",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_99dcda38415784": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c61705fc-489e-4112-b9f6-5aeaf08608f4",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_a2429f3aabd6b1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e016da65-6592-4b5d-af72-6ca61a50e4b7",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_aec8ccccc7fcad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c3074ddc-176e-400f-b259-9c8f178b78a2",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    },
+    "s_e763f4a082f8e4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "642a24a6-b3e9-4fca-9a46-ebcb603dd948",
+        "model": "claude-fable-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
