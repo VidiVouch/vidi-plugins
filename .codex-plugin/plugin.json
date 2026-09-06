@@ -1,6 +1,6 @@
 {
   "name": "vidi-skills",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Vidi workflow skills for Codex and Claude Code.",
   "author": {
     "name": "Vidi",
@@ -22,8 +22,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Vidi Skills",
-    "shortDescription": "Review, eval, attestation, reporting, and coverage skills.",
-    "longDescription": "Vidi Skills packages reusable agent workflows for Codex and Claude Code, including local review, deep review, deep eval, review attestation design, HTML reporting, coverage checks, and Codex delegation workflows.",
+    "shortDescription": "Review, rebuild, eval, reporting, and coverage skills.",
+    "longDescription": "Vidi Skills packages reusable agent workflows for Codex and Claude Code, including local and deep review, epoch-based clean rebuilds, deep eval, review attestation design, HTML reporting, coverage checks, and Codex delegation workflows.",
     "developerName": "Vidi",
     "category": "Productivity",
     "capabilities": [

@@ -13,6 +13,10 @@ Lean plugin repo for Vidi's AI-driven development workflows across Claude Code a
 - `epoch-review`
 - `html-report`
 - `local-review`
+- `rebuild`
+- `rebuild-plan`
+- `rebuild-epoch`
+- `rebuild-examine`
 - `vidi-review-attestation`
 
 ## Layout
