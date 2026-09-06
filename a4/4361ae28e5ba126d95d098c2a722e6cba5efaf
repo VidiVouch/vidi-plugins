@@ -1,0 +1,14 @@
+skills/epoch-review/SKILL.md
+  h_795c5e33ecc5af 189
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "a44361ae28e5ba126d95d098c2a722e6cba5efaf",
+  "prompts": {},
+  "humans": {
+    "h_795c5e33ecc5af": {
+      "author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
