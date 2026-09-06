@@ -31,7 +31,6 @@ Resolved by the shell when this skill loads — do NOT re-probe with your own Ba
 - Uncommitted changes: !`test -n "$(git status --porcelain 2>/dev/null)" && echo yes || echo no`
 - Toolchain: !`if test -f Cargo.toml; then echo rust; elif test -f pyproject.toml && { test -f uv.lock || grep -q '^\[tool\.uv\]' pyproject.toml 2>/dev/null; }; then echo uv-python; else echo none; fi`
 - codex CLI: !`command -v codex >/dev/null 2>&1 && echo yes || echo no`
-- cubic CLI: !`command -v cubic >/dev/null 2>&1 && echo yes || echo no`
 - coderabbit CLI: !`command -v coderabbit >/dev/null 2>&1 && echo yes || echo no`
 - grok CLI: !`command -v grok >/dev/null 2>&1 && echo yes || echo no`
 - codex companion: !`C=$(ls "$HOME/.claude/plugins/cache/openai-codex/codex/"*/scripts/codex-companion.mjs 2>/dev/null | sort -V | tail -1); if [ -z "$C" ]; then echo absent; elif ! node --check "$C" 2>/dev/null; then echo "unloadable $C"; else echo "ok $C"; fi`
@@ -187,7 +186,7 @@ Workflow({
     fix: <true unless --nofix>,
     maxRounds: <--max-rounds or 3>,
     boss: <--boss split on ',' or []>,
-    tools: { codex, codexAdversarial, cubic, coderabbit, grok, codexCompanion },  // from the injected facts
+    tools: { codex, codexAdversarial, coderabbit, grok, codexCompanion },  // from the injected facts
   },
 })
 ```
