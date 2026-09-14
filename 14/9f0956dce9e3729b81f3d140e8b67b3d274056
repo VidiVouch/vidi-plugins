@@ -1,0 +1,41 @@
+skills/html-report/references/content-model.md
+  s_189a2996ceef3a::t_0e9617d7dbe20d 59-65
+  s_189a2996ceef3a::t_a119e499131408 55-58
+  s_189a2996ceef3a::t_06272d3a731fef 113-125
+  s_189a2996ceef3a::t_5cc20603d10f44 52
+skills/html-report/references/diagrams.md
+  s_189a2996ceef3a::t_4172732be9b117 42
+  s_189a2996ceef3a::t_b4889c5f68adcb 33,35
+  s_189a2996ceef3a::t_250fa40e6d7b20 108-109
+  s_189a2996ceef3a::t_44be7a2d492a0a 25-29
+  s_189a2996ceef3a::t_f6ba9e79fc5820 1-24,30-32,34,36-41,43-107,110-128
+skills/html-report/references/generation.md
+  s_189a2996ceef3a::t_6f2b2e51850358 102-105
+  s_189a2996ceef3a::t_c7244a29115629 50-67,74-87
+  s_189a2996ceef3a::t_61c39899602254 68-70
+  s_189a2996ceef3a::t_0d9b6de96d97c3 95-96
+skills/html-report/SKILL.md
+  s_189a2996ceef3a::t_d2a94ca5ffed61 67-72
+  s_189a2996ceef3a::t_abd964bab669dc 53
+  s_189a2996ceef3a::t_3504fc5a9316ec 99-104
+  s_189a2996ceef3a::t_3b29b293fc6db8 140-147
+  s_189a2996ceef3a::t_4070daabf14535 151-156
+  s_189a2996ceef3a::t_7f31fde202555f 191-192
+  s_189a2996ceef3a::t_af77e3c4631c66 115-120,123-129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "149f0956dce9e3729b81f3d140e8b67b3d274056",
+  "prompts": {},
+  "sessions": {
+    "s_189a2996ceef3a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "0932a1e9-dd70-4447-84aa-f5dcf016dd92",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
