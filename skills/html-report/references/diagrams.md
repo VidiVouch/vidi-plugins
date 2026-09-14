@@ -34,6 +34,11 @@ This small authoring-flow example uses the host's ink token, native SVG shapes a
 text. It needs no library, script or network resource. Place it in a report using
 `theming.md`; transparent node interiors preserve the host's light or dark surface.
 Give every copied instance unique title/description IDs and update its labels and caption.
+This example is for the host report, not a drop-in iframe fragment. Inside a sandboxed
+fragment, define light/dark values for `--ink` and set the fragment body's foreground and
+background explicitly; parent tokens and its theme toggle do not cross the iframe boundary.
+The renderer's iframe stub otherwise uses light-theme ink (`#0d2438`, dark text) on a
+transparent background.
 
 ```html
 <style>

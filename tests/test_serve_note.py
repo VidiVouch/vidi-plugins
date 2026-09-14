@@ -50,6 +50,18 @@ def test_extract_jsonl_text_keeps_last_completed():
     assert sn.extract_jsonl_text(raw) == "last"
 
 
+# ---------------------------------------------------------------- fragment prompt
+def test_fragment_prompt_requires_self_contained_themes_and_fallback():
+    prompt = sn.build_prompt({"meta": {"title": "Test"}}, BLOCK, {"response": "fragment"})
+    assert '"sandbox":true' in prompt
+    assert "define your own light/dark theme styles" in prompt
+    assert "body foreground and background" in prompt
+    assert "parent CSS variables and theme toggles are not available" in prompt
+    assert "use prefers-color-scheme" in prompt
+    assert "local theme toggle only if needed" in prompt
+    assert "visible text explanation even if scripts fail" in prompt
+
+
 # ---------------------------------------------------------------- validate / patch
 def test_validate_block_accepts_known_type():
     assert sn.validate_block(BLOCK) == BLOCK

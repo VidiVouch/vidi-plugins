@@ -10,22 +10,36 @@ re-runnable script (`generate_report.py`) rather than hand-writing the HTML. The
 shape:
 
 1. Keep the full HTML as a template string with literal placeholders:
-   `__DATA__`, `__META__`, `__GEN__` (generation timestamp).
-2. Substitute with plain `str.replace` — no templating engine needed:
+   `__DATA__`, `__META__`, `__GEN__` (generation timestamp), each used once in this recipe.
+   These slots hold complete JSON values inside a `<script>`, such as `const DATA = __DATA__;`, not quoted
+   strings, HTML attributes or visible HTML text.
+2. Serialize for the HTML context, then substitute slots in one pass. JSON serialization
+   alone does not stop a value containing `</script>` from closing the element. A single
+   substitution pass also preserves marker-like text inside input data.
    ```python
-   html = TEMPLATE.replace("__DATA__", json.dumps(rows)) \
-                  .replace("__META__", json.dumps(meta)) \
-                  .replace("__GEN__", gen_stamp)
+   import json
+   import re
+
+   def json_for_html(value):
+       return json.dumps(value).replace("<", "\\u003c")
+
+   values = {"__DATA__": rows, "__META__": meta, "__GEN__": gen_stamp}
+   assert all(TEMPLATE.count(slot) == 1 for slot in values), "missing or duplicate slot"
+   html = re.sub(r"__(?:DATA|META|GEN)__",
+                 lambda match: json_for_html(values[match.group()]), TEMPLATE)
    ```
-3. **Validate after every regeneration** — this is what makes the pattern trustworthy:
+3. **Validate after every regeneration**: parse embedded data and check executable JS.
+   For the single-line `const DATA = ...;` form above (terminated by a newline):
    ```python
+   import pathlib
+
    out = pathlib.Path("report.html").read_text()
-   for ph in ("__DATA__", "__META__", "__GEN__"):
-       assert ph not in out, f"leftover {ph}"
-   json.loads(re.search(r"const DATA = (\[.*?\]);\n", out, re.S).group(1))
+   assert json.loads(re.search(r"const DATA = (.*?);\n", out).group(1)) == rows
    ```
-   Plus extract the `<script>` body to a temp file and run `node --check` on it —
-   catches JS syntax errors before the user opens a broken page.
+   Check metadata and timestamp bindings the same way. Do not reject marker-like text
+   in the rendered output if it came from the input; validate slots in the template.
+   Extract executable `<script>` bodies and run `node --check` on them; parse JSON data
+   script elements with `json.loads` instead.
 
 **Raw strings, always.** Make the template a raw string (`r"""…"""`). A non-raw Python
 template once turned the `\n` inside embedded JS (`.replace(/\n/g,' ')`) into literal
@@ -36,9 +50,13 @@ this trap.
 
 Everything inlines into the one file — no loose assets to lose:
 
-- Structured data → `const DATA = <json.dumps(...)>` in a `<script>` tag; client JS
-  renders from it. No fetch/AJAX ever.
-- Text files → inlined as strings.
+- Structured data: embed `json_for_html(...)` output from the recipe above as a complete
+  JSON value in a `<script>` tag; client JS renders from it. This includes non-executing
+  `type="application/json"` data elements, which still need the same HTML-boundary escaping.
+  No fetch/AJAX for report data.
+- Text files: inline as strings using the same serializer when they enter a script.
+  Outside scripts, use the appropriate HTML text/attribute escaping instead; JSON
+  serialization is not a general-purpose HTML sanitizer.
 - Images / binaries → base64 `data:` URIs (`data:image/png;base64,...`); anything
   unviewable gets a data-URI download link.
 - Untrusted strings (user text, LLM output, filenames) enter the DOM via

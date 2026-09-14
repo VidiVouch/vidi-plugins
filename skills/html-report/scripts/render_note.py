@@ -409,8 +409,8 @@ def r_verdict_item(b, live):
 
 
 def r_fragment(b, live):
-    # Escape hatch. Sandbox subagent HTML in an iframe by default. Inject theme vars so it
-    # stays theme-consistent. Static/md renderers use `fallback` instead (handled elsewhere).
+    # Escape hatch. Static and live HTML sandbox fragments by default, without parent
+    # theme tokens or toggle synchronization. Only Markdown export uses `fallback`.
     frag = b.get("html", "")
     height = int(b.get("height", 220))
     if b.get("sandbox", True):

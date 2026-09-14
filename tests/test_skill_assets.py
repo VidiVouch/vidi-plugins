@@ -6,6 +6,8 @@ import json
 import re
 import shutil
 import subprocess
+from html.parser import HTMLParser
+from textwrap import dedent
 
 import pytest
 from conftest import REPO
@@ -30,6 +32,60 @@ def test_evals_shape():
 @pytest.mark.parametrize("path", sorted(SKILLS.rglob("*.html")), ids=lambda p: str(p.relative_to(SKILLS)))
 def test_html_assets_are_self_contained(path):
     assert not EXTERNAL.search(path.read_text()), f"{path.name} references external resources"
+
+
+@pytest.mark.parametrize("data_script", [False, True], ids=["executable", "json-data"])
+@pytest.mark.parametrize(
+    "value",
+    [
+        "ordinary text & quotes: \"hello\"",
+        '</ScRiPt><script>/* inert test */</script><!--<script>',
+        "__DATA__ __META__ __GEN__ café\nnext line",
+    ],
+    ids=["plain", "script-boundary", "literal-markers"],
+)
+def test_html_report_generator_example_preserves_data(value, data_script):
+    class ScriptParser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.scripts = []
+            self.in_script = False
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "script":
+                self.scripts.append("")
+                self.in_script = True
+
+        def handle_data(self, data):
+            if self.in_script:
+                self.scripts[-1] += data
+
+        def handle_endtag(self, tag):
+            if tag == "script":
+                self.in_script = False
+
+    doc = (SKILLS / "html-report" / "references" / "generation.md").read_text()
+    code = re.search(r"```python\n(.*?)\n\s*```", doc, re.S)
+    assert code is not None, "generation.md must contain its executable Python example"
+    example = dedent(code.group(1))
+    expected = {"DATA": [{"label": value}], "META": {"title": value}, "GEN": value}
+    if data_script:
+        template = '<script type="application/json">{"DATA":__DATA__,"META":__META__,"GEN":__GEN__}</script>'
+    else:
+        template = "<script>\nconst DATA = __DATA__;\nconst META = __META__;\nconst GEN = __GEN__;\n</script>"
+    namespace = {"TEMPLATE": template, "rows": expected["DATA"], "meta": expected["META"], "gen_stamp": value}
+    exec(compile(example, "generation.md", "exec"), namespace)
+    parser = ScriptParser()
+    parser.feed(namespace["html"])
+    assert len(parser.scripts) == 1
+    script = parser.scripts[0]
+    assert "<" not in script
+    actual = (
+        json.loads(script)
+        if data_script
+        else {name: json.loads(data) for name, data in re.findall(r"const (\w+) = (.*?);\n", script)}
+    )
+    assert actual == expected
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")

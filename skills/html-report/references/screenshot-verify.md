@@ -35,9 +35,12 @@ checklist, not background reading.
    Compounding trap: a blank-hero dark shot can make an all-light run look like
    "light ≠ dark, good" when actually both are light and one is mid-animation.
 
-4. **`file://` navigation breaks under automation** — URLs get mangled
-   (`https://file///...`) or load sandboxed without executing. Serve the shots dir via
-   `python -m http.server` and navigate to `localhost`.
+4. **`file://` navigation can fail under automation**: URLs get mangled
+   (`https://file///...`) or load sandboxed without executing. Serve only the report/shot
+   folder with `python -m http.server 8089 --bind 127.0.0.1 --directory <report-dir>` and
+   navigate to `http://127.0.0.1:8089/report.html`. Opening a localhost URL does not by
+   itself restrict the server's bind address. Stop your server after verification;
+   see `references/generation.md` for the serving and occupied-port rules.
 
 ## The two-fact verification
 

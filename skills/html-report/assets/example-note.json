@@ -93,7 +93,7 @@
       "id": "viz",
       "num": "03",
       "title": "A shape the spec can't hold",
-      "sub": "When content falls outside the block vocabulary, a subagent returns an HTMX-style fragment. It is sandboxed and carries a text fallback for static/markdown export.",
+      "sub": "When content falls outside the block vocabulary, a subagent returns an HTMX-style fragment. Static and live HTML render it in a sandbox; the text fallback is used by Markdown export.",
       "body": [
         {
           "type": "fragment",

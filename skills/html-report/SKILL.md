@@ -63,7 +63,9 @@ just checked.
 ## Non-negotiables
 
 1. **Self-contained single file.** Inline all CSS and JS. No CDN fonts, no ES-module
-   imports, no fetch/AJAX for data — embed the dataset as JSON in a `<script>` tag.
+   imports, no fetch/AJAX for data; embed the dataset as JSON in a `<script>` tag.
+   Use the HTML-safe JSON serializer in `references/generation.md`: escape literal
+   less-than characters after JSON serialization so data cannot close the script tag.
    CDN and module imports can fail on restricted networks and in-app browsers;
    inline classic scripts avoid those dependencies, but still need a JS-capable viewer.
    System font stack by default; if the treatment calls for a display face, inline it
@@ -130,7 +132,8 @@ just checked.
 
 ## Verify before declaring done
 
-- No leftover template placeholders (`grep` for `__` markers, `{{`, "TODO").
+- No unresolved template slots. Inspect matches for `__` markers, `{{` or "TODO";
+  distinguish genuine placeholders from literal text in the input data.
 - Embedded JSON parses; extracted `<script>` passes `node --check`.
 - Every internal `href` resolves — cross-artifact hash links checked against the target's
   embedded data ("0 dead links" is a reportable number), and every nav target smoke-clicked.

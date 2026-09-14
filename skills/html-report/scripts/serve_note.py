@@ -57,8 +57,11 @@ def build_prompt(note, block, action):
     if want == "fragment":
         shape = (
             'Return ONLY a JSON object: {"type":"fragment","sandbox":true,"height":<px>,'
-            '"fallback":"<plain-text summary>","html":"<self-contained HTML fragment; style via '
-            'var(--accent) etc, no external anything>"}.'
+            '"fallback":"<plain-text summary>","html":"<self-contained HTML fragment; define your own '
+            'light/dark theme styles, including body foreground and background; parent CSS variables '
+            'and theme toggles are not available inside the iframe; use prefers-color-scheme and '
+            'add a local theme toggle only if needed; '
+            'include a visible text explanation even if scripts fail; no external resources>"}.'
         )
     else:
         shape = (

@@ -116,9 +116,12 @@ safety rule — so it is deliberately **second-class**, and the guardrails are m
   inserts raw markup and is only for independently trusted author HTML. The sandbox
   does not sanitize content or prevent network access; inspect SVG and other markup.
 - **Themes are fragment-owned today.** The renderer does not inject parent CSS tokens or
-  synchronize the parent's theme toggle into the iframe. Define and test both themes
-  inside the fragment, with its own toggle if needed; prefer a hand-authored report
-  when automatic parent-theme integration matters. Do not remove the sandbox to fix it.
+  synchronize the parent's theme toggle into the iframe. Its stub sets light-theme ink
+  (`#0d2438`, dark text) on a transparent body; override body foreground/background and
+  define the tokens your markup uses for both themes. Use `prefers-color-scheme`, and
+  test with a fragment-owned toggle if needed; prefer
+  a hand-authored report when automatic parent-theme integration matters. Do not remove
+  the sandbox to fix it.
 - **Fallback required.** `fallback` is plain text/markdown used by the Markdown export.
   Static HTML currently renders the fragment too; it does not substitute `fallback`.
   Include a visible textual explanation inside the fragment or an adjacent prose block

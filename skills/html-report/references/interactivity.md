@@ -82,9 +82,11 @@ Supporting patterns that make feedback collection feel right:
 - **Keyboard nav**: arrow keys move between items, guarded with
   `if (e.target.tagName === 'TEXTAREA') return;` so typing never navigates.
 
-If serving live, a stdlib Python server is enough: regenerate HTML on every `GET /`
-(refresh picks up changes without restart) and persist `POST /api/feedback` to a JSON
-file. Kill stale listeners first: `lsof -ti :PORT | xargs kill`.
+If serving live, bind the stdlib Python server to `127.0.0.1` and expose only the report
+files and feedback endpoints: regenerate HTML on every `GET /` and persist
+`POST /api/feedback` to a JSON file. If the port is occupied, choose another; stop only
+a server you started and own, never an unknown listener. Stop temporary servers after
+verification. For static serving, use the loopback recipe in `references/generation.md`.
 
 ## 4. Deep links — hand the work back to Claude Code
 
