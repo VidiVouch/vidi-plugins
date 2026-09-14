@@ -47,19 +47,44 @@ Everything inlines into the one file — no loose assets to lose:
 - Scan raw export data for PII before embedding: card-number-like digit runs, tokens,
   secrets. Redact, then assert the redaction held in the validation pass.
 
-Exception to "everything inline": a folder of full-resolution screenshots referenced by
-relative path is fine when the deliverable is the folder (zip it and paths still work).
+Deliberate folder delivery is an exception: full-resolution screenshots or a vendored
+heavy runtime may use relative paths when the deliverable is the whole folder. Zip it,
+test the extracted bundle, and include serving instructions when needed. Do not leave
+loose dependencies behind while claiming the HTML alone is shareable.
+
+### Heavy runtimes
+
+Inline remains the default, not a size-free choice. For static diagrams, prefer rendering
+SVG at build time and embedding the inspected result; see `references/diagrams.md`.
+If a browser runtime such as Mermaid is actually needed:
+
+- **One file:** inline a pinned, tested classic-script bundle, retain its license notice,
+  and accept the measured file size. Bundle size depends on version/build; do not promise
+  a fixed megabyte cost. Avoid builds that load additional chunks, fonts or assets.
+- **Folder delivery:** vendor the pinned bundle alongside the report, using relative
+  paths. This avoids duplicating it across reports but requires distributing the bundle.
+  Test its loading mechanism in the intended viewer; use loopback HTTP if needed.
+
+Neither runtime option draws a diagram in a JS-disabled viewer; keep a readable caption
+or source fallback. Do not upload private diagrams to online renderers. Keep rendering
+local and vendor any runtime instead of depending on a CDN.
 
 ## Serving
 
-- Handing to the user on this machine: `open report.html`. Done.
-- **Any automated browser/screenshot loop: use a local HTTP server, not `file://`.**
-  `file://` navigation via browser automation breaks unpredictably (URLs mangled to
-  `https://file///...`, sandboxed non-executing loads). `python -m http.server 8089 -d <dir>`
-  then `http://localhost:8089/report.html` sidesteps all of it.
-- Live feedback loop: stdlib `http.server` that regenerates the page per `GET /` and
-  persists `POST /api/feedback` to disk (see `references/interactivity.md` §3). Kill
-  stale port-holders first: `lsof -ti :8089 | xargs kill`.
+- **Manual local viewing:** start with `open report.html` for a self-contained report,
+  then verify the actual browser. Ordinary sibling classic scripts and images can load
+  under `file://`; module scripts, fetch and local-file origin policies behave differently.
+  A missing asset path is not evidence of a CORS failure. Choose HTTP based on the loading
+  mechanism and viewer, not the number of files.
+- **Automated browser/screenshot loops or reports needing HTTP:** use
+  `python -m http.server 8089 --bind 127.0.0.1 --directory <report-dir>`, then
+  `http://127.0.0.1:8089/report.html`. Serve only the report directory, not a workspace
+  containing unrelated private files. Hand over both the command and URL when required.
+  If a browser is unavailable, report verification as blocked, not passed.
+- **Live feedback loop:** use a loopback-bound server that regenerates the page per
+  `GET /` and persists `POST /api/feedback` to disk (see `references/interactivity.md` §3).
+  If the port is occupied, choose another or stop only a process you started and own;
+  do not kill an unknown listener. Stop your temporary server after verification.
 
 ## Distribution triage — decide this BEFORE polishing the tech
 
@@ -67,17 +92,17 @@ Ask where the file will actually be viewed:
 
 | Destination | What works |
 |---|---|
-| This machine, this user | Self-contained file, `open` it |
-| Email/zip to a colleague (desktop) | Self-contained file or relative-path folder, zipped |
+| This machine, this user | Self-contained file, verify with `open`; loopback HTTP when needed |
+| Email/zip to a colleague (desktop) | Self-contained file or tested relative-path bundle, zipped with serving instructions when needed |
 | Phone via iMessage/AirDrop | **Self-contained HTML is a dead end** — iOS Quick Look previews `.html` without executing any JS. No packaging trick fixes this. Host it and send a link |
 | Hosted (Cloudflare Pages etc.) | Works everywhere — but anyone with the link can view. Flag that explicitly before deploying; sensitive content doesn't ship this way |
 | GitHub README/issue | `claude-cli://` links get stripped; show raw URLs in code blocks |
 
 Related hard-won rules:
-- No CDN anything (fonts, libs) and no ES-module imports — they silently fail on
-  restricted networks and in-app browsers. Inline libraries as classic `<script>` IIFE
-  globals. This is the difference between "works on my desktop" and "works on the
-  phone in someone else's hand".
+- No CDN anything (fonts, libs) and no ES-module imports for the self-contained default;
+  these dependencies can fail on restricted networks and in-app browsers. Prefer inline
+  classic scripts, or the explicit vendored-bundle path above, and verify the actual
+  viewer. Packaging cannot enable JavaScript in a viewer that disables it.
 - Interactive/heavy viewers need a **staged diagnostic overlay** ("Decompressing… →
   Building scene… → Rendering…") so a failure is a message, not a silent blank page —
   a remote user can then tell you exactly which stage hung.

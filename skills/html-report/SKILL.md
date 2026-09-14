@@ -50,7 +50,7 @@ python scripts/serve_note.py  note.json --dispatch ccs:glm    # route expansions
 | Interactive playground / logic simulator | freeform single file | Inputs at top, live-updating result below; mirror the real code's logic exactly |
 | Live, driveable note — reader expands/discusses sections and the note updates in place | JSON + `scripts/render_note.py` / `serve_note.py` | The content-model path. Per-section actions dispatch to scoped subagents (block/fragment/hand-off); runs headless after the conversation ends. See `references/content-model.md` |
 
-**Utilitarian vs editorial is a real fork, not a mood.** Per the artifact-design skill: calibrate the treatment to how the deliverable will be consumed. A thing someone scans for a pass/fail ruling wants `report.html` — hierarchy and a verdict, no hero. A thing someone reads to understand a landscape wants `report-editorial.html` — it earns attention with a hero, an eyebrow-labeled rhythm, and density. When unsure, ask which mode the reader is in; don't dress an audit as a magazine or vice versa.
+**Utilitarian vs editorial is a real fork, not a mood.** Calibrate the treatment to how the deliverable will be consumed. A thing someone scans for a pass/fail ruling wants `report.html` — hierarchy and a verdict, no hero. A thing someone reads to understand a landscape wants `report-editorial.html` — it earns attention with a hero, an eyebrow-labeled rhythm, and density. When unsure, ask which mode the reader is in; don't dress an audit as a magazine or vice versa.
 
 Templates are starting points, not straitjackets — restructure freely, but keep the
 non-negotiables below. Read `assets/snippets.html` for the interactive building blocks
@@ -64,9 +64,12 @@ just checked.
 
 1. **Self-contained single file.** Inline all CSS and JS. No CDN fonts, no ES-module
    imports, no fetch/AJAX for data — embed the dataset as JSON in a `<script>` tag.
-   CDN and module imports silently fail on restricted networks and in-app browsers;
-   classic `<script>` IIFEs work everywhere. System font stack by default; if the
-   treatment calls for a display face, inline it as a `@font-face` data URI.
+   CDN and module imports can fail on restricted networks and in-app browsers;
+   inline classic scripts avoid those dependencies, but still need a JS-capable viewer.
+   System font stack by default; if the treatment calls for a display face, inline it
+   as a `@font-face` data URI. For deliberate folder delivery (screenshots or a heavy
+   runtime), see `references/generation.md`; do not silently turn a single-file handoff
+   into a bundle.
 2. **Both themes, toggleable.** Use the token cascade + `data-theme` bootstrap from
    `references/theming.md`. One `:root` block, one `:root[data-theme="dark"]` override —
    never separate light/dark stylesheets, never media-query-only dark mode.
@@ -93,11 +96,12 @@ just checked.
 
 ## Build
 
-1. **Sketch a design plan first** (per the artifact-design skill — invoke it for
-   anything beyond a utilitarian internal doc): 4–6 named hex colors, typefaces by
-   role, one-sentence layout concept. A report is a *utilitarian* treatment: real
-   hierarchy and a considered palette, no hero sections. Avoid the AI-design tells:
-   warm-cream + terracotta, purple gradients, Inter-everywhere, emoji section markers.
+1. **Sketch a design plan first:** 4-6 named hex colors, typefaces by role, one-sentence
+   layout concept. If `artifact-design` is available, use it for work beyond a utilitarian
+   internal doc; otherwise these local rules are the fallback, not a blocked dependency.
+   A verdict report wants real hierarchy and a considered palette, no hero; synthesis
+   can use the editorial treatment above. Avoid the AI-design tells: warm-cream +
+   terracotta, purple gradients, Inter-everywhere, emoji section markers.
 2. **Honor existing tokens.** If the project has a design-token file (e.g.
    `design/assets/cyanotype.css`), use its custom properties instead of the template's
    palette. `report.html`, `gallery.html`, and `snippets.html` ship the cyanotype system
@@ -108,12 +112,21 @@ just checked.
    the structure.
 3. **Real content only.** Never lorem ipsum, never placeholder rows. If the data isn't
    gathered yet, gather it first.
-4. **Charts belong to the dataviz skill.** If the report includes any chart, stat tile,
-   or dashboard element, invoke `dataviz` and follow it — don't re-derive chart rules.
-5. **Generated at scale?** (hundreds of rows, multiple artifacts) — write a re-runnable
+4. **Use `dataviz` when available** for any chart, stat tile, or dashboard element.
+   External skills need not ship in this plugin; check the session's available skills.
+   If absent, use this fallback: choose a simple chart for the question, label units
+   and axes, start quantitative bars at zero, link the source data, use theme tokens,
+   and include readable values or a table. Never encode meaning only through color.
+5. **Generated at scale?** (hundreds of rows, multiple artifacts): write a re-runnable
    generator script with the placeholder+validate pattern in `references/generation.md`.
 6. **Long-lived doc?** Give sections and rows stable `id` anchors so later updates are
-   small targeted edits, not rewrites — these docs get patched incrementally for weeks.
+   small targeted edits, not rewrites; these docs get patched incrementally for weeks.
+7. **Diagrams?** Read `references/diagrams.md` before adding a flow, entity graph or SVG.
+   Prefer pre-rendered inline SVG for static reports; runtime rendering is a deliberate
+   choice, not a prerequisite. The JSON renderer has no `diagram` block.
+8. **Honor destination-project rules.** Check its instructions and pre-write hooks before
+   copying template prose. If punctuation such as em/en dashes is prohibited, adapt the
+   output to that policy; do not impose an ASCII-only rule on every project.
 
 ## Verify before declaring done
 
@@ -124,14 +137,23 @@ just checked.
 - Light and dark both render: if screenshotting, follow `references/screenshot-verify.md`
   — the two PNGs must differ by md5 AND the dark one must actually look dark. Several
   silent failure modes produce byte-identical shots.
-- Open it. `open report.html` works for handing to the user; for any automated
-  browser/screenshot loop use a throwaway `python -m http.server` — `file://`
-  navigation breaks unpredictably in automation.
+- Every expected diagram is present, nonempty and readable in both themes and at narrow
+  widths; runtime diagrams also survive theme toggles without duplicate or stale output.
+  Check for parse errors, clipped labels and error SVGs, not just the presence of `<svg>`.
+  Exercise visible failure/fallback behavior. See `references/diagrams.md`.
+- Open the actual deliverable in the intended viewer. For automated browser/screenshot
+  loops use loopback HTTP; `file://` automation can fail even when manual opening works.
+  Serve only the report folder: `python -m http.server 8089 --bind 127.0.0.1 --directory <report-dir>`.
+  If browser verification is blocked, report it separately from passing static checks.
 
 ## Delivery
 
-- Local viewing: `open <file>.html` — done. Zip the folder if assets are split; keep
-  paths relative so a zipped folder just works.
+- Prefer a self-contained file and verify `open <file>.html` in the intended desktop
+  browser. Sibling classic scripts/images do not universally fail under `file://`;
+  modules, fetch and browser-specific local-file restrictions need separate checks.
+  When HTTP is required, hand over the loopback serve command above and the report URL.
+  For deliberate bundles, keep paths relative, test after extraction, and zip the whole
+  folder with serving instructions if needed. File count alone is not the HTTP rule.
 - **iOS / messaging apps: a self-contained HTML attachment is a dead end** — Quick Look
   previews `.html` without executing any JS. If the report must reach a phone, host it
   (Cloudflare Pages or similar) and send a link — after flagging that hosted = anyone
@@ -166,4 +188,5 @@ Ordered by how tightly they close the loop. Full mechanics in `references/handof
 - `references/theming.md` — token cascade, no-flash bootstrap, toggle, print, reduced motion, contrast math. Read before writing any `<style>`.
 - `references/interactivity.md` — copy-as-prompt, URL-hash view links, dual-mode feedback export, deep links, dynamic-context skills. Read when adding any interactive element.
 - `references/generation.md` — generator scripts, placeholder+validate, embedding files, serving, distribution triage. Read before writing a generator or shipping beyond the local machine.
-- `references/screenshot-verify.md` — the light/dark screenshot tripwires. Read before screenshotting any themed page.
+- `references/screenshot-verify.md` - the light/dark screenshot tripwires. Read before screenshotting any themed page.
+- `references/diagrams.md` - static SVG example, pinned-runtime tradeoffs, ER styling, safety and render checks. Read before authoring a diagram.

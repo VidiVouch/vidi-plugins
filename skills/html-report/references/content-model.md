@@ -49,10 +49,20 @@ the subagent output validatable. When a shape recurs through the `fragment` esca
 | `ladder` | `steps:[{t, d}]` | numbered step ladder |
 | `verdict-item` | `id`, `title`, `meta?`, `body?[]`, `verbs:[{k,label,bucket,note?}]` | one review item with verdict buttons (feeds the walkthrough loop) |
 | `fragment` | `html`, `fallback`, `sandbox?`, `height?` | **escape hatch** — see below |
-| `chart` | `spec` | delegate to the `dataviz` skill; renderer emits a container |
+| `chart` | `spec` | placeholder container only; the renderer does not draw the chart |
 
 Text fields are escaped by the renderer (textContent semantics). Only `prose.md` gets the
-minimal-markdown pass, and only `fragment.html` is injected as markup — nothing else.
+minimal-markdown pass, and only `fragment.html` is injected as markup, nothing else.
+
+For chart design, use `dataviz` if available, otherwise the fallback rules in SKILL.md.
+Invoking a design skill does not make the `chart` placeholder a functioning renderer.
+There is no `diagram` block. For a diagram-bearing static report, prefer the hand-authored
+HTML path and `references/diagrams.md`. In a JSON note, prose/wire blocks can carry the
+explanation/source; a sandboxed `fragment` with inspected SVG and a text `fallback` is
+also possible, but it must handle its own themes and sizing (see the limits below).
+Do not invent an unsupported type or disable a fragment's sandbox to make a diagram work.
+A first-class diagram block requires separate HTML/Markdown, live-swap, validation and
+runtime-lifecycle work.
 
 ## Actions — three response modes
 
@@ -100,16 +110,19 @@ safety rule — so it is deliberately **second-class**, and the guardrails are m
 
 - **Flagged, not blended.** `type: "fragment"` marks the node as unvalidated and
   unportable so it's never confused with trusted blocks.
-- **Sandboxed when subagent-authored.** `sandbox: true` (the default for any fragment a
-  subagent produced) renders it inside `<iframe srcdoc>` — its script can't touch the
-  parent note. Author-written fragments may set `sandbox: false`. This is the one place
-  the renderer injects markup; the sandbox is why that's safe.
-- **Theme tokens injected.** The renderer passes the CSS custom properties into the
-  sandbox; a fragment must style via `var(--accent)` etc., never hardcoded hex, or it
-  breaks light/dark.
-- **Fallback required.** `fallback` is plain text/markdown the static and markdown
-  renderers emit in place of the fragment (like alt text) — otherwise exporting a live
-  note leaves a hole.
+- **Sandboxed when subagent-authored.** Keep `sandbox: true` (the renderer default) for
+  subagent-produced fragments. The iframe isolates its script from the parent, but this
+  is an authoring requirement, not an enforced server trust check. `sandbox: false`
+  inserts raw markup and is only for independently trusted author HTML. The sandbox
+  does not sanitize content or prevent network access; inspect SVG and other markup.
+- **Themes are fragment-owned today.** The renderer does not inject parent CSS tokens or
+  synchronize the parent's theme toggle into the iframe. Define and test both themes
+  inside the fragment, with its own toggle if needed; prefer a hand-authored report
+  when automatic parent-theme integration matters. Do not remove the sandbox to fix it.
+- **Fallback required.** `fallback` is plain text/markdown used by the Markdown export.
+  Static HTML currently renders the fragment too; it does not substitute `fallback`.
+  Include a visible textual explanation inside the fragment or an adjacent prose block
+  so a failed or non-executing viewer does not leave the reader with a hole.
 - **Promote on recurrence.** A fragment shape that shows up repeatedly is a signal to add
   a real block type. The escape hatch is where the vocabulary grows from evidence.
 
