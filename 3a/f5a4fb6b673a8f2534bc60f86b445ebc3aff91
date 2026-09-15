@@ -1,0 +1,26 @@
+skills/html-report/references/generation.md
+  s_477cbab2b3e255::t_ede6c14738b4d0 75-83,92-93
+  s_477cbab2b3e255::t_461a46ba23dd28 125-128
+skills/html-report/references/diagrams.md
+  s_477cbab2b3e255::t_f17f9724ddc22f 144-147
+  s_477cbab2b3e255::t_52b0cb73ab58ac 10-35
+skills/html-report/SKILL.md
+  s_477cbab2b3e255::t_32d8b41d8833d2 65-69,72-73
+  s_477cbab2b3e255::t_6bb3830231c1ee 130-131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3af5a4fb6b673a8f2534bc60f86b445ebc3aff91",
+  "prompts": {},
+  "sessions": {
+    "s_477cbab2b3e255": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3fb70a41-cd28-4b9d-8a93-4b24c4acf1ae",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
