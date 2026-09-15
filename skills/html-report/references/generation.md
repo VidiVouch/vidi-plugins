@@ -72,9 +72,15 @@ loose dependencies behind while claiming the HTML alone is shareable.
 
 ### Heavy runtimes
 
-Inline remains the default, not a size-free choice. For static diagrams, prefer rendering
-SVG at build time and embedding the inspected result; see `references/diagrams.md`.
-If a browser runtime such as Mermaid is actually needed:
+**Mermaid uses jsDelivr by default**, via the pinned classic-script URL in `diagrams.md`.
+Do not inline or vendor it merely to keep the report in one file. The HTML still embeds
+its data and diagram source, but rendering needs network access; disclose that dependency
+and keep a readable fallback for CDN failures. Rendering happens in the browser, not an
+online rendering service. Loading third-party JavaScript still grants it access to the
+page; use inspected inline SVG instead when offline or no-third-party-code delivery is required.
+
+For offline diagrams, render SVG locally at build time and embed the inspected result.
+If an offline report needs a browser runtime, or another heavy runtime cannot use a CDN:
 
 - **One file:** inline a pinned, tested classic-script bundle, retain its license notice,
   and accept the measured file size. Bundle size depends on version/build; do not promise
@@ -83,9 +89,8 @@ If a browser runtime such as Mermaid is actually needed:
   paths. This avoids duplicating it across reports but requires distributing the bundle.
   Test its loading mechanism in the intended viewer; use loopback HTTP if needed.
 
-Neither runtime option draws a diagram in a JS-disabled viewer; keep a readable caption
-or source fallback. Do not upload private diagrams to online renderers. Keep rendering
-local and vendor any runtime instead of depending on a CDN.
+No runtime option draws a diagram in a JS-disabled viewer; keep a readable caption
+or source fallback. Do not upload private diagrams to online renderers.
 
 ## Serving
 
@@ -117,10 +122,10 @@ Ask where the file will actually be viewed:
 | GitHub README/issue | `claude-cli://` links get stripped; show raw URLs in code blocks |
 
 Related hard-won rules:
-- No CDN anything (fonts, libs) and no ES-module imports for the self-contained default;
-  these dependencies can fail on restricted networks and in-app browsers. Prefer inline
-  classic scripts, or the explicit vendored-bundle path above, and verify the actual
-  viewer. Packaging cannot enable JavaScript in a viewer that disables it.
+- No CDN fonts or other libraries and no ES-module imports for the self-contained default;
+  the pinned Mermaid CDN runtime is the explicit exception above. Verify the actual viewer
+  with the CDN available and blocked; do not promise offline diagrams without an inline SVG
+  fallback or an offline bundle. Packaging cannot enable JavaScript in a viewer that disables it.
 - Interactive/heavy viewers need a **staged diagnostic overlay** ("Decompressing… →
   Building scene… → Rendering…") so a failure is a message, not a silent blank page —
   a remote user can then tell you exactly which stage hung.

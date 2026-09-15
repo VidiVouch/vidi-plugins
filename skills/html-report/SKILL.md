@@ -62,12 +62,15 @@ just checked.
 
 ## Non-negotiables
 
-1. **Self-contained single file.** Inline all CSS and JS. No CDN fonts, no ES-module
-   imports, no fetch/AJAX for data; embed the dataset as JSON in a `<script>` tag.
+1. **Self-contained single file by default.** Inline CSS and application JS. No CDN fonts,
+   no ES-module imports, no fetch/AJAX for data; embed the dataset as JSON in a `<script>` tag.
+   **Mermaid is the exception:** load its pinned classic-script runtime from jsDelivr as
+   shown in `references/diagrams.md`, not an inline or vendored copy. Disclose that diagrams
+   need network access; use pre-rendered inline SVG when offline delivery is required.
    Use the HTML-safe JSON serializer in `references/generation.md`: escape literal
    less-than characters after JSON serialization so data cannot close the script tag.
-   CDN and module imports can fail on restricted networks and in-app browsers;
-   inline classic scripts avoid those dependencies, but still need a JS-capable viewer.
+   CDN loading can fail on restricted networks and in-app browsers; keep a readable diagram
+   fallback. Inline classic scripts avoid network dependencies but still need a JS-capable viewer.
    System font stack by default; if the treatment calls for a display face, inline it
    as a `@font-face` data URI. For deliberate folder delivery (screenshots or a heavy
    runtime), see `references/generation.md`; do not silently turn a single-file handoff
@@ -124,8 +127,8 @@ just checked.
 6. **Long-lived doc?** Give sections and rows stable `id` anchors so later updates are
    small targeted edits, not rewrites; these docs get patched incrementally for weeks.
 7. **Diagrams?** Read `references/diagrams.md` before adding a flow, entity graph or SVG.
-   Prefer pre-rendered inline SVG for static reports; runtime rendering is a deliberate
-   choice, not a prerequisite. The JSON renderer has no `diagram` block.
+   Use the pinned Mermaid CDN runtime for Mermaid diagrams; use pre-rendered inline SVG
+   for offline delivery or simple hand-authored diagrams. The JSON renderer has no `diagram` block.
 8. **Honor destination-project rules.** Check its instructions and pre-write hooks before
    copying template prose. If punctuation such as em/en dashes is prohibited, adapt the
    output to that policy; do not impose an ASCII-only rule on every project.

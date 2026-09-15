@@ -7,19 +7,32 @@ color is not the deciding factor. Keep labels and a text explanation alongside t
 
 ## Choose the rendering path
 
-**Static report: prefer pre-rendered inline SVG.** Author a small diagram directly as
-SVG, or render Mermaid/another diagram source locally at build time. Embed the inspected
-SVG in the hand-authored report. This keeps the delivered file offline-capable and avoids
-shipping a parser/runtime just to draw a fixed picture. Retain editable source with the
-generator or in an escaped code/details section; do not make later changes depend on
-reverse-engineering paths. Check both themes after embedding, not only the source preview.
+**Mermaid: load the browser runtime from jsDelivr.** Use the classic-script build rather
+than inlining or vendoring the library. Pin the exact version so a report does not silently
+change when a new release ships:
 
-**Runtime rendering: use it only when needed.** If the reader edits diagram source or the
-graph changes in the browser, a runtime can be justified. Pin a tested library version
-and build, retain its license, and record them with the source. Inline a classic-script
-bundle by default; avoid builds with network-loaded chunks or fonts. A vendored sibling
-is an explicit folder-delivery choice, not a self-contained file. See
-`generation.md` for size tradeoffs, relative paths and loopback serving.
+```html
+<script src="https://cdn.jsdelivr.net/npm/mermaid@12.0.0/dist/mermaid.min.js"></script>
+```
+
+Mermaid's npm `latest` is **12.0.0** (checked 2026-09-15); the CDN asset above is available.
+The suggested `@11` URL tracks the previous major, while `@12` floats within the current
+major. [Official setup guidance](https://mermaid.js.org/intro/getting-started.html) uses
+an ESM CDN build; the classic build above exposes `window.mermaid` without a module import.
+After it loads, initialize with `startOnLoad: false` and `securityLevel: 'strict'`, then
+explicitly render using the lifecycle rules below.
+
+This is a deliberate exception to the skill's self-contained default: diagrams need
+network access and a JS-capable viewer. Keep report data and diagram source embedded,
+and keep a readable explanation/source fallback when the CDN is blocked or unavailable.
+Do not describe a CDN-backed report as fully offline-capable.
+
+**Offline report or simple hand-authored diagram: use inline SVG.** Author a small diagram
+directly as SVG, or render Mermaid/another diagram source locally at build time and embed
+the inspected SVG. Retain editable source with the generator or in an escaped code/details
+section; do not make later changes depend on reverse-engineering paths. Check both themes
+after embedding, not only the source preview. If an offline report needs an editable graph,
+use the explicit bundled-runtime options in `generation.md`.
 
 The JSON renderer currently has no `diagram` block; `chart` is also only a placeholder.
 Prefer hand-authored HTML for static diagrams, not an invented JSON type. For sandboxed
@@ -128,6 +141,7 @@ script, HTML attribute, CSS rule or `innerHTML`.
 - For runtime diagrams, deliberately test invalid source or an unavailable runtime and
   confirm a visible fallback. For build-time rendering, fail generation visibly rather
   than shipping an empty/error SVG as a successful report.
-- Test the actual offline file or extracted bundle in its intended viewer. For automated
-  browser checks use the loopback server in `generation.md`. Static syntax/XML checks
-  do not prove visual success; explicitly report blocked browser checks.
+- Test the actual file or extracted bundle in its intended viewer. For CDN-backed diagrams,
+  check both successful loading and the network-blocked fallback; do not label them offline.
+  For automated browser checks use the loopback server in `generation.md`. Static syntax/XML
+  checks do not prove visual success; explicitly report blocked browser checks.
