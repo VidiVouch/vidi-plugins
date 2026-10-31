@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "vidi",
-  "description": "Vidi workflow skills for AI-driven development, epoch rebuilds, reviews, reports, coverage, and attestation.",
+  "description": "Skills and agents for code review, rebuilds, reports, coverage, evaluations, and attestation design.",
   "owner": {
     "name": "Vidi",
     "url": "https://vidivouch.com"
@@ -10,7 +10,7 @@
     {
       "name": "vidi-skills",
       "source": "./",
-      "description": "Vidi rebuild, review, attestation, reporting, coverage, and Codex delegation skills.",
+      "description": "Multi-model reviews, rebuilds, HTML reports, coverage, evals, and Codex delegation.",
       "category": "productivity"
     }
   ]

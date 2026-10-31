@@ -21,6 +21,27 @@ def test_json_assets_parse(path):
     json.loads(path.read_text())
 
 
+@pytest.mark.parametrize(
+    "relative_path",
+    [".claude-plugin/plugin.json", ".claude-plugin/marketplace.json", ".codex-plugin/plugin.json"],
+)
+def test_plugin_metadata_parses(relative_path):
+    data = json.loads((REPO / relative_path).read_text())
+    assert data["name"] and data["description"]
+
+
+def test_plugin_metadata_agrees():
+    claude = json.loads((REPO / ".claude-plugin/plugin.json").read_text())
+    codex = json.loads((REPO / ".codex-plugin/plugin.json").read_text())
+    marketplace = json.loads((REPO / ".claude-plugin/marketplace.json").read_text())
+    assert claude["name"] == codex["name"]
+    assert claude["version"] == codex["version"]
+    entries = [entry for entry in marketplace["plugins"] if entry["name"] == claude["name"]]
+    assert len(entries) == 1
+    assert entries[0]["source"] == "./"
+    assert (REPO / codex["skills"]).is_dir()
+
+
 def test_evals_shape():
     data = json.loads((SKILLS / "html-report" / "evals" / "evals.json").read_text())
     assert data["skill_name"] == "html-report"
