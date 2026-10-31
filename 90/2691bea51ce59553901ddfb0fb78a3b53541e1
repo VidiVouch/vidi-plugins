@@ -1,0 +1,22 @@
+.claude-plugin/plugin.json
+  s_610be6e94314a7::t_395ee0870c72d1 4
+.claude-plugin/marketplace.json
+  s_610be6e94314a7::t_6aaf1187b77521 13
+  s_610be6e94314a7::t_6bf34966a2ca88 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "902691bea51ce59553901ddfb0fb78a3b53541e1",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
