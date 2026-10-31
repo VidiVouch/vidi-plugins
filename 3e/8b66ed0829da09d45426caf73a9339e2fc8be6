@@ -1,0 +1,34 @@
+.github/workflows/ci.yml
+  s_610be6e94314a7::t_59201d94c56250 21-22,24-25
+  s_610be6e94314a7::t_8c01b9d947c830 34-35
+  s_610be6e94314a7::t_d822346fe4948c 17,32
+  s_610be6e94314a7::t_d65c6e2a6e7c42 18,33
+  s_610be6e94314a7::t_dbf261e12b9195 23
+.claude-plugin/plugin.json
+  s_610be6e94314a7::t_395ee0870c72d1 4
+.codex-plugin/plugin.json
+  s_610be6e94314a7::t_14b1a96014582c 4
+  s_610be6e94314a7::t_57a62c27863be9 25
+  s_610be6e94314a7::t_75684771bc592c 26
+tests/test_skill_assets.py
+  s_610be6e94314a7::t_ef369ae447c7f9 24-44
+.claude-plugin/marketplace.json
+  s_610be6e94314a7::t_6bf34966a2ca88 4
+  s_610be6e94314a7::t_6aaf1187b77521 13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3e8b66ed0829da09d45426caf73a9339e2fc8be6",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "gpt-6-astra"
+      },
+      "human_author": null
+    }
+  }
+}
