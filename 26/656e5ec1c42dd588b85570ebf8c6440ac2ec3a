@@ -1,0 +1,25 @@
+agents/fixer.md
+  h_795c5e33ecc5af 5
+  s_610be6e94314a7::t_d7298d1e0192e3 8-9,11,13-15,19-24,27-28,32-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "26656e5ec1c42dd588b85570ebf8c6440ac2ec3a",
+  "prompts": {},
+  "humans": {
+    "h_795c5e33ecc5af": {
+      "author": "Tom Price <tom@tomprice.ca>"
+    }
+  },
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
