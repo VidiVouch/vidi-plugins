@@ -7,6 +7,11 @@ the model keys of a settings file and says whether an approved live check could 
 intended model; `evidence` reads the debug log that check wrote and says what was requested and
 whether the proxy served it. A launch that sent no classifier request proves nothing: reads and
 working-directory edits skip the review, so a read-only worker run is never a classifier test.
+
+`eligibility` answers a different question: whether auto mode is available at all to a session on
+the profile's main model. The permission-modes page lists the Claude families that support it and
+says any other model starts the session in Manual. The classifier variable is not in that list, so
+pinning a Sonnet classifier never makes a GPT or Grok session model eligible.
 """
 
 import argparse
@@ -30,6 +35,16 @@ IGNORED = f"ignoring {MODEL_KEY}"
 FAILED = "cannot determine the safety"
 REQUEST_MODEL = re.compile(r"\bmodel=([^\s,;]+)")
 VERSION = re.compile(r"\d+(?:\.\d+)+")
+# Session-model rules from the permission-modes page (read 2026-11-01). On the Anthropic API auto mode needs
+# Opus 4.6 or later, Sonnet 4.6 or later, Haiku 5.5, or a Fable model; Bedrock, Agent Platform, Foundry and the
+# apps gateway raise the floors to Opus 4.7 and Sonnet 5. "On any other model, the session starts in Manual."
+# An LLM gateway has no row of its own, so a proxy session is graded by the API list and the gap is reported.
+CLAUDE_ID = re.compile(r"^claude-(fable|opus|sonnet|haiku)-(\d+)(?:-(\d+))?(?:-|$)")
+API_FLOORS = {"fable": (0, 0), "opus": (4, 6), "sonnet": (4, 6), "haiku": (5, 5)}
+STRICT_FLOORS = {"fable": (0, 0), "opus": (4, 7), "sonnet": (5, 0), "haiku": (5, 5)}
+ALIASES = ("fable", "opus", "sonnet", "haiku")
+SESSION_SOURCES = (("env", "ANTHROPIC_MODEL"), ("setting", "model"), ("env", "ANTHROPIC_DEFAULT_MODEL"))
+MANUAL = "not a Claude family the permission-modes page lists for auto mode; the session starts in Manual instead"
 
 
 def version_tuple(text):
@@ -140,6 +155,96 @@ def evidence(debug_log, intended, proxy_logs=None):
     }
 
 
+def grade_session_model(model, env):
+    """Whether a session on this model can be in auto mode, by the documented family list alone.
+
+    An alias follows the profile's ANTHROPIC_DEFAULT_<FAMILY>_MODEL when set; otherwise Claude Code resolves it,
+    and only `fable` has a documented native target (Fable 5.1). Nothing is inferred about undocumented IDs."""
+    item = {"requestedModel": model, "resolvedModel": model, "supported": None, "reason": None}
+    base = bare(model)
+    if base in ALIASES:
+        pinned = env.get(f"ANTHROPIC_DEFAULT_{base.upper()}_MODEL")
+        if isinstance(pinned, str) and pinned.strip():
+            item["resolvedModel"], base = pinned.strip(), bare(pinned)
+        elif base == "fable":
+            item.update(
+                supported=True, reason="fable resolves to Fable 5.1 unless ANTHROPIC_DEFAULT_FABLE_MODEL is set"
+            )
+            return item
+        else:
+            item["reason"] = (
+                f"alias {base} is resolved by Claude Code, not this file; supported only if it lands on a listed version"
+            )
+            return item
+    match = CLAUDE_ID.match(base)
+    if not match:
+        item.update(supported=False, reason=f"{base} is {MANUAL}")
+        return item
+    family, major, minor = match.group(1), int(match.group(2)), int(match.group(3) or 0)
+    version = (major, minor)
+    ok = version == API_FLOORS[family] if family == "haiku" else version >= API_FLOORS[family]
+    if not ok:
+        item.update(
+            supported=False,
+            reason=f"{family} {major}.{minor} is older than the auto mode floor; the session starts in Manual",
+        )
+    elif family != "haiku" and version < STRICT_FLOORS[family]:
+        item.update(
+            supported=True,
+            reason=f"{family} {major}.{minor} is listed for the Anthropic API only; Bedrock, Agent Platform, Foundry and the apps gateway need {'.'.join(map(str, STRICT_FLOORS[family]))} or later",
+        )
+    else:
+        item.update(supported=True, reason=f"{family} {major}.{minor} is listed as supporting auto mode")
+    return item
+
+
+def eligibility(settings_path, roles_path=ROLES):
+    """Expected starting mode for a session on a settings profile, and which roles' models never decide it."""
+    data = json.loads(Path(settings_path).read_text())
+    env = data.get("env", {})
+    source = model = None
+    for kind, key in SESSION_SOURCES:
+        value = env.get(key) if kind == "env" else data.get(key)
+        if isinstance(value, str) and value.strip():
+            source, model = f"{kind}:{key}", value.strip()
+            break
+    session = (
+        grade_session_model(model, env) if model else {"requestedModel": None, "resolvedModel": None, "supported": None}
+    )
+    session["source"] = source
+    if not model:
+        session["reason"] = (
+            "this file sets no session model; the launch inherits one from --model, the user settings or the saved /model choice"
+        )
+    picker = [
+        grade_session_model(o["model"], env)
+        for o in data.get("modelPicker", {}).get("options", [])
+        if isinstance(o, dict) and isinstance(o.get("model"), str)
+    ]
+    roles = json.loads(Path(roles_path).read_text())
+    workers = {
+        name: {"model": r["model"], "provider": r.get("provider")}
+        for name, r in roles.items()
+        if r.get("provider") != "claude"
+    }
+    reasons = [] if session["supported"] else [session["reason"]]
+    configured = env.get(MODEL_KEY)
+    if configured and not session["supported"]:
+        reasons.append(
+            f"{MODEL_KEY}={configured} picks the classifier model only; it is not an availability requirement and does not make the session model eligible"
+        )
+    return {
+        "sessionModel": session,
+        "expectedStart": {True: "auto", False: "manual"}.get(session["supported"], "unknown"),
+        "classifierOverride": {"configured": configured, "affectsEligibility": False},
+        "picker": picker,
+        "nonClaudeWorkers": workers,
+        "workerNote": "a worker runs under the launching session's mode; the documentation states eligibility only for the session model, so a non-Claude worker model neither grants nor removes auto mode and its own behaviour as a session model is graded above",
+        "ready": session["supported"] is True,
+        "reasons": reasons,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -152,10 +257,16 @@ def main():
     e.add_argument("--debug-log", required=True)
     e.add_argument("--roles", default=str(ROLES))
     e.add_argument("--proxy-logs", help="CLIProxy request-log directory, when request-log is on")
+    g = sub.add_parser("eligibility", help="say whether a session on a settings file's main model can be in auto mode")
+    g.add_argument("--settings", required=True)
+    g.add_argument("--roles", default=str(ROLES))
     args = parser.parse_args()
     try:
         if args.command == "plan":
             report = plan(args.settings, args.roles, args.claude_version, args.probe_proxy)
+            ok = report["ready"]
+        elif args.command == "eligibility":
+            report = eligibility(args.settings, args.roles)
             ok = report["ready"]
         else:
             report = evidence(args.debug_log, intended_model(args.roles), args.proxy_logs)

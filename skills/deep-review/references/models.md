@@ -118,10 +118,10 @@ below relies on:
 
 - `CLAUDE_CODE_AUTO_MODE_MODEL=<full ID>` picks the classifier model from
   Claude Code v2.1.302. Without it the default is Claude Sonnet 5, or the
-  value of `ANTHROPIC_DEFAULT_SONNET_MODEL` when that is set. In the user's
-  CCS profiles that variable points at a GPT model, so an unset override
-  would send the classifier to Codex. The roles file names
-  `claude-sonnet-5`.
+  value of `ANTHROPIC_DEFAULT_SONNET_MODEL` when that is set. In the team
+  profile that variable points at a GPT model, so an unset override there
+  would send the classifier to Codex; the judge profile does not set it. The
+  roles file names `claude-sonnet-5`.
 - An Anthropic-configured classifier model takes precedence over the
   variable; the debug log reports it. A model the provider cannot serve makes
   every checked action fail closed.
@@ -153,6 +153,64 @@ and it needs CLIProxy's request log, which is off by default and a
 `global-settings` change to turn on. The live check itself is a `paid-calls`
 action: one short auto-mode session on the team profile with one shell
 command, so a handful of classifier requests.
+
+## Auto mode eligibility: the session model decides, not the classifier
+
+Choosing the classifier model and being allowed into auto mode are two
+different rules on the permission-modes page (read 2026-11-01), and only the
+second decides whether a session runs with the classifier at all:
+
+- Availability is listed by session model. On the Anthropic API: Claude Opus
+  4.6 or later, Sonnet 4.6 or later, Haiku 5.5, or a Fable model. On Bedrock,
+  Agent Platform, Foundry and the apps gateway: Sonnet 5 or later, Opus 4.7
+  or later, Haiku 5.5 and the Fable models. "Older models, including Sonnet
+  4.5, Opus 4.5, Haiku 4.5, and claude-3 models, are not supported on any
+  provider." No other vendor's model appears in either list, and the LLM
+  gateway page says Anthropic "doesn't support routing Claude Code to
+  non-Claude models through any gateway".
+- The fallback is Manual, silently. "When the flag, a settings file, or the
+  built-in default selects `auto` but auto mode isn't available to the
+  session, Claude Code starts the session in Manual instead", and the reasons
+  include "a model that doesn't support it". `--permission-mode auto` does
+  not override that. In a `-p` run Manual means every tool call outside an
+  allow rule is denied, so a non-interactive worker on an ineligible model
+  does not prompt, it fails its commands.
+- `CLAUDE_CODE_AUTO_MODE_MODEL` is not in the availability requirements; it
+  only picks which model answers the classifier requests of a session that
+  already has auto mode. Pinning `claude-sonnet-5` therefore never makes a
+  `gpt-6-astra` or `grok-4.7` session eligible, and the helper reports that
+  pin as `affectsEligibility: false`.
+- A subagent runs under the launching session's permission mode. The
+  documentation states eligibility only for the session model and says
+  nothing about subagent models, so a GPT or Grok worker dispatched from a
+  Fable session is reviewed by that session's classifier like any other
+  tool call, and a GPT or Grok main model is what loses auto mode.
+
+`scripts/classifier_check.py eligibility --settings <profile>` reads the
+session model a settings file would launch with (`ANTHROPIC_MODEL`, then the
+`model` setting, then `ANTHROPIC_DEFAULT_MODEL`; an alias follows the file's
+`ANTHROPIC_DEFAULT_<FAMILY>_MODEL`), grades it and every picker row against
+the lists above, and prints `expectedStart`: `auto`, `manual`, or `unknown`
+when the file sets no model or an alias Claude Code resolves elsewhere. It
+also lists the roles whose provider is not `claude`. Exit 0 only for `auto`.
+
+Recorded on this machine (2026-11-01, model keys only): the team profile
+(`claude-fable-5-1[1m]`) and the user settings (`fable`) are eligible; the
+judge profile (`gpt-6-astra`), the codex profile (`gpt-6-astra[1m]`) and the
+xai profile (`grok-4.7`) are expected to start in Manual whatever classifier
+they pin, and switching a team session to a GPT or Grok picker row would put
+it in the same position. So a judge-profile session is not a way to run the
+Astra judge in auto mode: run the panel from a Fable or Opus session and
+dispatch the judges as subagents, which is what the workflow does. The
+Manual fallback itself has not been observed live here; confirming it is one
+launch of `claude --settings ~/.ccs/claude-judge.settings.json
+--permission-mode auto` in a terminal and reading the mode indicator or
+`/status` before sending anything, which costs no model call. The `-p` form
+with a shell command instead spends one turn on the GPT model and is a
+`paid-calls` action.
+A proxy session has no row of its own in the availability list; the helper
+applies the Anthropic API list and names the stricter floor for Opus 4.6 and
+Sonnet 4.6, the only IDs the two lists disagree on.
 
 ## Run-record identity: three sources
 

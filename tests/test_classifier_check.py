@@ -119,6 +119,88 @@ def test_matching_request_is_served_only_with_proxy_evidence(tmp_path):
     assert report["state"] == "served" and report["proxyRequests"] == 1 and report["proxyServed"] == 1
 
 
+@pytest.mark.parametrize(
+    "model, supported",
+    [
+        ("claude-fable-5-1[1m]", True),
+        ("claude-opus-5-5[1m]", True),
+        ("claude-sonnet-5", True),
+        ("claude-sonnet-4-6", True),
+        ("claude-haiku-5-5", True),
+        ("claude-haiku-4-5", False),
+        ("claude-opus-4-5", False),
+        ("claude-3-5-sonnet-20241022", False),
+        ("gpt-6-astra[1m]", False),
+        ("grok-4.7", False),
+    ],
+)
+def test_only_listed_claude_families_are_eligible_for_auto_mode(model, supported):
+    item = check.grade_session_model(model, {})
+    assert item["supported"] is supported and item["reason"]
+    if not supported:
+        assert "Manual" in item["reason"]
+
+
+def test_api_only_versions_name_the_stricter_provider_floor():
+    assert "Bedrock" in check.grade_session_model("claude-opus-4-6", {})["reason"]
+    assert "Bedrock" not in check.grade_session_model("claude-opus-4-7", {})["reason"]
+
+
+def test_an_alias_follows_the_profile_default_or_stays_unknown():
+    via_env = check.grade_session_model("sonnet", {"ANTHROPIC_DEFAULT_SONNET_MODEL": "gpt-6.1-sol[1m]"})
+    assert via_env["supported"] is False and via_env["resolvedModel"] == "gpt-6.1-sol[1m]"
+    assert check.grade_session_model("fable", {})["supported"] is True
+    assert check.grade_session_model("opus", {})["supported"] is None
+
+
+def test_a_pinned_classifier_does_not_make_a_gpt_session_eligible(tmp_path):
+    env = {**GOOD_ENV, "ANTHROPIC_MODEL": "gpt-6-astra"}
+    report = check.eligibility(settings(tmp_path, env))
+    assert report["expectedStart"] == "manual" and not report["ready"]
+    assert report["classifierOverride"] == {"configured": INTENDED, "affectsEligibility": False}
+    assert any("does not make the session model eligible" in r for r in report["reasons"])
+    assert report["sessionModel"]["source"] == "env:ANTHROPIC_MODEL"
+
+
+def test_eligibility_reads_the_model_setting_grades_the_picker_and_lists_non_claude_workers(tmp_path):
+    path = tmp_path / "s.json"
+    path.write_text(
+        json.dumps(
+            {
+                "model": "claude-fable-5-1[1m]",
+                "env": {"ANTHROPIC_AUTH_TOKEN": "secret-token-value"},
+                "modelPicker": {"options": [{"model": "gpt-6-astra[1m]"}, {"model": "claude-opus-4-8[1m]"}]},
+            }
+        )
+    )
+    report = check.eligibility(path)
+    assert report["ready"] and report["expectedStart"] == "auto" and report["sessionModel"]["source"] == "setting:model"
+    assert [p["supported"] for p in report["picker"]] == [False, True]
+    workers = report["nonClaudeWorkers"]
+    assert {"judge-astra", "judge-grok", "astra-reviewer", "grok-reviewer"} <= set(workers)
+    assert all(w["provider"] in ("codex", "xai") for w in workers.values())
+    assert "secret-token-value" not in json.dumps(report)
+
+
+def test_a_file_without_a_session_model_is_unknown_not_eligible(tmp_path):
+    report = check.eligibility(settings(tmp_path, {"ANTHROPIC_BASE_URL": "http://127.0.0.1:8317"}))
+    assert report["expectedStart"] == "unknown" and not report["ready"]
+    assert "inherits" in report["reasons"][0]
+
+
+def test_cli_eligibility_exits_nonzero_for_a_gpt_session(tmp_path):
+    path = settings(tmp_path, {**GOOD_ENV, "ANTHROPIC_MODEL": "gpt-6-astra"})
+    out = subprocess.run(
+        [sys.executable, str(SCRIPTS / "classifier_check.py"), "eligibility", "--settings", str(path)],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert out.returncode == 1 and json.loads(out.stdout)["expectedStart"] == "manual"
+    assert "secret-token-value" not in out.stdout
+
+
 def test_cli_plans_without_network_and_prints_no_credential(tmp_path):
     path = settings(tmp_path, GOOD_ENV)
     out = subprocess.run(
