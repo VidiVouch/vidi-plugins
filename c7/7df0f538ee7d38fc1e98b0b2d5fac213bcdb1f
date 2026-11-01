@@ -1,0 +1,37 @@
+skills/deep-review/scripts/run_status.py
+  s_610be6e94314a7::t_a5031a7f52230f 18,20
+  s_610be6e94314a7::t_a4ab577b235951 47-56
+  s_610be6e94314a7::t_5cb37657f3eac6 1-17,19,21-46,57-456,458-463
+  s_610be6e94314a7::t_8d9a1eb8497928 457
+  s_610be6e94314a7::t_fb3cdca9acc9ab 464-534
+tests/test_run_status.py
+  s_610be6e94314a7::t_eb4f68facf74de 151
+  s_610be6e94314a7::t_c85f35f1e436d9 3
+  s_610be6e94314a7::t_51fe806226759d 1-2,4-150,152-182,184-185,187-189,191-204,207-208,216,219-254,257-316,318-352,354-372,374-398
+  s_610be6e94314a7::t_15ad9a021afcdc 186,190
+  s_610be6e94314a7::t_3519373818e4c9 205-206,209-215,217-218
+  s_610be6e94314a7::t_cf1b63432baf3a 373
+  s_610be6e94314a7::t_d509f020f9da2b 255-256
+  s_610be6e94314a7::t_00ebf4e6b37ab0 353
+  s_610be6e94314a7::t_4c0722c7d88282 183
+  s_610be6e94314a7::t_d6fb3dbcbe13c8 317
+  s_610be6e94314a7::t_3a0a22461e89b1 399-477
+skills/deep-review/references/result-meaning.md
+  s_610be6e94314a7::t_12a3497cc77b3b 139-199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c77df0f538ee7d38fc1e98b0b2d5fac213bcdb1f",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
