@@ -43,7 +43,9 @@ from one to the other reads the same sections in the same places.
   told.
 - `output`: the schema of the structured result the worker returns, inlined and
   pinned by path and digest. A worker's result is checked against this, not
-  against whatever shape its prose implies.
+  against whatever shape its prose implies. When the shared document names no
+  `output`, a task unit gets `hand-back.schema.json`, the short hand-back that
+  `hand-back.md` describes; review units pin their findings schema instead.
 - `stop`: `when` lists the conditions that end the unit (criteria met and
   checks pass; a closed gate; work that belongs to another task), and `gates`
   lists the approval gate IDs from `approvals.md` the worker must stop at rather
@@ -59,7 +61,6 @@ The run owner writes one shared document per run and reuses it for every unit:
               "forbidden": ["push", "stash", "reset --hard", "checkout another branch"]},
   "decisions": ["Reuse run_manifest.py identity for every snapshot."],
   "contracts": ["/abs/skills/deep-review/references/approvals.md", "/abs/skills/deep-review/review-output.schema.json"],
-  "output": "/abs/run/worker-result.schema.json",
   "stop": {"when": ["Every acceptance criterion is met and the registered checks pass."],
            "gates": ["commits-pushes", "hosted-reports"]}
 }

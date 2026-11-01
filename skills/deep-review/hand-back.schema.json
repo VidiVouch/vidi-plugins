@@ -1,0 +1,68 @@
+{
+  "$comment": "The short result one fresh worker hands back. Every detail lives in the note at notePath; this object only names the artifact, the checks that ran, the disposition, what is unresolved or refuted, deviations and the next action. Checked by scripts/hand_back.py, stored by scripts/work_ledger.py record; references/hand-back.md explains each field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "disposition",
+    "summary",
+    "artifact",
+    "checks",
+    "findings",
+    "deviations",
+    "nextAction",
+    "notePath",
+    "openObligations",
+    "gatedActions"
+  ],
+  "properties": {
+    "disposition": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "partial",
+        "blocked-approval",
+        "failed",
+        "accepted",
+        "changes-required",
+        "failed-verification"
+      ]
+    },
+    "summary": {"type": "string", "minLength": 1, "maxLength": 500},
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["range", "files"],
+      "properties": {
+        "range": {"type": "string", "pattern": "^([0-9a-f]{40})\\.\\.([0-9a-f]{40}|worktree)$"},
+        "files": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 500}}
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["command", "passed"],
+        "properties": {
+          "command": {"type": "string", "minLength": 1, "maxLength": 500},
+          "passed": {"type": "boolean"},
+          "note": {"type": "string", "maxLength": 500}
+        }
+      }
+    },
+    "findings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unresolved", "refuted"],
+      "properties": {
+        "unresolved": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+        "refuted": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 500}}
+      }
+    },
+    "deviations": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+    "nextAction": {"type": "string", "minLength": 1, "maxLength": 500},
+    "notePath": {"type": "string", "minLength": 1},
+    "openObligations": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+    "gatedActions": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 500}}
+  }
+}

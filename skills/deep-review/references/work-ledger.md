@@ -15,7 +15,8 @@ optional `mark`, and derived fields: `state`, `terminal`, `summary`,
 `openObligations`, `gatedActions`, `verification`, `artifacts`. An attempt record
 has the attempt number, the role (`implementer` or `verifier`), the `owner` string
 (agent id and label), `recordedAt`, the `input` snapshot captured before the
-worker started, and the worker's full structured `result`.
+worker started, and the worker's structured `result`, the short hand-back that
+`hand-back.md` describes.
 
 State is derived, not asserted. The latest attempt decides: an implementer
 `failed` status is `failed`; an implementer result without a verification is
@@ -46,9 +47,14 @@ python3 "$SCRIPTS/work_ledger.py" summary --ledger "$LEDGER"
 Run `snapshot` before the worker starts, because after it finishes the tree is
 the output, not the input. Record the implementer before the verifier for the
 same attempt; a retry gets a new attempt number and the old records stay. A
-result is validated for a known status or verdict and run through the same
-credential key filter as run manifests, so a worker cannot leave environment
-dumps or tokens in the ledger. Writes replace the file atomically; an
+result is checked as a hand-back before it is stored: exactly the schema's
+keys, a disposition the role can return, a note file that exists outside the
+repository named by the input snapshot, an artifact range whose commits exist
+there, and checks that ran and agree with the disposition. It also goes through
+the same credential key filter as run manifests, so a worker cannot leave
+environment dumps or tokens in the ledger. `--legacy` admits a `status` or
+`verdict` result from a run that started before the hand-back contract and
+skips the shape check. Writes replace the file atomically; an
 interrupted write leaves the previous ledger intact. One writer at a time is
 assumed, which matches sequential dispatch.
 
@@ -68,4 +74,5 @@ output schema, stop condition); work-unit.md describes it.
 
 Use the five gate IDs from `approvals.md` (`global-settings`, `skill-enablement`,
 `paid-calls`, `commits-pushes`, `hosted-reports`) at the start of each
-`gatedActions` string so the ledger's gated list and the approval record match.
+`gatedActions` string so the ledger's gated list and the approval record match;
+the hand-back check refuses any other prefix.

@@ -74,14 +74,21 @@ def run(tmp_path):
         "--packets",
         packets,
     )
-    impl = {
-        "status": "completed",
-        "summary": "did it",
-        "notePath": "/notes/implement-1.md",
-        "openObligations": ["A-2: reuse X"],
-    }
-    ver = {"verdict": "accepted", "summary": "checked", "issues": [], "checks": [], "notePath": "/notes/verify-1.md"}
-    for role, result in (("implementer", impl), ("verifier", ver)):
+    for role, outcome, summary in (("implementer", "completed", "did it"), ("verifier", "accepted", "checked")):
+        note = tmp_path / f"{role}.md"
+        note.write_text("detail\n")
+        result = {
+            "disposition": outcome,
+            "summary": summary,
+            "artifact": {"range": "a" * 40 + "..worktree", "files": []},
+            "checks": [{"command": "pytest", "passed": True}],
+            "findings": {"unresolved": [], "refuted": []},
+            "deviations": [],
+            "nextAction": "next",
+            "notePath": str(note),
+            "openObligations": ["A-2: reuse X"] if role == "implementer" else [],
+            "gatedActions": [],
+        }
         args = ("--ledger", ledger, "--task", "A-1", "--attempt", 1, "--role", role, "--owner", "w")
         cli("work_ledger.py", "record", *args, "--result", write(tmp_path / f"{role}.json", result))
     api = tmp_path / "api.md"
@@ -194,7 +201,7 @@ def test_validate_refuses_drifted_shared_contract_or_output_schema(run):
         ({"stop": {"when": [], "gates": []}}, "stop conditions must not be empty"),
         ({"contracts": ["/nowhere/api.md"]}, "cannot read shared contract"),
         ({"env": {"PATH": "x"}}, "prohibited credential or environment key"),
-        ({"output": None}, "shared output schema path"),
+        ({"output": 5}, "shared output schema path"),
     ],
 )
 def test_build_refuses_an_incomplete_shared_document(run, change, message):
@@ -202,6 +209,18 @@ def test_build_refuses_an_incomplete_shared_document(run, change, message):
     write(run["shared"], shared)
     assert message in build(run, success=False)
     assert not (run["evidence"] / "tasks/A-2").exists()
+
+
+def test_output_defaults_to_the_hand_back_schema(run):
+    """A task unit hands back the short hand-back unless the run pins another result shape."""
+    shared = json.loads(run["shared"].read_text())
+    del shared["output"]
+    write(run["shared"], shared)
+    contract = build(run)
+    hand_back = REPO / "skills/deep-review/hand-back.schema.json"
+    assert contract["output"]["path"] == str(hand_back)
+    assert contract["output"]["schema"] == json.loads(hand_back.read_text())
+    assert cli("work_unit.py", "validate", "--contract", contract["evidence"]["contract"])["ok"] is True
 
 
 def test_build_refuses_a_packet_without_acceptance_and_evidence_inside_the_repo(run, tmp_path):
@@ -250,7 +269,9 @@ def test_schema_validator_reference_and_gate_ids_agree():
     )
     gates = re.findall(r"- `([a-z-]+)`:", APPROVALS.read_text())
     assert schema["properties"]["stop"]["properties"]["gates"]["items"]["enum"] == gates
-    assert re.findall(r'"([a-z-]+)"', re.search(r"GATES = \((.*?)\)", source, re.S).group(1)) == gates
+    gate_source = (SCRIPTS / "hand_back.py").read_text()  # work_unit.py imports GATES from there.
+    assert re.findall(r'"([a-z-]+)"', re.search(r"GATES = \((.*?)\)", gate_source, re.S).group(1)) == gates
+    assert "from hand_back import GATES" in source
     reference = REFERENCE.read_text()
     for section in schema["required"][5:]:
         assert f"`{section}" in reference, section

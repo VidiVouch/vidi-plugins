@@ -10,11 +10,10 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+from hand_back import DISPOSITIONS, HandBackError, check, disposition, files, unresolved
 from run_manifest import ManifestError, identity, reject_secrets, snapshot
 
-ROLES = ("implementer", "verifier")
-IMPLEMENT_STATUSES = {"completed", "partial", "blocked-approval", "failed"}
-VERIFY_VERDICTS = {"accepted", "changes-required", "blocked-approval", "failed-verification"}
+ROLES = tuple(DISPOSITIONS)
 # States an overseer sets by hand because no worker ever produces them.
 MARK_STATES = {"pre-recorded", "blocked-dependency", "not-started", "failed"}
 TERMINAL = {"accepted", "awaiting-approval", "failed", "pre-recorded", "blocked-dependency", "not-started"}
@@ -81,12 +80,12 @@ def derive(task):
         last = max(a["attempt"] for a in attempts)
         impl = next((a for a in attempts if a["attempt"] == last and a["role"] == "implementer"), None)
         ver = next((a for a in attempts if a["attempt"] == last and a["role"] == "verifier"), None)
-        if impl["result"]["status"] == "failed":
+        if disposition(impl["result"]) == "failed":
             state = "failed"
         elif ver is None:
             state = "in-progress"
         else:
-            verdict = ver["result"]["verdict"]
+            verdict = disposition(ver["result"])
             state = {"accepted": "accepted", "blocked-approval": "awaiting-approval"}.get(verdict, verdict)
     impls = [a for a in attempts if a["role"] == "implementer"]
     vers = [a for a in attempts if a["role"] == "verifier"]
@@ -100,13 +99,16 @@ def derive(task):
         gatedActions=latest_impl.get("gatedActions", []),
         verification=(
             {k: latest_ver[k] for k in ("attempt", "owner", "recordedAt")}
-            | {k: latest_ver["result"].get(k) for k in ("verdict", "issues", "checks", "notePath")}
+            | {
+                "disposition": disposition(latest_ver["result"]),
+                "unresolved": unresolved(latest_ver["result"]),
+                "checks": latest_ver["result"].get("checks"),
+                "notePath": latest_ver["result"].get("notePath"),
+            }
             if latest_ver
             else None
         ),
-        artifacts=sorted(
-            {p for a in attempts for p in [a["result"].get("notePath"), *a["result"].get("filesChanged", [])] if p}
-        ),
+        artifacts=sorted({p for a in attempts for p in [a["result"].get("notePath"), *files(a["result"])] if p}),
     )
     return task
 
@@ -162,16 +164,18 @@ def record(options):
     result = load_json(options.result, "result")
     require(isinstance(result, dict), "result must be a JSON object")
     reject_secrets(result)
-    if options.role == "implementer":
-        require(result.get("status") in IMPLEMENT_STATUSES, "implementer result needs a known status")
+    snap = load_json(options.input, "input snapshot") if options.input else None
+    if options.legacy:
+        require(disposition(result) in DISPOSITIONS[options.role], f"{options.role} result needs a known disposition")
     else:
-        require(result.get("verdict") in VERIFY_VERDICTS, "verifier result needs a known verdict")
+        # The ledger stores only hand-backs whose claims point at a note, a range and checks that ran.
+        check(result, options.role, repo=snap.get("repo") if isinstance(snap, dict) else None)
     entry = {
         "attempt": options.attempt,
         "role": options.role,
         "owner": options.owner,
         "recordedAt": now(),
-        "input": load_json(options.input, "input snapshot") if options.input else None,
+        "input": snap,
         "result": result,
     }
     if options.packet:
@@ -262,6 +266,11 @@ def main(argv=None):
     rec.add_argument("--result", required=True, help="the worker's structured result JSON file")
     rec.add_argument("--input", help="snapshot JSON captured before the worker started")
     rec.add_argument("--packet", help="the packet the worker received; its digest must match init")
+    rec.add_argument(
+        "--legacy",
+        action="store_true",
+        help="accept a status/verdict result from before hand-back.schema.json; its shape is not checked",
+    )
     close = commands.add_parser("mark", help="set a state no worker produces, with a reason")
     close.add_argument("--ledger", required=True)
     close.add_argument("--task", required=True)
@@ -286,7 +295,7 @@ def main(argv=None):
     }
     try:
         result = handlers[options.command](options)
-    except (LedgerError, ManifestError) as exc:
+    except (LedgerError, HandBackError, ManifestError) as exc:
         print(f"work-ledger: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(result, indent=1, sort_keys=True))

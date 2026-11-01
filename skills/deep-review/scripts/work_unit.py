@@ -8,6 +8,8 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+from hand_back import GATES
+from hand_back import SCHEMA as HAND_BACK
 from run_manifest import (
     DIGEST,
     ManifestError,
@@ -22,8 +24,6 @@ from work_ledger import ROLES, LedgerError, load_json, sha256, snapshot_input
 from work_ledger import packet as ledger_packet
 
 HEAD = re.compile(r"[0-9a-f]{40}\Z")
-# The five gate IDs from references/approvals.md; a stop gate outside this list is a typo, not a new gate.
-GATES = ("global-settings", "skill-enablement", "paid-calls", "commits-pushes", "hosted-reports")
 SECTIONS = ("purpose", "input", "allowed", "decisions", "contracts", "evidence", "output", "stop")
 # The projection work_ledger.py packet prints per dependency; the schema requires the same six keys.
 DEPENDENCY_KEYS = ("state", "summary", "notePath", "verifyNote", "openObligations", "gatedActions")
@@ -163,6 +163,7 @@ def build(options):
     root = absolute(options.evidence_root, resolve=False) / "tasks" / options.task
     role, attempt = options.role, options.attempt
     stop = shared.get("stop") if isinstance(shared.get("stop"), dict) else {}
+    output = shared.get("output") or str(HAND_BACK)
     contract = {
         "version": 1,
         "runId": unit["runId"],
@@ -189,11 +190,10 @@ def build(options):
             "result": str(root / f"result-{role}-{attempt}.json"),
             "contract": str(root / f"contract-{role}-{attempt}.json"),
         },
+        # A task unit hands back hand-back.schema.json unless the run pins another result shape (review units do).
         "output": {
-            **reference(
-                absolute(text(shared.get("output"), "shared output schema path"), resolve=False), "output schema"
-            ),
-            "schema": load_json(shared["output"], "output schema"),
+            **reference(absolute(text(output, "shared output schema path"), resolve=False), "output schema"),
+            "schema": load_json(output, "output schema"),
         },
         "stop": {"when": stop.get("when", []), "gates": stop.get("gates", [])},
     }
@@ -219,7 +219,9 @@ def main(argv=None):
     make.add_argument("--ledger", required=True)
     make.add_argument("--task", required=True)
     make.add_argument("--packets", required=True, help="directory of <ID>.json packets registered in the ledger")
-    make.add_argument("--shared", required=True, help="run-level JSON: allowed, decisions, contracts, output, stop")
+    make.add_argument(
+        "--shared", required=True, help="run-level JSON: allowed, decisions, contracts, stop, optional output schema"
+    )
     make.add_argument("--evidence-root", required=True, help="run directory outside the repository; gets tasks/<ID>/")
     make.add_argument("--attempt", type=int, default=1)
     make.add_argument("--role", default="implementer", choices=ROLES)

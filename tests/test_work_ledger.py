@@ -34,13 +34,22 @@ def write(path, value):
     return path
 
 
+def note(tmp_path, name):
+    path = tmp_path / f"{name}.md"
+    path.write_text("# note\n\ndetail\n")
+    return str(path)
+
+
 def implement(tmp_path, name="impl", **overrides):
     result = {
-        "status": "completed",
+        "disposition": "completed",
         "summary": "did the work",
-        "filesChanged": ["/repo/file.py"],
+        "artifact": {"range": "a" * 40 + "..worktree", "files": ["/repo/file.py"]},
         "checks": [{"command": "pytest", "passed": True}],
-        "notePath": "/notes/implement-1.md",
+        "findings": {"unresolved": [], "refuted": []},
+        "deviations": [],
+        "nextAction": "verify",
+        "notePath": note(tmp_path, "implement-1"),
         "openObligations": ["A-2: reuse the helper"],
         "gatedActions": ["commits-pushes: push withheld"],
     }
@@ -48,7 +57,18 @@ def implement(tmp_path, name="impl", **overrides):
 
 
 def verify(tmp_path, name="ver", **overrides):
-    result = {"verdict": "accepted", "summary": "checked", "issues": [], "checks": [], "notePath": "/notes/verify-1.md"}
+    result = {
+        "disposition": "accepted",
+        "summary": "checked",
+        "artifact": {"range": "a" * 40 + "..worktree", "files": ["/repo/file.py"]},
+        "checks": [{"command": "pytest", "passed": True}],
+        "findings": {"unresolved": [], "refuted": []},
+        "deviations": [],
+        "nextAction": "close",
+        "notePath": note(tmp_path, "verify-1"),
+        "openObligations": [],
+        "gatedActions": ["commits-pushes: push withheld"] if overrides.get("disposition") == "blocked-approval" else [],
+    }
     return write(tmp_path / f"{name}.json", result | overrides)
 
 
@@ -120,7 +140,7 @@ def test_record_keeps_owner_input_attempt_artifacts_verification_and_state(case,
     assert task["attempts"][0]["owner"] == "agent-1 A-1 implement#1"
     assert task["attempts"][0]["input"] == {"head": "abc", "snapshotId": "s1"}
     assert task["attempts"][0]["attempt"] == 1 and task["attempts"][0]["recordedAt"]
-    assert task["artifacts"] == ["/notes/implement-1.md", "/repo/file.py"]
+    assert task["artifacts"] == sorted([str(tmp_path / "implement-1.md"), "/repo/file.py"])
     assert task["openObligations"] == ["A-2: reuse the helper"] and task["gatedActions"] == [
         "commits-pushes: push withheld"
     ]
@@ -142,9 +162,10 @@ def test_record_keeps_owner_input_attempt_artifacts_verification_and_state(case,
     )
     assert second == {"task": "A-1", "state": "accepted", "terminal": True}
     task = load(ledger)["A-1"]
-    assert task["verification"]["verdict"] == "accepted" and task["verification"]["notePath"] == "/notes/verify-1.md"
+    assert task["verification"]["disposition"] == "accepted" and task["verification"]["unresolved"] == []
+    assert task["verification"]["notePath"] == str(tmp_path / "verify-1.md")
     assert task["verification"]["owner"] == "agent-2" and task["summary"] == "checked"
-    assert "/notes/verify-1.md" in task["artifacts"] and len(task["attempts"]) == 2
+    assert str(tmp_path / "verify-1.md") in task["artifacts"] and len(task["attempts"]) == 2
 
 
 @pytest.mark.parametrize(
@@ -186,7 +207,7 @@ def test_terminal_state_follows_the_verifier_not_the_implementer(case, tmp_path,
         "--owner",
         "v",
         "--result",
-        verify(tmp_path, verdict=verdict),
+        verify(tmp_path, disposition=verdict),
     )
     task = load(ledger)["A-1"]
     assert (task["state"], task["terminal"]) == (state, terminal)
@@ -222,7 +243,7 @@ def test_retry_needs_a_new_attempt_and_the_latest_attempt_decides(case, tmp_path
         "--owner",
         "v",
         "--result",
-        verify(tmp_path, verdict="changes-required"),
+        verify(tmp_path, disposition="changes-required"),
     )
     error = cli(
         "record",
@@ -271,7 +292,7 @@ def test_retry_needs_a_new_attempt_and_the_latest_attempt_decides(case, tmp_path
         "--owner",
         "w2",
         "--result",
-        implement(tmp_path, status="failed"),
+        implement(tmp_path, disposition="failed"),
     )
     task = load(ledger)["A-1"]
     assert task["state"] == "failed" and task["terminal"] is True and len(task["attempts"]) == 3
@@ -311,9 +332,16 @@ def test_mark_records_states_no_worker_produces(case, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "bad", [{"status": "done"}, {"status": None}, {"status": "completed", "nested": {"apiKey": "sk-DO-NOT-STORE"}}]
+    "bad",
+    [
+        {"disposition": "done"},
+        {"disposition": None},
+        {"checks": []},
+        {"notePath": "/nowhere/implement-1.md"},
+        {"deviations": [{"apiKey": "sk-DO-NOT-STORE"}]},
+    ],
 )
-def test_results_are_validated_and_credentials_rejected_before_storing(case, tmp_path, bad):
+def test_results_are_checked_as_hand_backs_and_credentials_rejected_before_storing(case, tmp_path, bad):
     ledger, _ = case
     before = Path(ledger).read_bytes()
     error = cli(
@@ -334,6 +362,65 @@ def test_results_are_validated_and_credentials_rejected_before_storing(case, tmp
     )
     assert "DO-NOT-STORE" not in error
     assert Path(ledger).read_bytes() == before
+
+
+def test_record_checks_the_range_against_the_input_repository(case, tmp_path):
+    ledger, _ = case
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    for args in (["init", "-q"], ["config", "user.email", "t@example.invalid"], ["config", "user.name", "T"]):
+        subprocess.run(["git", "-C", str(repo), *args], check=True)
+    (repo / "f.txt").write_text("one\n")
+    subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", "init"], check=True)
+    snap = write(tmp_path / "snap.json", cli("snapshot", "--repo", repo))
+    args = ("record", "--ledger", ledger, "--task", "A-1", "--attempt", 1, "--role", "implementer", "--owner", "w")
+    fake = implement(tmp_path, artifact={"range": "a" * 40 + "..worktree", "files": []})
+    assert "not a commit in" in cli(*args, "--result", fake, "--input", snap, success=False)
+    real = implement(tmp_path, artifact={"range": json.loads(snap.read_text())["head"] + "..worktree", "files": []})
+    assert cli(*args, "--result", real, "--input", snap)["state"] == "in-progress"
+
+
+def test_legacy_results_need_the_flag_and_still_derive_state(case, tmp_path):
+    ledger, _ = case
+    legacy = write(
+        tmp_path / "legacy.json",
+        {
+            "status": "completed",
+            "summary": "old shape",
+            "filesChanged": ["/repo/old.py"],
+            "checks": [],
+            "notePath": "/notes/implement-1.md",
+            "openObligations": [],
+            "gatedActions": [],
+        },
+    )
+    args = ("record", "--ledger", ledger, "--task", "A-1", "--attempt", 1, "--owner", "w")
+    assert "exactly these keys" in cli(*args, "--role", "implementer", "--result", legacy, success=False)
+    assert cli(*args, "--role", "implementer", "--result", legacy, "--legacy")["state"] == "in-progress"
+    old_verdict = write(tmp_path / "legacy-ver.json", {"verdict": "accepted", "summary": "ok", "issues": ["i"]})
+    assert cli(*args, "--role", "verifier", "--result", old_verdict, "--legacy")["state"] == "accepted"
+    task = load(ledger)["A-1"]
+    assert task["artifacts"] == ["/notes/implement-1.md", "/repo/old.py"]
+    assert task["verification"]["disposition"] == "accepted" and task["verification"]["unresolved"] == ["i"]
+    bad = write(tmp_path / "bad.json", {"status": "done"})
+    assert "known disposition" in cli(
+        "record",
+        "--ledger",
+        ledger,
+        "--task",
+        "A-2",
+        "--attempt",
+        1,
+        "--owner",
+        "w",
+        "--role",
+        "implementer",
+        "--result",
+        bad,
+        "--legacy",
+        success=False,
+    )
 
 
 def test_packet_gives_a_worker_only_its_task_and_dependency_outcomes(case, tmp_path):
@@ -374,8 +461,8 @@ def test_packet_gives_a_worker_only_its_task_and_dependency_outcomes(case, tmp_p
         "A-1": {
             "state": "accepted",
             "summary": "checked",
-            "notePath": "/notes/implement-1.md",
-            "verifyNote": "/notes/verify-1.md",
+            "notePath": str(tmp_path / "implement-1.md"),
+            "verifyNote": str(tmp_path / "verify-1.md"),
             "openObligations": ["A-2: reuse the helper"],
             "gatedActions": ["commits-pushes: push withheld"],
         }
