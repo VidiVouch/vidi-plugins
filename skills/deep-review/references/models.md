@@ -108,6 +108,52 @@ claims nothing. Near matches are evidence for a human; the helper never
 substitutes one. A role whose packaged agent definition disagrees with the
 roles file is reported with `agentAgrees: false`.
 
+## Permission classifier: an independent route
+
+In auto mode Claude Code sends a separate request to a classifier model
+before a shell command, network call or protected-path edit runs. That
+request has no agent definition, so nothing in this plugin pins its model.
+The permission-modes documentation (read 2026-11-01) sets the rules the check
+below relies on:
+
+- `CLAUDE_CODE_AUTO_MODE_MODEL=<full ID>` picks the classifier model from
+  Claude Code v2.1.302. Without it the default is Claude Sonnet 5, or the
+  value of `ANTHROPIC_DEFAULT_SONNET_MODEL` when that is set. In the user's
+  CCS profiles that variable points at a GPT model, so an unset override
+  would send the classifier to Codex. The roles file names
+  `claude-sonnet-5`.
+- An Anthropic-configured classifier model takes precedence over the
+  variable; the debug log reports it. A model the provider cannot serve makes
+  every checked action fail closed.
+- With `ANTHROPIC_BASE_URL` pointing at a proxy, Claude Code v2.1.278 and
+  later first asks the server to review as part of the session's own
+  requests. A proxy that drops that review makes Claude Code fall back to its
+  own classifier requests. `CLAUDE_CODE_AUTO_MODE_SERVER=0` skips the server
+  and always sends the client-initiated request; it does not turn
+  classification off.
+- The debug file written by `claude --permission-mode auto --debug-file <log>`
+  records `classifier_request_started` with `model=<id>` per request, and
+  `ignoring CLAUDE_CODE_AUTO_MODE_MODEL` with the reason when the variable
+  was not honoured. Reads and working-directory edits skip the classifier,
+  so a session that only reads sends no request and proves nothing.
+
+`scripts/classifier_check.py plan --settings <profile> [--probe-proxy]`
+reads the model keys of a CCS or Claude settings file and says whether an
+approved live check could request the intended model: override present and
+equal to the roles file, server review off, Claude Code new enough, and
+(with the probe) the ID advertised by that profile's catalog. It prints the
+launch command and runs nothing. `evidence --debug-log <log>
+[--proxy-logs ~/.ccs/cliproxy/logs]` reads the log that check wrote and
+reports one of: `none` (no request sent; not a test), `mismatch` (another
+model requested or the override ignored), `failed` (requests failed, actions
+denied unreviewed), `requested` (every request named the intended model;
+proxy evidence absent), `served` (the proxy also received that model and
+its upstream answered with it). Only `served` meets the plan's criterion,
+and it needs CLIProxy's request log, which is off by default and a
+`global-settings` change to turn on. The live check itself is a `paid-calls`
+action: one short auto-mode session on the team profile with one shell
+command, so a handful of classifier requests.
+
 ## Run-record identity: three sources
 
 A unit's model is recorded three times, from three sources that never stand in
