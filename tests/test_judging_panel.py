@@ -1,7 +1,7 @@
 """--panel replaces the boss with three judges on one identical brief. Every judge receives the same frozen
 snapshot, candidates, exclusions and rubric and nothing from any other judge; each result is checked against
-the candidates it was given; only a unanimous confirmed or refuted disposition rules a candidate. Offline,
-mocked Workflow runtime; never calls a model."""
+the candidates it was given; the three records are merged by their evidence (test_evidence_merge.py holds the
+merge rules and the fixer's rebuttals). Offline, mocked Workflow runtime; never calls a model."""
 
 import importlib
 import json
@@ -298,17 +298,15 @@ def test_unanimous_refuted_is_a_refuted_claim_with_every_judges_reason():
 
 
 @pytest.mark.parametrize(
-    "words",
+    "words, why",
     [
-        ("confirmed", "refuted", "confirmed"),
-        ("confirmed", "confirmed", "unresolved"),
-        ("refuted", "refuted", "unreviewed"),
-        ("unresolved", "unresolved", "unresolved"),
+        (("confirmed", "refuted", "confirmed"), "evidence conflicts"),
+        (("unresolved", "unresolved", "unresolved"), "no judge demonstrated or refuted it"),
     ],
 )
-def test_a_split_or_undecided_panel_rules_nothing_and_stops_the_run(words):
-    """Anything short of three confirmed or three refuted leaves the candidate unruled: no fixer runs, the run is
-    incomplete, and the record shows what each judge said."""
+def test_conflicting_or_absent_evidence_rules_nothing_and_stops_the_run(words, why):
+    """A confirmation beside a refutation, or no verdict at all, leaves the candidate unruled: no fixer runs, the run
+    is incomplete, and the record shows what each judge said. The merge rules live in test_evidence_merge.py."""
     responses = {**ONE, **{f"{name}#1": judged(disposition=word) for name, word in zip(PANEL, words, strict=True)}}
     data = workflow({"judges": panel(), "fix": True}, responses)
     result = data["result"]
@@ -317,13 +315,10 @@ def test_a_split_or_undecided_panel_rules_nothing_and_stops_the_run(words):
     (unruled,) = result["disposition"]["unruled"]
     assert unruled["dispositions"] == dict(zip(PANEL, words, strict=True))
     said = ", ".join(f"{name} {word}" for name, word in zip(PANEL, words, strict=True))
-    assert (
-        unruled["outcomeReason"]
-        == f"round 1: UNRULED: no unanimous confirmed or refuted disposition ({said}); the evidence merge is not defined yet, so the finding stays open and the run incomplete"
-    )
+    assert unruled["outcomeReason"].startswith(f"round 1: UNRULED: {why} ({said})")
     degraded = {d["key"]: d["reason"] for d in result["degraded"]}
     assert degraded == {
-        "judge:panel": "degraded: 1 candidate(s) without a unanimous disposition; nothing is fixed or cleared on a split panel"
+        "judge:panel": "degraded: 1 candidate(s) with conflicting or no evidence; nothing is fixed or cleared until a reader resolves them"
     }
     assert all(result["judgeResults"][0]["results"][name]["error"] == "" for name in PANEL)
     assert len(result["confirmed"]) == 1  # fail-closed history, as for an unruled boss finding
@@ -624,7 +619,7 @@ def test_skill_and_references_describe_the_opt_in_and_the_identical_brief():
     judging = (SKILL / "references/judging.md").read_text()
     assert "`--panel`" in judging and "FNV-1a" in judging and "`judgeResults`" in judging
     disposition = (SKILL / "references/disposition.md").read_text()
-    assert "`--panel`" in disposition and "unanimous" in disposition
+    assert "`--panel`" in disposition and "evidence conflicts" in disposition
     assert "`judges`" in (SKILL / "references/reviewers.md").read_text()
     for path in (
         SKILL / "references/judge-contract.md",

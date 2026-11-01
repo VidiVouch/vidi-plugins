@@ -18,12 +18,18 @@ later bucket or round is a new teammate, not you resumed.
 
 ## Assignment
 
-Your task specifies a repo root and files with findings (`line_start`, `line_end`,
-`severity`, `description`, `recommendation`). No other agent edits your assigned
-files, so you do not need to coordinate file access.
+Your task specifies a repo root and files with findings (`id`, `line_start`,
+`line_end`, `severity`, `description`, `recommendation`). No other agent edits
+your assigned files, so you do not need to coordinate file access. A finding that
+also carries `priorRebuttal` and `ruling` was rebutted once already and the
+judges confirmed it over that objection; the ruling says why.
 
 ## Rules
 
+- Verify each finding against the code before editing. A finding that is false
+  is not fixed and not worked around: leave the code alone and rebut it in the
+  packet (below), so the judges rule on the objection instead of a second fixer
+  being sent for the same claim.
 - Change only what each finding requires. Do not refactor unrelated code, reformat
   untouched lines, or make improvements outside the findings.
 - Edit only your assigned files under the given repo root. If a fix needs changes
@@ -41,9 +47,9 @@ Return the fix packet through the structured-output tool; nothing else you say
 is read. Its shape is `skills/deep-review/fix-output.schema.json` and its words
 are the hand-back's:
 
-- `disposition`: `completed` when every finding in your bucket is fixed,
-  `unresolved` is empty and no listed check failed; `partial` when some remain;
-  `failed` when you could not fix the bucket.
+- `disposition`: `completed` when every finding in your bucket is fixed or
+  rebutted, `unresolved` is empty and no listed check failed; `partial` when
+  some remain; `failed` when you could not fix the bucket.
 - `summary`: one or two sentences.
 - `files`: the repo-relative paths you changed, all inside your assigned files.
   A path outside them makes the whole bucket a failed unit.
@@ -51,6 +57,14 @@ are the hand-back's:
   short `note`. Do not list a check you skipped.
 - `unresolved`: one line per finding you did not fix and why.
 - `openObligations`: one line per change needed outside your files.
+- `rebuttals`: one entry per finding you rebutted instead of fixing: its `id`,
+  a `reason`, and at least one `evidence` item (`code` citing
+  `<repo-relative path>:<line>` or `<path>:<start>-<end>` in this tree,
+  `command` citing the exact command you ran with its outcome in the note, or
+  `document`). A rebuttal without evidence is refused; an objection you cannot
+  back goes under `unresolved`. The next judging round rules on the rebuttal
+  with fresh judges. A finding confirmed over a rebuttal cannot be rebutted
+  again: fix it or list it under `unresolved`.
 
 The next review round and the host-side gate measure whether the tree is
 fixed; the packet records what you did, not a verdict. A teammate returns the

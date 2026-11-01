@@ -73,7 +73,10 @@ One task message, identical for every judge in the same round:
 - the candidates: a JSON array in which each entry has `id`, `file`,
   `line_start`, `line_end`, `severity`, `sources`, `description` and
   `recommendation`, with ids assigned by the orchestrator from content, never
-  from position
+  from position; a candidate the previous round's fixer rebutted instead of
+  fixing also carries `rebuttal` (the round, the fixer's reason and its
+  evidence), and the brief then says that the objection is a claim to verify,
+  not a ruling
 - the exclusions: the path of the repository's REVIEW.md and the rule that a
   candidate its skip section covers is `refuted` with that document as evidence
 - the rubric: the questions to answer per candidate (does the scenario occur in
@@ -82,11 +85,14 @@ One task message, identical for every judge in the same round:
 - the paths of this contract and of judging.md
 
 Not in the message, by design: other judges' results or reasoning, earlier
-rounds' transcripts, fixer summaries, the controller's conversation, or any
-instruction to continue earlier work. Independence is what makes agreement
-between judges informative; a judge that has read another's verdict is a second
-vote for that verdict, not a second examination. A judge that finds any of these
-in its brief returns every candidate as `unreviewed` with the reason as a limit.
+rounds' rulings or transcripts, fixer summaries, the controller's conversation,
+or any instruction to continue earlier work. Independence is what makes
+agreement between judges informative; a judge that has read another's verdict
+is a second vote for that verdict, not a second examination. A judge that finds
+any of these in its brief returns every candidate as `unreviewed` with the
+reason as a limit. A rebuttal is not one of these: it is part of the claim
+under examination, carries no judge's verdict, and the judge checks it against
+the tree exactly as it checks the candidate's own description.
 
 ## What every judge returns
 
@@ -140,15 +146,51 @@ cross-family comparison, not for every small diff. The flag does three things:
   `agentType` alone, checks each result as described above, and keeps the
   candidates and every checked result or error under `judgeResults`.
 
+## Merging and rebuttals
+
+The three checked results are merged per candidate from their evidence, never
+by count, because a vote cannot tell a judge that traced a defect from two that
+did not look closely enough. Only `confirmed` and `refuted` entries are
+verdicts: each is an examination with evidence the checker required. An
+`unresolved` or `unreviewed` entry is recorded in the finding's `dispositions`
+and the merged reason but carries no verdict, so it neither confirms, refutes
+nor blocks. The rules, in order:
+
+- A missing or invalid result leaves every candidate unruled, the run
+  incomplete and nothing fixed or cleared, as before; replacing a failed judge
+  is REVIEW-5.
+- A confirmation beside a refutation is conflicting evidence. The candidate
+  stays unruled and open, with both sides in the record, the loop stops and the
+  run is incomplete. A demonstrated defect is not outvoted by refutations and a
+  refutation is not overruled by a majority of confirmations; a conflict is for
+  a reader of both sides, not for a count.
+- Confirmations with no refutation confirm, at the highest severity any
+  confirming judge gave, so a judge that demonstrated a blocker is not
+  downgraded by one that rated it lower or could not decide.
+- Refutations with no confirmation refute, with every judge's reason kept, so a
+  claim nobody could demonstrate is not confirmed by default.
+- No verdict at all (every entry unresolved or unreviewed) leaves the candidate
+  unruled and the run incomplete; an undecided claim is neither confirmed nor
+  cleared.
+
+A fixer that finds a confirmed candidate false does not fix it: it returns the
+objection under `rebuttals` in its fix packet, naming the finding's id with a
+reason and evidence in the shape a judge's evidence takes, once per finding per
+run. The next round judges that candidate again with the objection attached,
+whether or not a reviewer re-detected it, so the rebuttal is answered by fresh
+judges rather than by sending a second fixer for the same claim. Judges that
+uphold it refute the finding with their reasons; judges that confirm over it
+send it back to a fixer that now sees both the rebuttal and the ruling and may
+not rebut again. This is why a false claim dies in one fix step instead of
+costing a round per fixer that declines it.
+
 ## Outside this contract
 
-How disagreeing results are merged and rebutted (REVIEW-4), what happens when
-a required judge fails (REVIEW-5), and the run-record identity fields
-`resolvedModel` and `upstreamModel` (MODEL-3) are specified by those tasks.
-Until they land the workflow rules a candidate only when all three results
-agree on confirmed or on refuted; any split, any unresolved or unreviewed entry
-and any missing or invalid result leaves it unruled, nothing is fixed or
-cleared, and the run is incomplete. A missing judge is not yet replaced.
+What happens when a required judge fails (REVIEW-5) and the run-record
+identity fields `resolvedModel` and `upstreamModel` (MODEL-3) are specified by
+those tasks. Until they land a missing or invalid judge result leaves the
+round's candidates unruled and the run incomplete, and a missing judge is not
+replaced.
 
 Without `--panel` one boss adjudicates and the boss stage keeps its `rulings`
 shape; judging.md says how to read it through this contract. The earlier

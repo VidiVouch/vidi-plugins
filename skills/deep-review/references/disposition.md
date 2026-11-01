@@ -32,21 +32,37 @@ judge's name).
   round instead of being re-detected as new.
 - `unruled`: no boss ruled it in the last round it appeared, because the boss
   was unavailable or returned an invalid result. Under `--panel` it also covers
-  a candidate the three judges did not unanimously confirm or refute, or one a
-  missing or invalid judge result left undecided; the finding then carries
-  `dispositions`, what each judge said, with `missing` for a judge that
-  returned nothing usable. The run is already incomplete and the finding is
-  neither confirmed nor cleared.
+  a candidate whose judges' evidence conflicts (one confirmed it and another
+  refuted it, which no count resolves), one that no judge demonstrated or
+  refuted, or one a missing or invalid judge result left undecided; the finding
+  then carries `dispositions`, what each judge said, with `missing` for a judge
+  that returned nothing usable. The run is already incomplete and the finding
+  is neither confirmed nor cleared.
 - `degraded`: a fixer was dispatched for it and nothing verified the result:
   the loop hit its round limit before a re-review, the fixer failed and its
-  partial edits were not re-reviewed, or a lane that reported the finding did
-  not complete the re-review. An unverified fix is not resolved and not
+  partial edits were not re-reviewed, a lane that reported the finding did not
+  complete the re-review, or the fixer rebutted it and the run ended before a
+  round ruled on the objection. An unverified fix is not resolved and not
   outstanding; it is unknown, and the report says so.
 
 The latest ruling decides. A claim refuted in round 1 and confirmed in round 2
 is open or fixed by round 2's history; a finding confirmed in round 1, fixed,
 and re-detected in round 2 starts again from round 2, and its reason says it
 was re-detected after a fix.
+
+## Rebuttals
+
+A fixer may rebut a confirmed finding instead of fixing it: the fix packet's
+`rebuttals` names the finding's id with a reason and evidence, once per finding
+per run. The next round judges that finding again with the objection attached
+as `rebuttal`, whether or not a reviewer re-detected it, so the claim gets a
+ruling from fresh judges rather than a second fixer. The finding then carries
+`rebuttal` in this record and its `outcomeReason` says whether the judges
+upheld the objection (`refuted`) or confirmed the finding over it, in which
+case the fixer that receives it next sees the prior rebuttal and the ruling and
+may not rebut again. A false claim therefore ends after one fix step, with the
+judges' answer kept, instead of being sent to a fixer every round. A rebuttal
+the run ended on, with no round to rule on it, leaves the finding `degraded`.
 
 ## Identity
 

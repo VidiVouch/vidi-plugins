@@ -19,10 +19,14 @@ neither one arbiter nor a panel. Read the rulings through this contract:
 is refuted, and an `UNRULED` finding is unreviewed. With `--panel` the workflow
 dispatches the three judges of judge-contract.md on one identical brief, each
 returns this shape, and the result keeps the candidates of every round beside
-each judge's checked result or error under `judgeResults`. Until the evidence
-merge lands, only a unanimous confirmed or refuted disposition rules a
-candidate; everything else is unruled. Nothing about the candidates, the dedup
-step or the fix lane changes between the two modes.
+each judge's checked result or error under `judgeResults`. The three records
+are merged by their evidence, never by count (judge-contract.md, "Merging and
+rebuttals"): confirmations with no refutation confirm, refutations with no
+confirmation refute, a confirmation beside a refutation is a conflict that
+leaves the candidate unruled and open, and an unresolved or unreviewed entry is
+recorded but is not a verdict. Nothing about the candidates, the dedup step or
+the fix lane changes between the two modes, except that a candidate the
+previous round's fixer rebutted carries that objection as `rebuttal` in both.
 
 ## Top level
 
