@@ -149,6 +149,39 @@ earlier phase or run; a replacement gets a new name. The Workflow runtime never
 creates a teammate, so a review or fix lane inside the workflow is always an
 ordinary worker.
 
+## How units disagree
+
+Units in the Workflow runtime never talk to each other. `agent()` gives a unit
+no address, no message tool and no teammate: it starts from its definition and
+one prompt, returns one result and is gone, and the runtime's resume replays
+each call from its prompt alone, so a result that depended on a conversation
+nobody recorded could not be replayed. deep-review therefore carries every
+disagreement as evidence in a typed packet that a fresh unit reads later. Three
+judges rule on one identical brief and are merged by evidence, never by count
+(judge-contract.md, "Merging and rebuttals"). A fixer that finds a confirmed
+finding false rebuts it in its fix packet, with evidence, and the next round's
+fresh judges answer the objection. A fixer whose cause lies in a file it does
+not own escalates in the packet, and a fresh fixer owning that file repairs it.
+Each exchange is one write and one later read of a durable record, so a
+restarted controller sees the same argument the live one did, and no party's
+conclusion reaches another's brief before that party has formed its own. This
+is the default for every workflow unit and needs no team support.
+
+Live discussion is for the one case a returning packet cannot serve: a fix on
+the live checkout where the lead must answer a teammate's question or redirect
+it before it returns. That is Phase 3.6 under the explicit `teams` strategy,
+and the lead owns it, never the Workflow. The lead opens the phase in
+`scripts/team_phase.py`, records each teammate before spawning it by name,
+messages it with SendMessage, records each shutdown, and closes the phase,
+which the script refuses while any teammate is still standing. Discussion runs
+between the lead and one teammate; teammates do not message each other,
+because their buckets are disjoint and anything that crosses a bucket is an
+escalation in the packet. The script never spawns, messages or stops an agent
+(the Agent tool and SendMessage do that, in the lead's session); it is the
+record that turns "I shut them all down" into a list a reader can check, and
+the barrier that keeps the next report-only review from starting while a
+teammate could still edit the tree.
+
 ## The lead stays thin
 
 The lead is the session that owns a run: it builds units, dispatches them and

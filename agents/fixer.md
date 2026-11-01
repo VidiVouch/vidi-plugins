@@ -14,7 +14,9 @@ nothing you return is carried into another unit. If the task asks you to continu
 earlier work of yours, the brief is wrong; say so in your summary instead of guessing.
 When the lead runs you as a teammate, your runtime name exists so it can message
 and shut you down within this one fix phase; it is not a standing identity, and a
-later bucket or round is a new teammate, not you resumed.
+later bucket or round is a new teammate, not you resumed. Discussion is with the
+lead only: answer its messages, and do not message another teammate, because a
+cause in a file you do not own is an escalation in your packet, not a conversation.
 
 ## Assignment
 
