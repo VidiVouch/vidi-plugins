@@ -404,7 +404,7 @@ def finalize(manifest_path, result_path):
             raise ManifestError("Registered gate command did not pass")
         for stream in ("stdout", "stderr"):
             path = manifest_path.parent / f"gate-{index}.{stream}"
-            if check.get(stream) != str(path) or check.get(f"{stream}Sha256") != digest(path):
+            if check.get(stream) != str(path) or not path.is_file() or check.get(f"{stream}Sha256") != digest(path):
                 raise ManifestError("Gate output evidence missing or changed")
     verify_manifest(manifest_path)
     if digest(result_path) != result_hash or digest(gate_path) != gate_hash:

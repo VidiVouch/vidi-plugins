@@ -249,6 +249,16 @@ def file_state(repo, relative):
         os.close(directory)
 
 
+# Markers Git keeps in the (per-worktree) git directory while a history operation is underway.
+IN_PROGRESS = (
+    ("rebase-merge", "rebase"),
+    ("rebase-apply", "rebase"),
+    ("MERGE_HEAD", "merge"),
+    ("CHERRY_PICK_HEAD", "cherry-pick"),
+    ("REVERT_HEAD", "revert"),
+)
+
+
 def snapshot(repo, excluded):
     root = os.fsdecode(git(repo, "rev-parse", "--show-toplevel").removesuffix(b"\n"))
     require(Path(root).resolve() == repo, "repo-root must be the Git working-tree root")
@@ -263,6 +273,16 @@ def snapshot(repo, excluded):
         require(stage == b"0", "repository has unresolved merges")
         require(mode != b"160000", "submodules are not supported by run manifests")
         tracked.add(os.fsdecode(name))
+    # A tree stopped partway through a rebase, merge, cherry-pick or revert (a crash, an unfinished caller
+    # step) is nobody's requested input even when nothing is left unresolved: HEAD is neither the old tip
+    # nor the new one. Freezing it would let a review of that half-state read as a review of the epoch, so
+    # it is refused until the operation is finished or aborted by whoever owns the history.
+    git_dir = Path(os.fsdecode(git(repo, "rev-parse", "--absolute-git-dir").removesuffix(b"\n")))
+    for marker, operation in IN_PROGRESS:
+        require(
+            not (git_dir / marker).exists(),
+            f"repository has a {operation} in progress; finish or abort it before freezing a run",
+        )
     for entry in git(repo, "ls-tree", "-r", "-z", "HEAD").split(b"\0"):
         if entry:
             metadata, name = entry.split(b"\t", 1)
