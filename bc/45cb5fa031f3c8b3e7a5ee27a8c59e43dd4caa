@@ -1,0 +1,29 @@
+tests/test_owned_processes.py
+  s_610be6e94314a7::t_803cf8906eeaba 85-97
+  s_610be6e94314a7::t_9397049881e8b1 45-46
+  s_610be6e94314a7::t_9df410b4ae486a 15-21,26
+  s_610be6e94314a7::t_55c3bfb54dd256 27-29
+  s_610be6e94314a7::t_7fdf440102224f 6
+  s_610be6e94314a7::t_82bfad3bf5e3f6 43,48-49,57-59
+  s_610be6e94314a7::t_e37740c2a73390 30-31
+skills/deep-review/scripts/owned_processes.py
+  s_610be6e94314a7::t_f33155b0a9bbc6 70-77,82,88-95,100-101,104-105,113,115,117
+skills/deep-review/references/work-ledger.md
+  s_610be6e94314a7::t_1002d4964a5702 86-90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bc45cb5fa031f3c8b3e7a5ee27a8c59e43dd4caa",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
