@@ -1,8 +1,13 @@
-# Agent A: CodeRabbit review
+# CodeRabbit review (opt-in)
 
-Skip entirely if the `coderabbit` CLI is not installed (`CODERABBIT=no`).
-(Mechanics verified against coderabbit CLI 0.6.4; originally authored for 0.4.x —
-the NDJSON `--agent` contract has been stable across that span.)
+Disabled by default. Run only when reviewer policy explicitly enables
+`coderabbit` and preparation finds the CodeRabbit CLI. An installed binary is not
+a reason to run this lane, and installation does not prove authentication,
+subscription, quota, or a successful review; those are known only when an enabled
+review runs. A disabled lane is never probed or dispatched
+(references/reviewers.md). Mechanics verified against coderabbit CLI 0.6.4,
+originally authored for 0.4.x; the NDJSON `--agent` contract has been stable
+across that span.
 
 ## Launch prompt
 

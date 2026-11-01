@@ -1,6 +1,10 @@
-# Agent F: Cubic review
+# Cubic review (opt-in)
 
-Skip entirely if the `cubic` CLI is not installed (`CUBIC=no`).
+Disabled by default. Run only when reviewer policy explicitly enables `cubic`
+and preparation finds the Cubic CLI. An installed binary is not a reason to run
+this lane, and installation does not prove authentication, subscription, quota,
+or a successful review; those are known only when an enabled review runs. A
+disabled lane is never probed or dispatched (references/reviewers.md).
 
 ## Launch prompt
 
