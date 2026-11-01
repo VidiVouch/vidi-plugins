@@ -21,8 +21,10 @@ judge's name).
 
 - `open`: the boss confirmed it in the last round it appeared and no fixer was
   sent for it. That happens in a report-only run, for a nit (nits are never
-  sent to fixers), or when the loop stopped before its fix step. It is a known
-  defect that still needs work.
+  sent to fixers), when the loop stopped before its fix step, or when the
+  finding came back after two fix attempts and the loop ended as a repeated
+  failure rather than dispatch a third fixer (`result.termination`). It is a
+  known defect that still needs work.
 - `fixed`: the boss confirmed it, a fixer was dispatched for it, and the next
   review round did not detect it again while every lane that had reported it
   completed that round. A lane that did not complete cannot clear what it

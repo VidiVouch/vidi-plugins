@@ -200,6 +200,9 @@ def classify(manifest_path):
     if report["treeDrift"]:
         return conclude("stale", reasons=[report["treeDrift"]])
     if result.get("fixed") is not False or result.get("requiresPostFixReview") is not False:
+        # The patch is the only durable copy of the fixes once the worktree is gone; say when it is absent.
+        if not report["artifacts"]["patch"]:
+            reasons.append("no patch at patchPath; the fixes exist only in the worktree until Phase 3.5 captures them")
         return conclude("modified", reasons=reasons)
     text = "\n".join(reasons)
     transient = bool(TRANSIENT.search(text)) and not BLOCKING.search(text)

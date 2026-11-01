@@ -50,7 +50,9 @@ request fare better next time.
 - `modified`: `fixed` or `requiresPostFixReview` is true. Keep the patch at
   `patchPath`, create a manifest for the resulting tree and run one fresh
   read-only review (run-lifecycle.md). A retry would repeat the fixer's side
-  effects against a tree that already carries them.
+  effects against a tree that already carries them. When no patch is at
+  `patchPath` the reasons say so: the fixes then exist only in the worktree,
+  which must not be torn down before Phase 3.5 captures them.
 - `launch-blocked`: `admission.started` is 0. Nothing was dispatched, so nothing
   can be reused. Retryable only when the reasons are transient; otherwise change
   what blocked the launch and initialize a fresh manifest.
