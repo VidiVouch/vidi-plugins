@@ -1,0 +1,31 @@
+tests/test_work_unit.py
+  s_610be6e94314a7::t_1d159934de2a24 240-243
+  s_610be6e94314a7::t_9dfd3d93ed86f9 138
+  s_610be6e94314a7::t_75613aa13daabb 59-62
+  s_610be6e94314a7::t_4e73d801135272 146-164
+  s_610be6e94314a7::t_b99ad34cd02f3d 24,26-31
+  s_610be6e94314a7::t_00e9ed50366fce 244
+skills/deep-review/scripts/work_unit.py
+  s_610be6e94314a7::t_6fc71e59b93595 121,123-126
+  s_610be6e94314a7::t_7c6708487c77f5 28-29
+  s_610be6e94314a7::t_776b5d7db77a38 59-67,71
+skills/deep-review/references/work-unit.md
+  s_610be6e94314a7::t_594c3b5be42b51 19-20
+  s_610be6e94314a7::t_6e39d15320bfb7 16-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "632f214b0bf72b358efbb3820e080eafdc4f109d",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
