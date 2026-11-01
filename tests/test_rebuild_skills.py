@@ -75,8 +75,19 @@ def test_epoch_and_examine_agree_on_gate_path():
         assert ref in (SKILLS / skill / "SKILL.md").read_text(), f"{skill}: must call the gate by its plugin-root path"
 
 
+def test_fresh_spawn_rule_is_preserved():
+    # deep-review's dispatch layer refuses named, forked or resumed agents; the rebuild
+    # skills state the same rule in prose for implementers and fixers, and it must stay.
+    dispatcher = (SKILLS / "rebuild" / "SKILL.md").read_text().replace("\n  ", " ")
+    epoch = (SKILLS / "rebuild-epoch" / "SKILL.md").read_text()
+    assert "## Fresh-spawn rule" in dispatcher and "never resume a stalled agent" in dispatcher
+    assert "never resume the original" in epoch and "Fresh spawn for every implementer round" in epoch
+
+
 def test_canonical_bookkeeping_token():
     # The ledger status is IMPLEMENTED@<sha> for both build and --fix re-entry;
     # REVISED@ must never be introduced as a ledger status (only a spoken verb).
     epoch = (SKILLS / "rebuild-epoch" / "SKILL.md").read_text()
-    assert "spoken return verb" in epoch, "rebuild-epoch must distinguish the spoken REVISED@ verb from the ledger token"
+    assert "spoken return verb" in epoch, (
+        "rebuild-epoch must distinguish the spoken REVISED@ verb from the ledger token"
+    )

@@ -163,8 +163,14 @@ def test_validate_requires_every_dependency_outcome_key(run, tmp_path):
 
 
 def test_each_attempt_and_role_gets_its_own_contract_file(run):
-    build(run)
+    first = build(run)
     assert "exists" in build(run, success=False)
+    # A retry is a fresh unit: the same brief against the same inputs, its own evidence
+    # files, and nothing from attempt 1's note, result or contract.
+    retry = build(run, "--attempt", 2)
+    assert retry["attempt"] == 2 and "implementer-1" not in json.dumps(retry["evidence"])
+    strip = lambda c: {k: v for k, v in c.items() if k not in ("attempt", "evidence")}  # noqa: E731
+    assert strip(retry) == strip(first)
     second = build(run, "--attempt", 2, "--role", "verifier")
     assert second["evidence"]["note"].endswith("tasks/A-2/verify-2.md")
     assert second["evidence"]["contract"].endswith("tasks/A-2/contract-verifier-2.json")

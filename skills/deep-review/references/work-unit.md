@@ -93,3 +93,14 @@ global rules and coverage matrix, `allowed.files` is the epoch scope and
 `stop.when` includes returning `PLAN-DEFECT` rather than stubbing. Neither
 dispatcher pastes a previous worker's conversation into a new unit; a retry gets
 a new attempt number and a freshly built contract against the current snapshot.
+
+Every dispatch, including a repair round and a replacement after a stall, is a
+new instance started from its agent definition and its brief. A completed agent
+is never handed a second unit, and no unit is a fork of the controller, because
+a fork carries the controller's conversation, which is the context this contract
+exists to exclude. The deep-review workflow enforces this in its dispatch layer:
+only label, phase, schema, model, effort and agent type reach the runtime, and
+every brief opens by telling the agent it is a fresh instance. The agent
+definitions under `agents/` say the same, so a worker that is asked to continue
+earlier work reports a wrong brief instead of guessing. The rebuild skills keep
+their own fresh-spawn rule for implementers and fixers.
