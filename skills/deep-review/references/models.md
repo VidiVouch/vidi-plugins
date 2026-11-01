@@ -60,6 +60,36 @@ match rather than fixing it.
   the context suffix. Neither Claude Code's documentation nor CCS describes that
   spelling; the helper reports it as an unverified suffix.
 
+## Role definitions and how they are selected
+
+Every role with a packaged definition is dispatched by `agentType`
+(`vidi-skills:<agent>`) and never with a per-call `model`. The Agent call's
+model parameter takes only a family alias and Claude Code resolves it ahead of
+the definition's `model` field, so passing one would replace the pinned ID with
+whatever the launching profile maps the alias to. The deep-review workflow
+stops a unit that sets both.
+
+| Role | Definition | Model field |
+| --- | --- | --- |
+| judge-fable, judge-astra, judge-grok | `agents/judge-<name>.md`, one shared body (judge-contract.md) | as in the table above |
+| astra-reviewer, astra-adversarial-reviewer, grok-reviewer | `agents/<name>.md` | gpt-6-astra, grok-4.7 |
+| implementer-opus | `agents/implementer.md` | claude-opus-5-5[1m] |
+| fixer-opus | `agents/fixer.md` | claude-opus-5-5[1m] |
+| permission-classifier | none; the env key `CLAUDE_CODE_AUTO_MODE_MODEL` (MODEL-4) | claude-sonnet-5 |
+
+Subagent model precedence, from the Claude Code sub-agents documentation for
+2.1.251 and later: the per-invocation parameter, then the definition's
+`model`, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the session model. The
+environment default therefore cannot override a definition on its own.
+`CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` (2.1.257 and later) makes Claude Code
+ignore the `model` field in every definition and refuse the per-call
+parameter; `CLAUDE_CODE_FORK_SUBAGENT=1` forks the controller's conversation
+into each subagent. `prepare_reviewers.py` reports either under
+`namedAgents.blocked`, the three callers pass that object to the workflow, and
+the workflow refuses to start while it is blocked, so a forced model never runs
+under a definition's name. `model_roles.py` reports `agentAgrees: false` when a
+definition's `model` drifts from the roles file.
+
 ## Re-verifying
 
 ```

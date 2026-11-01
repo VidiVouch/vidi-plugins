@@ -51,8 +51,58 @@ def test_roles_file_names_every_requested_role_with_a_full_id():
 def test_agent_linked_roles_agree_with_packaged_definitions():
     report = roles.check()["roles"]
     linked = {name for name, role in json.loads(roles.ROLES.read_text()).items() if "agent" in role}
-    assert {"grok-reviewer", "astra-reviewer", "astra-adversarial-reviewer"} <= linked
+    assert (REQUESTED - {"permission-classifier"}) | {"astra-reviewer", "astra-adversarial-reviewer"} <= linked
     assert all(report[name]["agentAgrees"] for name in linked)
+
+
+JUDGES = ("judge-fable", "judge-astra", "judge-grok")
+READ_ONLY_TOOLS = (
+    "tools: Read, Grep, Glob, Bash(git -C * diff *), Bash(git -C * show *), "
+    "Bash(git -C * ls-files *), Bash(git -C * log *), Bash(git -C * rev-parse *)"
+)
+
+
+def definition(name):
+    _, frontmatter, body = (REPO / "agents" / f"{name}.md").read_text().split("---", 2)
+    return frontmatter, body
+
+
+def test_judge_definitions_pin_full_ids_and_share_one_body():
+    data = json.loads(roles.ROLES.read_text())
+    bodies = set()
+    for name in JUDGES:
+        frontmatter, body = definition(name)
+        assert f"name: {name}\n" in frontmatter and READ_ONLY_TOOLS in frontmatter
+        assert "Write" not in frontmatter and "Edit" not in frontmatter
+        assert data[name]["agent"] == name
+        assert prepare.agent_model(name) == data[name]["model"]
+        bodies.add(body)
+    assert len(bodies) == 1, "the three judges must be the same brief on different models"
+    shared = bodies.pop()
+    assert "references/judge-contract.md" in shared and "judging-output.schema.json" in shared
+    assert "fresh instance" in shared and "no prior conversation" in shared and "`unreviewed`" in shared
+    assert "Do not describe which model you are" in shared
+
+
+def test_judge_contract_names_the_roles_and_the_dispatch_rule():
+    contract = (REPO / "skills/deep-review/references/judge-contract.md").read_text()
+    data = json.loads(roles.ROLES.read_text())
+    for name in JUDGES:
+        assert f"| {name} | `agents/{name}.md` | {data[name]['model']} |" in contract
+    assert "`agentType`" in contract and "passes no\n`model`" in contract
+    assert "CLAUDE_CODE_SUBAGENT_MODEL_FORCE" in contract and "namedAgents.blocked" in contract
+    assert "judging-output.schema.json" in contract and "grok-reviewer discovers" in contract
+    assert "—" not in contract and "–" not in contract
+
+
+def test_implementer_and_fixer_pin_the_opus_id_not_the_alias():
+    data = json.loads(roles.ROLES.read_text())
+    for role, agent in (("implementer-opus", "implementer"), ("fixer-opus", "fixer")):
+        assert data[role]["agent"] == agent
+        assert prepare.agent_model(agent) == data[role]["model"] == "claude-opus-5-5[1m]"
+        _, body = definition(agent)
+        assert "fresh instance" in body and "no prior conversation" in body
+    assert "hand-back.schema.json" in definition("implementer")[1]
 
 
 @pytest.mark.parametrize(

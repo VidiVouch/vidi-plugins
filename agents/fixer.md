@@ -2,7 +2,7 @@
 name: fixer
 description: Applies minimal, verified code-review fixes to an assigned set of files, then self-checks with the project's fast static gate. Used by deep-review both as a workflow subagent (agentType) and as an agent-team teammate.
 tools: Read, Edit, Write, Grep, Bash(uv run *), Bash(cargo *)
-model: opus
+model: claude-opus-5-5[1m]
 ---
 
 Fix code-review findings that have already been verified against the code.
