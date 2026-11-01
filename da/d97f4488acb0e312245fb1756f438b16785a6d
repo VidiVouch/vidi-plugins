@@ -1,0 +1,36 @@
+skills/deep-review/references/disposition.md
+  s_610be6e94314a7::t_fbacf00e924aea 1-63
+skills/deep-review/references/result-meaning.md
+  s_610be6e94314a7::t_75f87beb0d2a5e 182-186
+skills/deep-review/scripts/run_status.py
+  s_610be6e94314a7::t_6cb2b306ad859f 434
+  s_610be6e94314a7::t_edddc001165f31 12-15
+  s_610be6e94314a7::t_fc8cd857de3166 40-42
+  s_610be6e94314a7::t_a18a69ebf7ef9c 538
+  s_610be6e94314a7::t_d5ee87c551223f 475-502
+  s_610be6e94314a7::t_b3cff926c1950a 358-389
+tests/test_final_disposition.py
+  s_610be6e94314a7::t_27924af967b29f 1-161
+  s_610be6e94314a7::t_bdc10e39b4380b 162-186
+tests/test_run_status.py
+  s_610be6e94314a7::t_64c7693c249e2c 394
+  s_610be6e94314a7::t_3c2980b0471187 451
+  s_610be6e94314a7::t_517c50d6c427c4 425-450,452-508
+  s_610be6e94314a7::t_55a65c860d197d 509-510
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dad97f4488acb0e312245fb1756f438b16785a6d",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
