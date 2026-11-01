@@ -1,0 +1,40 @@
+agents/implementer.md
+  s_610be6e94314a7::t_28803a70c297c1 1-39
+skills/deep-review/model-roles.json
+  s_610be6e94314a7::t_1344dcc2f2d0b7 5-6,11-12,17-18,41-42,47-48
+agents/judge-fable.md
+  s_610be6e94314a7::t_588397af2b4ae6 1-29
+tests/test_named_agents.py
+  s_610be6e94314a7::t_692d428594b0a8 84,90-91
+  s_610be6e94314a7::t_2118f50a7b9a65 1-83,86-89,92-96
+  s_610be6e94314a7::t_54eea5fcab7063 85
+tests/test_model_roles.py
+  s_610be6e94314a7::t_e7b6958af3fa93 54,58-105
+  s_610be6e94314a7::t_e451ce50d2beb8 106-107
+agents/judge-grok.md
+  s_610be6e94314a7::t_a087b17f9fc55c 1-29
+agents/fixer.md
+  s_610be6e94314a7::t_28220a17c60972 5
+skills/deep-review/references/judge-contract.md
+  s_610be6e94314a7::t_31298a01dbb4d3 1-112
+skills/deep-review/references/models.md
+  s_610be6e94314a7::t_ae87375cbbe7b7 63-92
+agents/judge-astra.md
+  s_610be6e94314a7::t_0dd01e888bcb6f 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b9e58a27b2297868aacedcd02025d22577cd2d56",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
