@@ -1,6 +1,6 @@
-"""Named definitions are selected by agentType with no per-call model override, and a session setting
-that would override every definition (CLAUDE_CODE_SUBAGENT_MODEL_FORCE, CLAUDE_CODE_FORK_SUBAGENT)
-stops the run before any dispatch instead of being applied silently. Offline; never calls a model."""
+"""Named definitions are selected by agentType with no per-call model override, and the session setting
+that overrides every definition's model (CLAUDE_CODE_SUBAGENT_MODEL_FORCE) stops the run before any
+dispatch instead of being applied silently. Offline; never calls a model."""
 
 from unittest.mock import Mock
 
@@ -19,28 +19,30 @@ def no_live_capabilities(monkeypatch):
     )
 
 
+FORCE = "CLAUDE_CODE_SUBAGENT_MODEL_FORCE"
+# Claude Code's env-vars reference: a boolean variable is on for 1, true, yes or on in any casing,
+# and off for 0, false, no or off. The FORCE row states no rule of its own.
+ON_VALUES = ["1", "true", "yes", "on", "TRUE", "Yes", " On "]
+OFF_VALUES = ["", "0", "false", "no", "off", "OFF"]
+
+
 @pytest.mark.parametrize(
-    ("env", "named"),
-    [
-        ({}, ""),
-        ({"CLAUDE_CODE_SUBAGENT_MODEL": "haiku"}, ""),
-        ({"CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "0"}, ""),
-        ({"CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1"}, "CLAUDE_CODE_SUBAGENT_MODEL_FORCE"),
-        ({"CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "true"}, "CLAUDE_CODE_SUBAGENT_MODEL_FORCE"),
-        ({"CLAUDE_CODE_FORK_SUBAGENT": "1"}, "CLAUDE_CODE_FORK_SUBAGENT"),
-    ],
+    "env",
+    [{}, {"CLAUDE_CODE_SUBAGENT_MODEL": "haiku"}, {"CLAUDE_CODE_FORK_SUBAGENT": "1"}]
+    + [{FORCE: value} for value in OFF_VALUES],
 )
-def test_prepare_reports_a_setting_that_overrides_definitions(tmp_path, env, named):
-    """CLAUDE_CODE_SUBAGENT_MODEL alone is a default below the definition; only the force and fork switches block."""
-    result = prepare.prepare(tmp_path, env=env)["namedAgents"]
-    assert result["blocked"] is bool(named)
-    assert named in result["reason"] and (result["reason"] == "") is not bool(named)
+def test_prepare_passes_when_no_setting_overrides_definitions(tmp_path, env):
+    """CLAUDE_CODE_SUBAGENT_MODEL alone is a default below the definition, and fork mode (on by default)
+    only lets Claude start forks on its own; a dispatch by agentType still starts fresh from its definition."""
+    assert prepare.prepare(tmp_path, env=env)["namedAgents"] == {"blocked": False, "reason": ""}
 
 
-def test_both_switches_are_named_in_one_reason(tmp_path):
-    env = {"CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1", "CLAUDE_CODE_FORK_SUBAGENT": "1"}
-    reason = prepare.prepare(tmp_path, env=env)["namedAgents"]["reason"]
-    assert "CLAUDE_CODE_SUBAGENT_MODEL_FORCE" in reason and "CLAUDE_CODE_FORK_SUBAGENT" in reason
+@pytest.mark.parametrize("value", ON_VALUES)
+def test_prepare_reports_every_documented_on_value_of_the_force_switch(tmp_path, value):
+    """Every spelling Claude Code reads as on must block; yes or on passing silently would be the exact defeat."""
+    result = prepare.prepare(tmp_path, env={FORCE: value, "CLAUDE_CODE_FORK_SUBAGENT": "1"})["namedAgents"]
+    assert result["blocked"] is True
+    assert FORCE in result["reason"] and "FORK" not in result["reason"]
 
 
 def test_workflow_refuses_to_start_while_definitions_are_overridden(tmp_path):

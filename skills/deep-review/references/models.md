@@ -81,14 +81,18 @@ Subagent model precedence, from the Claude Code sub-agents documentation for
 2.1.251 and later: the per-invocation parameter, then the definition's
 `model`, then `CLAUDE_CODE_SUBAGENT_MODEL`, then the session model. The
 environment default therefore cannot override a definition on its own.
-`CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` (2.1.257 and later) makes Claude Code
+`CLAUDE_CODE_SUBAGENT_MODEL_FORCE` (2.1.257 and later) makes Claude Code
 ignore the `model` field in every definition and refuse the per-call
-parameter; `CLAUDE_CODE_FORK_SUBAGENT=1` forks the controller's conversation
-into each subagent. `prepare_reviewers.py` reports either under
-`namedAgents.blocked`, the three callers pass that object to the workflow, and
-the workflow refuses to start while it is blocked, so a forced model never runs
-under a definition's name. `model_roles.py` reports `agentAgrees: false` when a
-definition's `model` drifts from the roles file.
+parameter. `prepare_reviewers.py` reports it under `namedAgents.blocked` for
+every value Claude Code reads as on (`1`, `true`, `yes`, `on`, any casing), the
+three callers pass that object to the workflow, and the workflow refuses to
+start while it is blocked, so a forced model never runs under a definition's
+name. `CLAUDE_CODE_FORK_SUBAGENT` is not part of that check: fork mode, on by
+default since 2.1.302, only lets Claude start a fork of its own conversation on
+its own, and a non-fork subagent starts fresh from its definition with the
+definition's model, so a dispatch by `agentType` is unaffected. `model_roles.py`
+reports `agentAgrees: false` when a definition's `model` drifts from the roles
+file.
 
 ## Re-verifying
 

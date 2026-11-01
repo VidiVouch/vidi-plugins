@@ -91,8 +91,12 @@ def test_judge_contract_names_the_roles_and_the_dispatch_rule():
         assert f"| {name} | `agents/{name}.md` | {data[name]['model']} |" in contract
     assert "`agentType`" in contract and "passes no\n`model`" in contract
     assert "CLAUDE_CODE_SUBAGENT_MODEL_FORCE" in contract and "namedAgents.blocked" in contract
+    # Fork mode only lets Claude start forks on its own; the contract must not claim it overrides a definition.
+    prose = " ".join(contract.split())
+    assert "CLAUDE_CODE_FORK_SUBAGENT`, on by default since 2.1.302) does not override a definition" in prose
+    assert "forks the controller" not in prose
     assert "judging-output.schema.json" in contract and "grok-reviewer discovers" in contract
-    assert "—" not in contract and "–" not in contract
+    assert "\u2014" not in contract and "\u2013" not in contract
 
 
 def test_implementer_and_fixer_pin_the_opus_id_not_the_alias():

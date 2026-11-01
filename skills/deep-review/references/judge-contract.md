@@ -38,14 +38,22 @@ ID the definition pins. The deep-review workflow refuses to start a unit that
 sets both `agentType` and `model`.
 
 `CLAUDE_CODE_SUBAGENT_MODEL` is a default below the definition and does not
-override it. `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` makes Claude Code ignore the
-`model` field in every definition, and `CLAUDE_CODE_FORK_SUBAGENT=1` forks the
-controller's conversation into every subagent; either one defeats these
-definitions. `scripts/prepare_reviewers.py` reports both under
-`namedAgents.blocked` with the reason, and the workflow refuses to start while
-it is set, so the setting is never applied silently. Turn the setting off for
-the session, or do not run named lanes; do not work around it with a per-call
-model.
+override it. `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` makes Claude Code ignore the
+`model` field in every definition, so a judge would run on the session model
+under its own name. `scripts/prepare_reviewers.py` reports that switch under
+`namedAgents.blocked` with the reason, for every spelling Claude Code reads as
+on (`1`, `true`, `yes`, `on`, any casing), and the workflow refuses to start
+while it is set, so the setting is never applied silently. Turn the setting off
+for the session, or do not run named lanes; do not work around it with a
+per-call model.
+
+Fork mode (`CLAUDE_CODE_FORK_SUBAGENT`, on by default since 2.1.302) does not
+override a definition and is not a reason to refuse: it only lets Claude start
+a fork of its own conversation on its own, and a dispatch by `agentType` is not
+a fork, so the judge still starts fresh from its definition with the
+definition's model. What the contract forbids is a fork, named or resumed
+dispatch of a judge, and the workflow refuses any dispatch option that would
+make one.
 
 The requested model of a judge is the definition's `model`. What actually
 served the request is recorded separately (`resolvedModel`, `upstreamModel`,
