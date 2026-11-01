@@ -91,6 +91,7 @@ def run(tmp_path):
         }
         args = ("--ledger", ledger, "--task", "A-1", "--attempt", 1, "--role", role, "--owner", "w")
         cli("work_ledger.py", "record", *args, "--result", write(tmp_path / f"{role}.json", result))
+        cli("work_ledger.py", "close", *args, "--outcome", "success")  # each finished unit passes its barrier
     api = tmp_path / "api.md"
     api.write_text("shared API contract\n")
     output = write(
@@ -181,6 +182,38 @@ def test_each_attempt_and_role_gets_its_own_contract_file(run):
     second = build(run, "--attempt", 2, "--role", "verifier")
     assert second["evidence"]["note"].endswith("tasks/A-2/verify-2.md")
     assert second["evidence"]["contract"].endswith("tasks/A-2/contract-verifier-2.json")
+
+
+def test_build_refuses_to_start_a_unit_while_a_finished_one_is_not_closed(run, tmp_path):
+    """The cleanup barrier runs between units: a recorded unit without one blocks every next build."""
+    ledger = run["base"][run["base"].index("--ledger") + 1]
+    note = tmp_path / "b1.md"
+    note.write_text("detail\n")
+    result = write(
+        tmp_path / "b1.json",
+        {
+            "disposition": "partial",
+            "summary": "half",
+            "artifact": {"range": "a" * 40 + "..worktree", "files": []},
+            "checks": [],
+            "findings": {"unresolved": [], "refuted": []},
+            "deviations": [],
+            "nextAction": "retry",
+            "notePath": str(note),
+            "openObligations": [],
+            "gatedActions": [],
+        },
+    )
+    args = ("--ledger", ledger, "--task", "B-1", "--attempt", 1, "--role", "implementer", "--owner", "w")
+    cli("work_ledger.py", "record", *args, "--result", result)
+    refused = build(run, success=False)  # another task's finished unit blocks this one too
+    assert "close every finished unit" in refused and "B-1 attempt 1 implementer" in refused
+    assert not (run["evidence"] / "tasks/A-2").exists()
+    cli("work_ledger.py", "close", *args, "--outcome", "retry")
+    assert build(run)["task"] == "A-2"
+    unreturned = ("--ledger", ledger, "--task", "B-1", "--attempt", 2, "--role", "implementer", "--owner", "w")
+    cli("work_ledger.py", "close", *unreturned, "--outcome", "cancellation")  # never returned: closed, not left open
+    assert build(run, "--attempt", 3, task="B-1")["attempt"] == 3
 
 
 def test_validate_refuses_drifted_shared_contract_or_output_schema(run):

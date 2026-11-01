@@ -20,7 +20,8 @@ from run_manifest import (
     reject_secrets,
     write_exclusive,
 )
-from work_ledger import ROLES, LedgerError, load_json, sha256, snapshot_input
+from work_ledger import ROLES, LedgerError, load_json, open_units, sha256, snapshot_input
+from work_ledger import load as load_ledger
 from work_ledger import packet as ledger_packet
 
 HEAD = re.compile(r"[0-9a-f]{40}\Z")
@@ -155,6 +156,11 @@ def build(options):
     shared = load_json(options.shared, "shared contract")
     require(isinstance(shared, dict), "shared contract must be a JSON object")
     reject_secrets(shared)
+    # A finished unit's workers and children are stopped by its cleanup barrier; no new unit starts before that.
+    unclosed = open_units(load_ledger(options.ledger))
+    require(
+        not unclosed, f"close every finished unit before the next starts (work_ledger.py close): {', '.join(unclosed)}"
+    )
     unit = ledger_packet(
         SimpleNamespace(ledger=options.ledger, task=options.task, packets=options.packets, attempt=options.attempt)
     )

@@ -7,16 +7,22 @@ import json
 import os
 import sys
 import tempfile
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
 from hand_back import DISPOSITIONS, HandBackError, check, disposition, files, unresolved
-from run_manifest import ManifestError, identity, reject_secrets, snapshot
+from owned_processes import ProcessError, stop
+from run_manifest import ManifestError, absolute, digest, git, identity, reject_secrets, snapshot
 
 ROLES = tuple(DISPOSITIONS)
 # States an overseer sets by hand because no worker ever produces them.
 MARK_STATES = {"pre-recorded", "blocked-dependency", "not-started", "failed"}
 TERMINAL = {"accepted", "awaiting-approval", "failed", "pre-recorded", "blocked-dependency", "not-started"}
+# Why a unit ended. The barrier records it for every unit, including one that never returned a result.
+OUTCOMES = ("success", "failure", "cancellation", "retry")
+# A unit that ended without a result: a failure outcome is a failed attempt, the other two leave the task open.
+UNRETURNED = {"failure": "failed", "cancellation": "cancelled", "retry": "cancelled"}
 
 
 class LedgerError(ValueError):
@@ -80,16 +86,18 @@ def derive(task):
         last = max(a["attempt"] for a in attempts)
         impl = next((a for a in attempts if a["attempt"] == last and a["role"] == "implementer"), None)
         ver = next((a for a in attempts if a["attempt"] == last and a["role"] == "verifier"), None)
-        if disposition(impl["result"]) == "failed":
+        if impl["result"] is None:
+            state = UNRETURNED[impl["barrier"]["outcome"]]
+        elif disposition(impl["result"]) == "failed":
             state = "failed"
-        elif ver is None:
+        elif ver is None or ver["result"] is None:
             state = "in-progress"
         else:
             verdict = disposition(ver["result"])
             state = {"accepted": "accepted", "blocked-approval": "awaiting-approval"}.get(verdict, verdict)
     impls = [a for a in attempts if a["role"] == "implementer"]
-    vers = [a for a in attempts if a["role"] == "verifier"]
-    latest_impl = impls[-1]["result"] if impls else {}
+    vers = [a for a in attempts if a["role"] == "verifier" and a["result"] is not None]
+    latest_impl = (impls[-1]["result"] if impls else None) or {}
     latest_ver = vers[-1] if vers else None
     task.update(
         state=state,
@@ -108,9 +116,31 @@ def derive(task):
             if latest_ver
             else None
         ),
-        artifacts=sorted({p for a in attempts for p in [a["result"].get("notePath"), *files(a["result"])] if p}),
+        artifacts=sorted(
+            {
+                p
+                for a in attempts
+                if a["result"] is not None
+                for p in [a["result"].get("notePath"), *files(a["result"])]
+                if p
+            }
+        ),
     )
     return task
+
+
+def unit(task_id, attempt, role):
+    return f"{task_id} attempt {attempt} {role}"
+
+
+def open_units(ledger):
+    """Recorded units whose cleanup barrier has not run; no new unit starts while one exists."""
+    return [
+        unit(task_id, a["attempt"], a["role"])
+        for task_id, entry in ledger["tasks"].items()
+        for a in entry["attempts"]
+        if not a.get("barrier")
+    ]
 
 
 def init(options):
@@ -152,10 +182,14 @@ def record(options):
     task = task_entry(ledger, options.task)
     require(options.role in ROLES, "role must be implementer or verifier")
     require(options.attempt >= 1, "attempt numbers start at 1")
-    require(
-        not any(a["attempt"] == options.attempt and a["role"] == options.role for a in task["attempts"]),
-        "this attempt and role is already recorded; a retry needs a new attempt number",
+    existing = next(
+        (a for a in task["attempts"] if a["attempt"] == options.attempt and a["role"] == options.role), None
     )
+    require(
+        existing is None or not existing.get("barrier"),
+        "this unit was closed by its cleanup barrier; a late result is not recorded, start a new attempt",
+    )
+    require(existing is None, "this attempt and role is already recorded; a retry needs a new attempt number")
     if options.role == "verifier":
         require(
             any(a["attempt"] == options.attempt and a["role"] == "implementer" for a in task["attempts"]),
@@ -185,6 +219,77 @@ def record(options):
     derive(task)
     save(options.ledger, ledger)
     return {"task": options.task, "state": task["state"], "terminal": task["terminal"]}
+
+
+def preserve_tree(repo, patch_path):
+    """Keep what the unit left in the worktree: HEAD, index identity, the tracked diff as a patch, untracked paths."""
+    root = absolute(repo)
+    head = git(root, "rev-parse", "--verify", "HEAD").decode().strip()
+    index = git(root, "ls-files", "--stage", "-z")
+    patch = git(root, "diff-index", "-p", "--binary", "--no-ext-diff", "HEAD")
+    untracked = sorted(
+        os.fsdecode(n) for n in git(root, "ls-files", "--others", "--exclude-standard", "-z").split(b"\0") if n
+    )
+    with patch_path.open("xb") as stream:  # exclusive: an earlier barrier's patch is never overwritten
+        stream.write(patch)
+    return {
+        "head": head,
+        "indexSha256": digest(index),
+        "patch": str(patch_path),
+        "patchSha256": digest(patch),
+        "untracked": untracked,
+    }
+
+
+def close(options):
+    """The cleanup barrier: stop what the unit owned, keep what it produced, and record why it ended."""
+    ledger = load(options.ledger)
+    task = task_entry(ledger, options.task)
+    require(options.role in ROLES, "role must be implementer or verifier")
+    require(options.outcome in OUTCOMES, f"outcome must be one of {list(OUTCOMES)}")
+    require(not options.repo or options.evidence_root, "--repo needs --evidence-root to hold the patch")
+    entry = next((a for a in task["attempts"] if a["attempt"] == options.attempt and a["role"] == options.role), None)
+    require(entry is None or not entry.get("barrier"), "this unit is already closed")
+    if entry is None:
+        # A unit that never returned still gets its record, so the barrier is visible and the number is not reused.
+        require(options.outcome != "success", "success needs the unit's recorded result; record it first")
+        require(
+            options.role == "implementer"
+            or any(a["attempt"] == options.attempt and a["role"] == "implementer" for a in task["attempts"]),
+            "a verifier unit needs the implementer record for the same attempt",
+        )
+        entry = {
+            "attempt": options.attempt,
+            "role": options.role,
+            "owner": options.owner,
+            "recordedAt": now(),
+            "input": None,
+            "result": None,
+        }
+        task["attempts"].append(entry)
+    barrier = {"outcome": options.outcome, "owner": options.owner, "closedAt": now(), "processes": [], "tree": None}
+    if options.evidence_root:
+        unit_dir = absolute(options.evidence_root, resolve=False) / "tasks" / options.task
+        barrier["processes"] = stop(unit_dir / f"processes-{options.role}-{options.attempt}.json")
+        require(
+            all(p["outcome"] != "survived" for p in barrier["processes"]),
+            "an owned process survived the barrier; inspect it before starting the next unit",
+        )
+        if options.repo:
+            unit_dir.mkdir(parents=True, exist_ok=True)
+            barrier["tree"] = preserve_tree(options.repo, unit_dir / f"patch-{options.role}-{options.attempt}.diff")
+    entry["barrier"] = barrier
+    derive(task)
+    save(options.ledger, ledger)
+    return {
+        "task": options.task,
+        "unit": unit(options.task, options.attempt, options.role),
+        "outcome": options.outcome,
+        "state": task["state"],
+        "processes": dict(Counter(p["outcome"] for p in barrier["processes"])),
+        "patch": barrier["tree"]["patch"] if barrier["tree"] else None,
+        "openUnits": open_units(ledger),
+    }
 
 
 def mark(options):
@@ -238,6 +343,7 @@ def summary(options):
         "updatedAt": ledger.get("updatedAt"),
         "counts": dict(sorted(counts.items())),
         "open": sorted(t for t, e in ledger["tasks"].items() if not e["terminal"]),
+        "openUnits": open_units(ledger),
         "openObligations": {t: e["openObligations"] for t, e in ledger["tasks"].items() if e.get("openObligations")},
         "gatedActions": {t: e["gatedActions"] for t, e in ledger["tasks"].items() if e.get("gatedActions")},
     }
@@ -271,12 +377,25 @@ def main(argv=None):
         action="store_true",
         help="accept a status/verdict result from before hand-back.schema.json; its shape is not checked",
     )
-    close = commands.add_parser("mark", help="set a state no worker produces, with a reason")
-    close.add_argument("--ledger", required=True)
-    close.add_argument("--task", required=True)
-    close.add_argument("--state", required=True)
-    close.add_argument("--reason", required=True)
-    close.add_argument("--owner", required=True)
+    end = commands.add_parser(
+        "close", help="cleanup barrier: stop the unit's owned processes, keep its patch, record why it ended"
+    )
+    end.add_argument("--ledger", required=True)
+    end.add_argument("--task", required=True)
+    end.add_argument("--attempt", type=int, required=True)
+    end.add_argument("--role", required=True, choices=ROLES)
+    end.add_argument("--outcome", required=True, choices=OUTCOMES)
+    end.add_argument("--owner", required=True, help="who ran the barrier, normally the run owner")
+    end.add_argument(
+        "--evidence-root", help="run directory with tasks/<ID>/; holds the unit's process registry and gets its patch"
+    )
+    end.add_argument("--repo", help="repository the unit worked in; its tracked diff is kept as the unit's patch")
+    flag = commands.add_parser("mark", help="set a state no worker produces, with a reason")
+    flag.add_argument("--ledger", required=True)
+    flag.add_argument("--task", required=True)
+    flag.add_argument("--state", required=True)
+    flag.add_argument("--reason", required=True)
+    flag.add_argument("--owner", required=True)
     pack = commands.add_parser("packet", help="print one worker's packet plus its dependencies' outcomes, nothing else")
     pack.add_argument("--ledger", required=True)
     pack.add_argument("--task", required=True)
@@ -289,13 +408,14 @@ def main(argv=None):
         "init": init,
         "snapshot": snapshot_input,
         "record": record,
+        "close": close,
         "mark": mark,
         "packet": packet,
         "summary": summary,
     }
     try:
         result = handlers[options.command](options)
-    except (LedgerError, HandBackError, ManifestError) as exc:
+    except (LedgerError, HandBackError, ManifestError, ProcessError) as exc:
         print(f"work-ledger: {exc}", file=sys.stderr)
         return 1
     print(json.dumps(result, indent=1, sort_keys=True))

@@ -3,6 +3,7 @@ recorded evidence or an explicit mark, and hands a worker exactly its own packet
 its dependencies' outcomes. These tests run the real CLI against temporary files."""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -508,6 +509,132 @@ def test_summary_lists_counts_open_tasks_obligations_and_gated_actions(case, tmp
     assert out["open"] == ["A-1", "A-2"]
     assert out["openObligations"] == {"A-1": ["A-2: reuse the helper"]}
     assert out["gatedActions"] == {"A-1": ["commits-pushes: push withheld"]}
+
+
+def record(ledger, task, attempt, role, result, *extra, success=True):
+    args = ("record", "--ledger", ledger, "--task", task, "--attempt", attempt, "--role", role, "--owner", "w")
+    return cli(*args, "--result", result, *extra, success=success)
+
+
+def close(ledger, task, attempt, role, outcome, *extra, success=True):
+    args = ("close", "--ledger", ledger, "--task", task, "--attempt", attempt, "--role", role, "--owner", "overseer")
+    return cli(*args, "--outcome", outcome, *extra, success=success)
+
+
+def test_close_is_the_barrier_between_a_finished_unit_and_the_next(case, tmp_path):
+    ledger, _ = case
+    record(ledger, "A-1", 1, "implementer", implement(tmp_path))
+    assert cli("summary", "--ledger", ledger)["openUnits"] == ["A-1 attempt 1 implementer"]
+    out = close(ledger, "A-1", 1, "implementer", "success")
+    assert out == {
+        "task": "A-1",
+        "unit": "A-1 attempt 1 implementer",
+        "outcome": "success",
+        "state": "in-progress",
+        "processes": {},
+        "patch": None,
+        "openUnits": [],
+    }
+    attempt = load(ledger)["A-1"]["attempts"][0]
+    assert attempt["result"]["summary"] == "did the work"  # the barrier keeps the result and the note it names
+    assert Path(attempt["result"]["notePath"]).read_text() == "# note\n\ndetail\n"
+    assert attempt["barrier"]["outcome"] == "success" and attempt["barrier"]["owner"] == "overseer"
+    assert (
+        attempt["barrier"]["closedAt"] and attempt["barrier"]["processes"] == [] and attempt["barrier"]["tree"] is None
+    )
+    assert "already closed" in close(ledger, "A-1", 1, "implementer", "success", success=False)
+    assert "late result is not recorded" in record(ledger, "A-1", 1, "implementer", implement(tmp_path), success=False)
+    assert "record it first" in close(ledger, "A-1", 1, "verifier", "success", success=False)
+    record(ledger, "A-1", 1, "verifier", verify(tmp_path))
+    assert close(ledger, "A-1", 1, "verifier", "success")["state"] == "accepted"
+
+
+@pytest.mark.parametrize(
+    ("outcome", "state", "terminal"),
+    [("cancellation", "cancelled", False), ("retry", "cancelled", False), ("failure", "failed", True)],
+)
+def test_a_unit_that_never_returned_is_closed_with_its_outcome(case, tmp_path, outcome, state, terminal):
+    """A cancelled, replaced or crashed worker leaves a closed record, so its attempt number is spent."""
+    ledger, _ = case
+    out = close(ledger, "A-1", 1, "implementer", outcome)
+    assert out["state"] == state and out["openUnits"] == []
+    task = load(ledger)["A-1"]
+    attempt = task["attempts"][0]
+    assert attempt["result"] is None and attempt["input"] is None and attempt["barrier"]["outcome"] == outcome
+    assert (task["terminal"], task["summary"], task["artifacts"], task["verification"]) == (terminal, None, [], None)
+    assert "late result is not recorded" in record(ledger, "A-1", 1, "implementer", implement(tmp_path), success=False)
+    assert "implementer record" in close(ledger, "A-1", 2, "verifier", "cancellation", success=False)
+    assert record(ledger, "A-1", 2, "implementer", implement(tmp_path))["state"] == "in-progress"
+    assert cli("summary", "--ledger", ledger)["openUnits"] == ["A-1 attempt 2 implementer"]
+
+
+def test_a_cancelled_verifier_leaves_the_implementer_result_awaiting_verification(case, tmp_path):
+    ledger, _ = case
+    record(ledger, "A-1", 1, "implementer", implement(tmp_path))
+    close(ledger, "A-1", 1, "implementer", "success")
+    assert close(ledger, "A-1", 1, "verifier", "cancellation")["state"] == "in-progress"
+    task = load(ledger)["A-1"]
+    assert task["summary"] == "did the work" and task["verification"] is None and len(task["attempts"]) == 2
+    assert "late result is not recorded" in record(ledger, "A-1", 1, "verifier", verify(tmp_path), success=False)
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX process groups")
+def test_close_stops_only_the_registered_processes_and_keeps_the_patch(case, tmp_path):
+    ledger, _ = case
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    for args in (["init", "-q"], ["config", "user.email", "t@example.invalid"], ["config", "user.name", "T"]):
+        subprocess.run(["git", "-C", str(repo), *args], check=True)
+    (repo / "f.txt").write_text("one\n")
+    subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-qm", "init"], check=True)
+    head = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
+    sleeper = [sys.executable, "-c", "import time; time.sleep(60)"]
+    owned_child = subprocess.Popen(sleeper, start_new_session=True)
+    unrelated = subprocess.Popen(sleeper, start_new_session=True)
+    try:
+        root = tmp_path / "run"
+        registry = root / "tasks/A-1/processes-implementer-1.json"
+        registered = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT.with_name("owned_processes.py")),
+                "register",
+                "--registry",
+                str(registry),
+                "--pid",
+                str(owned_child.pid),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        assert registered.returncode == 0, registered.stderr
+        record(ledger, "A-1", 1, "implementer", implement(tmp_path))
+        (repo / "f.txt").write_text("two\n")  # what the unit left behind: a tracked edit and an untracked file
+        (repo / "new.txt").write_text("x\n")
+        out = close(ledger, "A-1", 1, "implementer", "success", "--evidence-root", root, "--repo", repo)
+        assert out["processes"] == {"stopped": 1} and out["patch"] == str(root / "tasks/A-1/patch-implementer-1.diff")
+        assert owned_child.wait(timeout=5) != 0 and unrelated.poll() is None
+        tree = load(ledger)["A-1"]["attempts"][0]["barrier"]["tree"]
+        assert tree["head"] == head and tree["untracked"] == ["new.txt"]
+        patch = Path(tree["patch"]).read_text()
+        assert "-one\n+two\n" in patch and len(tree["patchSha256"]) == 64
+        assert json.loads(registry.read_text())[0]["pid"] == owned_child.pid  # the registry stays as evidence
+        assert (repo / "f.txt").read_text() == "two\n" and (repo / "new.txt").exists()  # nothing is reset or cleaned
+        # The same patch path is never overwritten by a later barrier.
+        record(ledger, "A-1", 1, "verifier", verify(tmp_path))
+        assert close(ledger, "A-1", 1, "verifier", "success", "--evidence-root", root, "--repo", repo)[
+            "patch"
+        ].endswith("patch-verifier-1.diff")
+        assert "--evidence-root" in close(
+            ledger, "A-2", 1, "implementer", "cancellation", "--repo", repo, success=False
+        )
+    finally:
+        for child in (owned_child, unrelated):
+            if child.poll() is None:
+                child.kill()
+                child.wait()
 
 
 def test_snapshot_identity_matches_run_manifest(tmp_path):

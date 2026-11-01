@@ -74,7 +74,11 @@ python3 "$SCRIPTS/work_unit.py" build --ledger "$RUN_DIR/ledger.json" --task "$I
 python3 "$SCRIPTS/work_unit.py" validate --contract "$RUN_DIR/tasks/$ID/contract-implementer-$N.json"
 ```
 
-`build` reads the task's packet and dependency outcomes through the ledger, so
+`build` first refuses if any recorded unit in the ledger has not passed its
+cleanup barrier (`work_ledger.py close`, described in work-ledger.md), because
+a new unit must not start while a finished worker or its child processes may
+still be active. It then
+reads the task's packet and dependency outcomes through the ledger, so
 the packet digest is checked against `init`, merges the shared document, writes
 `tasks/<ID>/contract-<role>-<N>.json` read-only, refuses to overwrite an earlier
 attempt's contract, and prints the contract. Hand the printed contract to the

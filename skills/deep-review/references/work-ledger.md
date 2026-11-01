@@ -15,13 +15,18 @@ optional `mark`, and derived fields: `state`, `terminal`, `summary`,
 `openObligations`, `gatedActions`, `verification`, `artifacts`. An attempt record
 has the attempt number, the role (`implementer` or `verifier`), the `owner` string
 (agent id and label), `recordedAt`, the `input` snapshot captured before the
-worker started, and the worker's structured `result`, the short hand-back that
-`hand-back.md` describes.
+worker started, the worker's structured `result`, the short hand-back that
+`hand-back.md` describes, and once the unit's cleanup barrier has run, its
+`barrier` (outcome, owner, time, the owned processes it stopped, the tree it
+preserved).
 
 State is derived, not asserted. The latest attempt decides: an implementer
 `failed` status is `failed`; an implementer result without a verification is
 `in-progress`; a verifier verdict maps to `accepted`, `awaiting-approval`
-(verdict `blocked-approval`), `changes-required` or `failed-verification`. Only
+(verdict `blocked-approval`), `changes-required` or `failed-verification`. An
+implementer unit closed without a result is `cancelled`, or `failed` when its
+barrier outcome was `failure`; a verifier unit closed without a result leaves
+the task `in-progress`. Only
 `accepted`, `awaiting-approval`, `failed` and the marked states are terminal.
 `changes-required` stays open so a retry is visible as an unmet obligation rather
 than a closed task. A `mark` sets the states no worker produces (`pre-recorded`,
@@ -57,6 +62,55 @@ environment dumps or tokens in the ledger. `--legacy` admits a `status` or
 skips the shape check. Writes replace the file atomically; an
 interrupted write leaves the previous ledger intact. One writer at a time is
 assumed, which matches sequential dispatch.
+
+## Cleanup barrier
+
+Every unit ends through `close`, whether it returned a hand-back, failed, was
+cancelled, or is being replaced by a retry. The barrier exists because the next
+unit must start with nothing of the previous one still running, and a worker's
+own report of having finished is not evidence of that.
+
+```bash
+python3 "$SCRIPTS/work_ledger.py" close --ledger "$LEDGER" --task "$ID" --attempt "$N" \
+  --role implementer --outcome success --owner overseer \
+  --evidence-root "$RUN_DIR" --repo "$REPO"
+python3 "$SCRIPTS/owned_processes.py" register \
+  --registry "$RUN_DIR/tasks/$ID/processes-implementer-$N.json" --pid "$CHILD"
+```
+
+`close` does three things and nothing else. It stops the child processes the
+run registered for the unit under `tasks/<ID>/processes-<role>-<N>.json`:
+each entry is checked by pid, process group and start time, so a pid the
+operating system has reused is skipped and reported as `reused`, and a group
+that is the caller's own is refused rather than killed; processes the run never
+registered are never touched, which is how unrelated sessions stay up. Register
+only children started in their own session (`start_new_session`, `setsid`); a
+child in the caller's group is refused at `register`. Agents the Workflow
+runtime ran are stopped by the runtime; the deep-review script records its own
+barriers in `admission.barriers` so the gate can see every dispatch was
+terminal before the run returned.
+
+It keeps what the unit produced. With `--repo` and `--evidence-root` the
+tracked diff of the worktree is written once to
+`tasks/<ID>/patch-<role>-<N>.diff` and the barrier records HEAD, the index
+digest, the patch digest and the untracked paths, so a later cleanup or reset
+of the worktree cannot lose the unit's edits. Notes, hand-backs, commits,
+decisions and the process registry are left exactly as they are; `close` never
+deletes, resets or commits.
+
+It records why the unit ended: `outcome` is `success`, `failure`,
+`cancellation` or `retry`, with the owner and time. A unit that never returned
+(the agent was cancelled, crashed, or was replaced after a stall) is closed
+the same way; the ledger then holds an attempt with no result, state
+`cancelled` (or `failed` for a `failure` outcome), and that attempt number is
+spent: a late result for it is refused, and the replacement takes the next
+number. `success` needs the unit's recorded result.
+
+Until a recorded unit is closed it is an open unit. `summary` lists them under
+`openUnits`, and `work_unit.py build` refuses to start any new unit while one
+exists, in any task, because sequential dispatch means an open unit is a
+finished worker whose barrier has not run. A barrier whose owned process
+survived SIGKILL refuses too; inspect that process before going on.
 
 ## What a worker receives
 
