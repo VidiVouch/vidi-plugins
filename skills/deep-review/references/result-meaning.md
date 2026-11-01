@@ -179,6 +179,11 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/deep-review/scripts/run_status.py" status 
   backwards and replacements forwards through the sibling manifests, each with
   its outcome (`missing`, `returned`, `replaced` with the recorded cause,
   `accepted` or `changes-required`) and which one is the current run.
+- `disposition`: every finding the run judged, each under one final outcome
+  (`open`, `degraded`, `unruled`, `fixed`, `refuted`) with its rounds and the
+  reason, copied from the result's own record (references/disposition.md). A
+  result without that record reports `recorded: false`; the helper never derives
+  a current state from the historical `confirmed` union.
 - `obligations`: the open findings of the last review, and with `--ledger` the
   unit the manifest names: its ledger state, the attempt's implementer and
   verifier records (started, returned, disposition, barrier outcome), the open

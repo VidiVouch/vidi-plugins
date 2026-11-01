@@ -391,6 +391,7 @@ def test_the_note_renders_through_the_existing_report_surface(review_run, tmp_pa
         "blocking",
         "dispatches",
         "reviewers",
+        "disposition",
         "history",
         "obligations",
         "sources",
@@ -419,6 +420,92 @@ def test_the_note_renders_through_the_existing_report_surface(review_run, tmp_pa
     page = subprocess.run([sys.executable, str(RENDER), str(path)], capture_output=True, text=True, timeout=30)
     assert page.returncode == 0 and "<title>" in page.stdout and run_id in page.stdout
     assert "unknown block" not in page.stdout
+
+
+def test_findings_are_reported_by_final_disposition_not_by_the_historical_union(review_run, tmp_path):
+    _, init, _, _ = review_run
+    round1 = {"round": 1, "ruling": "confirmed", "severity": "warning", "reason": "traced"}
+    fixed = {
+        **FINDING,
+        "sources": ["claude-bugs"],
+        "outcome": "fixed",
+        "outcomeReason": "confirmed in round 1; fixed in round 1; not re-detected by claude-bugs in round 2",
+        "rounds": [round1],
+    }
+    refuted = {
+        **FINDING,
+        "file": "other.py",
+        "description": "a claim",
+        "sources": ["grok"],
+        "outcome": "refuted",
+        "outcomeReason": "round 1: guarded",
+        "rounds": [{**round1, "ruling": "refuted", "reason": "guarded"}],
+    }
+    still = {
+        **FINDING,
+        "line_start": 7,
+        "severity": "critical",
+        "description": "still here",
+        "sources": ["claude-bugs", "grok"],
+        "outcome": "open",
+        "outcomeReason": "re-detected in round 2 after a fix; the loop stopped before a fixer was dispatched",
+        "rounds": [round1, {**round1, "round": 2}],
+    }
+    manifest = init()
+    write_result(
+        manifest,
+        rounds=2,
+        confirmed=[still, fixed],
+        currentFindings=[still],
+        disposition={"fixed": [fixed], "refuted": [refuted], "open": [still], "unruled": [], "degraded": []},
+    )
+    record = read(manifest)
+    assert record["disposition"]["recorded"]
+    assert record["disposition"]["counts"] == {"open": 1, "degraded": 0, "unruled": 0, "fixed": 1, "refuted": 1}
+    assert [(i["outcome"], i["file"], i["rounds"]) for i in record["disposition"]["items"]] == [
+        ("open", "file.py", [1, 2]),
+        ("fixed", "file.py", [1]),
+        ("refuted", "other.py", [1]),
+    ]
+    assert record["disposition"]["items"][2]["reason"] == "round 1: guarded"
+    # The open count comes from the last round, not from the two-entry union.
+    assert record["acceptance"]["openFindings"] == 1 and record["obligations"]["findings"] == [
+        "critical file.py:7 still here"
+    ]
+    produced = status(manifest, "--format", "note")
+    note = json.loads(produced.stdout)
+    block = next(b for b in note["blocks"] if b["id"] == "disposition")
+    assert "1 open, 0 degraded, 0 unruled, 1 fixed, 1 refuted" in block["body"][0]["md"]
+    assert [row[0] for row in block["body"][1]["rows"]] == ["open", "fixed", "refuted"]
+    path = tmp_path / "note.json"
+    path.write_text(produced.stdout)
+    markdown = subprocess.run(
+        [sys.executable, str(RENDER), str(path), "--format", "md"], capture_output=True, text=True, timeout=30
+    )
+    assert markdown.returncode == 0, markdown.stderr
+    for phrase in (
+        "| open | critical | file.py:7 | still here | claude-bugs, grok | 1, 2 |",
+        "| fixed | warning | file.py:1 | fixture | claude-bugs | 1 |",
+        "| refuted | warning | other.py:1 | a claim | grok | 1 | round 1: guarded |",
+    ):
+        assert phrase in markdown.stdout, phrase
+    # An older result without the record: the helper reports none rather than deriving one from `confirmed`.
+    older = init()
+    write_result(older, confirmed=[fixed, still])
+    record = read(older)
+    assert record["disposition"] == {
+        "recorded": False,
+        "counts": {"open": 0, "degraded": 0, "unruled": 0, "fixed": 0, "refuted": 0},
+        "items": [],
+    }
+    note = json.loads(status(older, "--format", "note").stdout)
+    block = next(b for b in note["blocks"] if b["id"] == "disposition")
+    assert block["body"] == [
+        {
+            "type": "prose",
+            "md": "No final disposition is recorded in this result; the historical `confirmed` list is not a current state.",
+        }
+    ]
 
 
 def test_helper_reads_artifacts_and_never_wakes_an_agent():

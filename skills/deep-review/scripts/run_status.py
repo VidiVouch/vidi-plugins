@@ -9,7 +9,10 @@ coverage from the full result at outputs.resultPath, acceptance from acceptance.
 recovery from run_attempt.py classify. It records every dispatch and reviewer in one state vocabulary,
 the attempt series the run belongs to, and the obligations still open, then names the files and digests it
 read so the projection (status.json) can always be regenerated and checked. The report surface is the
-html-report note model, so there is no second dashboard to keep in step.
+html-report note model, so there is no second dashboard to keep in step. Findings are shown by the final
+disposition the controller recorded (fixed, refuted, open, unruled, degraded), never by the historical union
+of what some round once confirmed, so a finding fixed in round 1 is not reported as open and a refuted claim
+does not disappear.
 """
 
 import argparse
@@ -34,6 +37,9 @@ REVIEWER = {"disabled": "skipped", "unavailable": "skipped", "pending": "skipped
 # What a unit that ended without a result means for execution, by the ledger barrier's recorded outcome.
 CLOSED = {"failure": "failed", "cancellation": "cancelled", "retry": "cancelled"}
 ARTIFACTS = ("manifestPath", "argsFile", "resultPath", "patchPath", "gatePath", "acceptancePath")
+# The controller's final disposition of every finding it ever judged (references/disposition.md), in the
+# order a reader acts on them: what still needs work first, then what is settled, then what nobody can say.
+OUTCOMES = ("open", "degraded", "unruled", "fixed", "refuted")
 
 
 def now():
@@ -349,6 +355,38 @@ def ledger_unit(ledger_path, unit):
     }
 
 
+def disposition(result):
+    """Where each judged finding stands now, copied from the result's own disposition record.
+
+    Nothing here is derived from `confirmed`: that list is the union of every round's confirmations and cannot
+    say which were fixed since. A result that carries no record (an older controller) reports none rather than
+    presenting the union as all open or all resolved.
+    """
+    counts = dict.fromkeys(OUTCOMES, 0)
+    items = []
+    record = result.get("disposition") if result is not None else None
+    if not isinstance(record, dict):
+        return {"recorded": False, "counts": counts, "items": items}
+    for outcome in OUTCOMES:
+        for f in record.get(outcome) or []:
+            if not isinstance(f, dict):
+                continue
+            counts[outcome] += 1
+            items.append(
+                {
+                    "outcome": outcome,
+                    "severity": f.get("severity"),
+                    "file": f.get("file"),
+                    "line": f.get("line_start"),
+                    "description": str(f.get("description", ""))[:120],
+                    "sources": [str(s) for s in f.get("sources") or []],
+                    "rounds": [r.get("round") for r in f.get("rounds") or [] if isinstance(r, dict)],
+                    "reason": f.get("outcomeReason") or "",
+                }
+            )
+    return {"recorded": True, "counts": counts, "items": items}
+
+
 def obligations(result, ledger):
     findings = [
         f"{f.get('severity')} {f.get('file')}:{f.get('line_start')} {str(f.get('description', ''))[:120]}"
@@ -393,6 +431,7 @@ def status(manifest_path, ledger_path=None):
         "acceptance": acceptance(manifest, result),
         "recovery": recovery(report, result, manifest, manifest_path),
         "history": history(manifest),
+        "disposition": disposition(result),
         "obligations": obligations(result, ledger),
         "sources": sources(manifest),
     }
@@ -433,6 +472,34 @@ def note(record):
         if block
         else f"None: the decision is recorded ({accept['status']})."
     )
+    final = record["disposition"]
+    if final["recorded"]:
+        summary = ", ".join(f"{final['counts'][o]} {o}" for o in OUTCOMES)
+        findings_body = [
+            {"type": "prose", "md": f"Each finding appears once, under where it stands now: {summary}."},
+            table(
+                ["outcome", "severity", "file:line", "finding", "sources", "rounds", "why"],
+                [
+                    [
+                        i["outcome"],
+                        i["severity"],
+                        f"{i['file']}:{i['line']}",
+                        i["description"],
+                        ", ".join(i["sources"]),
+                        ", ".join(str(r) for r in i["rounds"]),
+                        i["reason"],
+                    ]
+                    for i in final["items"]
+                ],
+            ),
+        ]
+    else:
+        findings_body = [
+            {
+                "type": "prose",
+                "md": "No final disposition is recorded in this result; the historical `confirmed` list is not a current state.",
+            }
+        ]
     owed = record["obligations"]
     lines = [f"finding: {f}" for f in owed["findings"]]
     if owed["ledger"]:
@@ -468,6 +535,7 @@ def note(record):
                 )
             ],
         ),
+        ("disposition", "Findings by final disposition", findings_body),
         (
             "history",
             "Attempts of this request",
