@@ -1,0 +1,24 @@
+tests/test_rebuild_skills.py
+  s_610be6e94314a7::t_399b14566197c7 78-86
+  s_610be6e94314a7::t_ca0ce78092d1f7 91-93
+tests/test_work_unit.py
+  s_610be6e94314a7::t_1f4fae3ad5cc64 166,168-173
+skills/deep-review/references/work-unit.md
+  s_610be6e94314a7::t_57a1a7020fa184 96-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "76a0688b56a12943100b70c3896943545d508a6b",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
