@@ -1,0 +1,29 @@
+skills/deep-eval/SKILL.md
+  s_610be6e94314a7::t_07f2ddbf9685fc 65-70
+tests/test_model_evidence.py
+  s_610be6e94314a7::t_e733e3a7b73cd8 1-275
+  s_610be6e94314a7::t_6abe5ac9c3cff7 276-296
+skills/deep-review/references/judge-contract.md
+  s_610be6e94314a7::t_2817e539aa731f 243-248
+skills/deep-review/scripts/model_evidence.py
+  s_610be6e94314a7::t_556c37ad6e9441 1-265
+  s_610be6e94314a7::t_9731b725ab5d01 266-267
+skills/deep-review/references/models.md
+  s_610be6e94314a7::t_4e188bfd3ad4f4 110-166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "85237350c2d86498ad6d761d14ac7e54243c1f0e",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
