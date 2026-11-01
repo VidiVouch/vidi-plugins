@@ -1,0 +1,25 @@
+skills/deep-review/references/work-ledger.md
+  s_610be6e94314a7::t_170833be590cf0 1-68
+tests/test_work_ledger.py
+  s_610be6e94314a7::t_e5c2b4e04e70cd 1-192
+  s_610be6e94314a7::t_b039d0b58177b9 193-437
+skills/deep-review/scripts/work_ledger.py
+  s_610be6e94314a7::t_2e26df70c25e42 1-268
+  s_610be6e94314a7::t_dba962c50b8a25 269-297
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "34ac54a134b565288f3e38ed373342b3bf437cc6",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
