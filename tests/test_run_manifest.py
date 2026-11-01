@@ -109,12 +109,13 @@ def test_unchanged_run_and_public_api(case):
         "snapshotId": run["snapshotId"],
         "rubricId": run["rubricId"],
         "unit": None,
+        "attempt": {"number": 1, "priorRunId": None, "cause": None},
         "argsFile": run["argsFile"],
     }
     stored = load_manifest(run)
     assert manifest_api.verify_manifest(Path(run["manifestPath"])) == stored
     assert stored["originalArgs"] == case.original
-    assert stored["version"] == 2
+    assert stored["version"] == 3
     assert stored["repoRoot"] == str(case.repo)
     assert stored["argsFile"] == run["argsFile"]
     # Every durable artifact has a declared path in the run directory, outside the reviewed tree.
@@ -535,9 +536,22 @@ def test_unit_models_and_rubric_are_recorded_and_cannot_be_rewritten(case):
         ("unit", {"taskId": "FLOW-2", "attempt": 2, "role": "verifier"}, "invalid unit"),
         ("unit", {}, "invalid unit"),
         ("rubricId", "0" * 64, "rubric identity"),
+        # The run's own attempt number: a first attempt has no prior, a retry names one that is not itself.
+        ("attempt", {"number": 2, "priorRunId": None, "cause": "transient: quota"}, "prior run"),
+        ("attempt", {"number": 1, "priorRunId": run["runId"], "cause": None}, "no prior run"),
+        ("attempt", {"number": 2, "priorRunId": run["runId"], "cause": "transient: quota"}, "invalid attempt"),
+        ("attempt", {"number": 2, "priorRunId": other["runId"], "cause": ""}, "why the prior attempt ended"),
+        ("attempt", {"number": 0, "priorRunId": None, "cause": None}, "attempt numbers"),
+        ("attempt", {"number": 1}, "invalid attempt"),
+        ("attempt", None, "invalid attempt"),
     ):
         overwrite(run["manifestPath"], resign({**stored, key: value}))
         assert message in verify(run, success=False)
+    assert manifest_api.attempt_of(2, other["runId"], "transient: quota") == {
+        "number": 2,
+        "priorRunId": other["runId"],
+        "cause": "transient: quota",
+    }
 
 
 def test_resume_resends_the_exact_generated_args_or_refuses(case):
@@ -551,6 +565,7 @@ def test_resume_resends_the_exact_generated_args_or_refuses(case):
         "manifestPath": run["manifestPath"],
     }
     assert result["unit"] == {"taskId": "FLOW-1", "attempt": 1}
+    assert result["attempt"] == {"number": 1, "priorRunId": None, "cause": None}
     assert result["outputs"]["resultPath"].startswith(str(Path(run["manifestPath"]).parent))
     assert manifest_api.resume(SimpleNamespace(manifest=run["manifestPath"]))["args"] == generated
     # No arguments to resend: nothing can be replayed, so nothing is handed to the runtime.

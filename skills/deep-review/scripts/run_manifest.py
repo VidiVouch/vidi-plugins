@@ -152,6 +152,31 @@ def unit_of(task_id, attempt):
     return {"taskId": task_id, "attempt": attempt}
 
 
+def is_run_id(value):
+    try:
+        return isinstance(value, str) and str(uuid.UUID(value, version=4)) == value
+    except ValueError:
+        return False
+
+
+def attempt_of(number, prior_run_id=None, cause=None):
+    """This request's attempt in its own series: 1 for a first run, N+1 for a retry of a terminal prior run.
+
+    The ledger's unit.attempt is the worker's attempt; this is the review run's. A retry names the run
+    it replaces and why that run ended (run_attempt.py records the classified cause), so a manifest found
+    on disk says whether it is a first try or the third, and which artifacts to read for the earlier ones."""
+    require(type(number) is int and number >= 1, "attempt numbers start at 1")
+    if number == 1:
+        require(prior_run_id is None and cause is None, "a first attempt has no prior run")
+    else:
+        require(is_run_id(prior_run_id), "a retry names the prior run it replaces")
+        require(
+            isinstance(cause, str) and cause.strip() and len(cause) <= 500,
+            "a retry records why the prior attempt ended",
+        )
+    return {"number": number, "priorRunId": prior_run_id, "cause": cause}
+
+
 def git(repo, *args):
     # Ignore ambient Git repository/index overrides. These plumbing commands do not
     # invoke diff drivers, textconv, clean/smudge filters, or refresh the index.
@@ -304,7 +329,8 @@ def write_exclusive(path, value):
         temporary.unlink(missing_ok=True)
 
 
-def init(options):
+def init(options, attempt=None):
+    """Freeze one run. `attempt` is only passed by run_attempt.py retry, after the prior run is terminal."""
     repo = absolute(options.repo_root)
     artifact_dir = absolute(options.artifact_dir)
     outside_repo(artifact_dir, repo)
@@ -322,11 +348,12 @@ def init(options):
     run = {"id": run_id, "snapshotId": snapshot_id, "manifestPath": paths["manifestPath"]}
     generated = {**args, "run": run}
     manifest = {
-        "version": 2,
+        "version": 3,
         "runId": run_id,
         "snapshotId": snapshot_id,
         "repoRoot": str(repo),
         "unit": unit_of(options.task_id, options.attempt),
+        "attempt": attempt or attempt_of(1),
         "originalArgs": args,
         "sourceArgs": {"path": str(source), "sha256": digest(args_data)},
         "workflow": workflow,
@@ -376,6 +403,7 @@ def _verify_manifest(path):
         "snapshotId",
         "repoRoot",
         "unit",
+        "attempt",
         "originalArgs",
         "sourceArgs",
         "workflow",
@@ -389,13 +417,9 @@ def _verify_manifest(path):
         "manifestSha256",
     }
     require(isinstance(manifest, dict) and set(manifest) == keys, "invalid manifest schema")
-    require(type(manifest["version"]) is int and manifest["version"] == 2, "unsupported manifest version")
+    require(type(manifest["version"]) is int and manifest["version"] == 3, "unsupported manifest version")
     run_id = manifest["runId"]
-    require(isinstance(run_id, str), "invalid run ID")
-    try:
-        require(str(uuid.UUID(run_id, version=4)) == run_id, "invalid run ID")
-    except ValueError as exc:
-        raise ManifestError("invalid run ID") from exc
+    require(is_run_id(run_id), "invalid run ID")
     require(
         identity({key: value for key, value in manifest.items() if key != "manifestSha256"})
         == manifest["manifestSha256"],
@@ -417,6 +441,13 @@ def _verify_manifest(path):
     require(
         unit is None or (isinstance(unit, dict) and unit == unit_of(unit.get("taskId"), unit.get("attempt"))),
         "invalid unit",
+    )
+    attempt = manifest["attempt"]
+    require(
+        isinstance(attempt, dict)
+        and attempt == attempt_of(attempt.get("number"), attempt.get("priorRunId"), attempt.get("cause"))
+        and attempt["priorRunId"] != run_id,
+        "invalid attempt",
     )
     source = check_reference(manifest["sourceArgs"], "source args")
     require(
@@ -455,6 +486,7 @@ def verify(options):
         "snapshotId": manifest["snapshotId"],
         "rubricId": manifest["rubricId"],
         "unit": manifest["unit"],
+        "attempt": manifest["attempt"],
         "argsFile": manifest["argsFile"],
     }
 

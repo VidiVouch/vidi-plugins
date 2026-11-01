@@ -30,10 +30,14 @@ def review_result(run, findings=()):
     return {
         "run": run,
         "mode": "uncommitted",
+        "rounds": 1,
+        "boss": ["inherit"],
         "incomplete": False,
         "fixed": False,
         "requiresPostFixReview": False,
         "admission": {
+            "limits": {"concurrency": 3, "maxAgents": 30, "minRemainingTokens": 0},
+            "maxRounds": 3,
             "started": 1,
             "stopReason": "",
             "dispatches": [{"label": "claude-bugs#1", "phase": "Review", "state": "returned"}],
@@ -44,7 +48,7 @@ def review_result(run, findings=()):
         "attempted": ["claude-bugs"],
         "coverageComplete": True,
         "attempts": [{"key": "claude-bugs", "round": 1, "state": "succeeded", "reason": ""}],
-        "currentFindings": list(findings),
+        "currentFindings": [{**f, "sources": ["claude-bugs"]} for f in findings],
         "degraded": [],
         "acceptance": "pending-external-verification",
         "reviewResults": [

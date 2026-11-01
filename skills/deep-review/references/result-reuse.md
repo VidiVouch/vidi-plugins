@@ -39,7 +39,9 @@ gate that ran before anyone finalized. An `acceptance.json` with
 `status: changes-required` is a ruling against the tree. A `.review-cache`
 hash file is a prior-attempt hint. A ledger unit in `running` is a worker that
 has not returned. None of these can prove acceptance, and `reuse_result.py`
-refuses each of them with the reason.
+refuses each of them with the reason. Which marker a failed run left, and
+whether the same request is worth a bounded retry under a new run id, is what
+`run_attempt.py classify` answers; result-meaning.md defines its categories.
 
 ## Reuse only when input and rubric identity match
 
