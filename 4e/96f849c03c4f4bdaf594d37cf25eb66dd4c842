@@ -1,0 +1,26 @@
+tests/test_rebuild_forwarding.py
+  s_610be6e94314a7::t_c5d06b6de89602 35
+  s_610be6e94314a7::t_4599a1287fd9ca 1-34,36-70,72-115
+  s_610be6e94314a7::t_4d914b284b999c 71
+  s_610be6e94314a7::t_5d6f3edaffc941 116
+skills/rebuild/compat/user-skill.md
+  s_610be6e94314a7::t_0e590f2cb498e5 1-57
+skills/rebuild/scripts/user_skill_forwarding.py
+  s_610be6e94314a7::t_fdc192c7e18cb7 1-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4e96f849c03c4f4bdaf594d37cf25eb66dd4c842",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
