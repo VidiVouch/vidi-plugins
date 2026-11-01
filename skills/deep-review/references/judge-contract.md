@@ -240,8 +240,12 @@ costing a round per fixer that declines it.
 
 ## Outside this contract
 
-The run-record identity fields `resolvedModel` and `upstreamModel` (MODEL-3)
-are specified by that task and stay null until it lands.
+The run-record identity fields `resolvedModel` and `upstreamModel` stay null
+in the workflow result and are filled afterwards by `scripts/model_evidence.py`
+from the harness transcript and the proxy request log (models.md, "Run-record
+identity: three sources"), never from a judge's words. A judge whose transcript
+names a model other than its definition's is a fallback, and the panel it sat
+on is not a cross-family comparison.
 
 Without `--panel` one boss adjudicates and the boss stage keeps its `rulings`
 shape; judging.md says how to read it through this contract. The earlier

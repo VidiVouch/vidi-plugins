@@ -62,3 +62,9 @@ mechanical checks, artifacts, or explicit human notes.
   stopping condition, and total cost before any metered call, and get explicit
   approval for that scope; see deep-review/references/approvals.md, gate
   `paid-calls`. Hosting a review page beyond localhost follows `hosted-reports`.
+- A run that compares models is a trial only when
+  `deep-review/scripts/model_evidence.py` reports `trial.state: valid` for it.
+  A label, a configured model name, or a model's own description of itself is
+  not proof of what answered. A unit answered by another model (`invalid`) or
+  without harness evidence (`unverified`) drops the run from the comparison
+  rather than counting it under the requested name.

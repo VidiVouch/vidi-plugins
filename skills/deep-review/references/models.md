@@ -107,3 +107,60 @@ and prints no credentials. Without `--probe-proxy` it makes no request and
 claims nothing. Near matches are evidence for a human; the helper never
 substitutes one. A role whose packaged agent definition disagrees with the
 roles file is reported with `agentAgrees: false`.
+
+## Run-record identity: three sources
+
+A unit's model is recorded three times, from three sources that never stand in
+for each other:
+
+- `requestedModel` is what the dispatch asked for. For a dispatch by
+  `agentType` it is the definition's `model`, a full ID (`pinned: true`); for
+  a per-call alias such as `opus`, or the inherited session model, it is that
+  alias (`pinned: false`), because the harness resolves an alias and the
+  request pins nothing. The workflow writes this into every entry of
+  `admission.dispatches` (`agentType`, `model`).
+- `resolvedModel` is what Claude Code's own transcript for the unit says. The
+  runtime journal maps each dispatch label to an agent id, and that agent's
+  transcript records per API call the model sent (`api-request.params.model`,
+  `assistant.requestedModel`) and the model the response named
+  (`assistant.message.model`). Only those fields are read; message content is
+  never opened, so a model's description of itself cannot reach the record.
+- `upstreamModel` is what the proxy's request log says it received and what
+  its upstream answered with, joined to the transcript by the response message
+  id. CLIProxy writes that log only with `request-log: true`, a settings change
+  (approvals.md, `global-settings`). Without it the field stays null and the
+  record says why.
+
+`scripts/model_evidence.py` fills the record after a run:
+
+```
+python3 skills/deep-review/scripts/model_evidence.py \
+  --result "$RUN_DIR/result.json" --workflow-dir <transcript directory of the Workflow run> \
+  --proxy-logs ~/.ccs/cliproxy/logs --out "$RUN_DIR/model-evidence.json"
+```
+
+The workflow result itself keeps `resolvedModel` and `upstreamModel` null; the
+evidence file beside it carries the filled values with their sources. A unit is
+`verified` when every source agrees with the request (`[1m]` is stripped on
+both sides, since the provider never sees it), `fallback` when any source
+disagrees (another ID sent or answered, more than one model answering, the
+runtime running a different definition than the one selected, the proxy
+receiving or answering with something else), and `unverified` when it has no
+transcript or no answered turn. The label only locates the transcript: a unit
+labelled `judge-grok#1` whose transcript names `claude-fable-5-1` is a
+fallback, not a Grok ruling.
+
+A model-comparison trial (a `--panel` run read as a cross-family comparison, a
+deep-eval baseline against a variant, a routing smoke) is `valid` only when
+every unit that ran is verified. One fallback makes it `invalid` and one
+unverified unit makes it `unverified`; the helper exits nonzero for anything
+but `valid`, so a comparison harness cannot count a substituted model under the
+requested name. `upstreamVerified` is reported separately and is true only when
+the proxy log covered every unit without disagreement; a comparison between
+providers behind the proxy should require it once the log is on.
+
+Why the rule exists: subagent transcripts on this machine already show the
+harness sending `grok-4.5` and the response naming `grok-4.5-build` across
+more than a hundred turns, a substitution nothing in a run result would have
+shown. A trial that counted those turns as Grok 4.5 would have compared a model
+that never answered.
