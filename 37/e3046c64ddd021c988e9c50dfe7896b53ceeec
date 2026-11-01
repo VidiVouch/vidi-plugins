@@ -1,0 +1,37 @@
+tests/test_convergence.py
+  s_610be6e94314a7::t_cb9168bed7d996 254
+  s_610be6e94314a7::t_d894bcd6c8d128 13-14
+  s_610be6e94314a7::t_fd0c6b5373b7d4 257,262-263
+  s_610be6e94314a7::t_e261d3d847ea14 204-208
+  s_610be6e94314a7::t_f8bd0b3c8ef6b1 253
+  s_610be6e94314a7::t_bed5d247f208e6 6-7
+  s_610be6e94314a7::t_c7a2031ccd174c 111-112
+  s_610be6e94314a7::t_bb5800f71f5fc4 245
+  s_610be6e94314a7::t_d531351ee459e6 1-5,8-12,15-105,107-110,113-132,134-203,209-240,242-244,246-249,251-252,255-256,258-261,264
+  s_610be6e94314a7::t_c608ca7a282239 106
+  s_610be6e94314a7::t_87b2a92c48826a 133
+  s_610be6e94314a7::t_9153c9aa619107 241
+  s_610be6e94314a7::t_f4e8f10e13a52a 250
+skills/deep-review/references/disposition.md
+  s_610be6e94314a7::t_d7f93ea56a6c0d 24-27
+skills/deep-review/references/result-meaning.md
+  s_610be6e94314a7::t_5e6168090d8dc8 53-55
+skills/deep-review/scripts/run_attempt.py
+  s_610be6e94314a7::t_d337d33c8526bb 203-205
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "37e3046c64ddd021c988e9c50dfe7896b53ceeec",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
