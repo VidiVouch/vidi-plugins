@@ -36,7 +36,8 @@ TRANSIENT = re.compile(
 BLOCKING = re.compile(
     r"authenticat|unauthori[sz]ed|\b401\b|\b403\b|account.on.hold|preflight|capability was not established"
     r"|not advertised|cli missing|not installed|not checked|absent or unloadable|conflicts with|misconfigur"
-    r"|non-fresh agent|no result schema|agent-attempt limit|token budget",
+    r"|non-fresh agent|no result schema|agent-attempt limit|token budget"
+    r"|gate (did not pass|evidence missing|not registered)",
     re.I,
 )
 ARTIFACTS = (("args", "argsFile"), ("result", "resultPath"), ("patch", "patchPath"), ("gate", "gatePath"))
@@ -44,7 +45,7 @@ DECIDED = {"accepted", "changes-required", "complete"}
 NEXT = {
     "accepted": "the decision is recorded in acceptance.json; nothing to retry",
     "changes-required": "a ruling against this tree is recorded; repair under the round cap and review again",
-    "complete": "pending finalization: run run_gate.py run and finalize",
+    "complete": "pending finalization: the controller recorded a passed gate, run run_gate.py finalize",
     "missing": (
         "no result at resultPath: the attempt has not returned or was interrupted before the result was saved;"
         " resume it with run_manifest.py resume, or once the worker is known to be gone pass --abandon"
@@ -58,7 +59,10 @@ NEXT = {
         " tree (run-lifecycle.md); nothing replays the fixer"
     ),
     "launch-blocked": "nothing was dispatched; change what blocked the launch, then initialize a fresh manifest",
-    "blocked": "the same request would fail again; change credentials, tooling or limits, then initialize a fresh manifest",
+    "blocked": (
+        "the same request would fail again; change credentials, tooling, limits or the tree a gate refused,"
+        " then initialize a fresh manifest"
+    ),
     "transient": "retry: run_attempt.py retry starts the next attempt with a new run id and the same request",
     "partial": "retry: run_attempt.py retry starts the next attempt with a new run id and the same request",
     "malformed": "retry: a fresh run id replays nothing; if the shape is a script mismatch the next attempt fails the same way",

@@ -32,8 +32,9 @@ request fare better next time.
 - `accepted` and `changes-required`: `acceptance.json` exists for this run. The
   decision is made; a ruling against the tree is repaired under the round cap and
   reviewed again, never retried.
-- `complete`: the result passes every check finalize makes short of the gate.
-  Run `run_gate.py run` and `finalize`; until then it is still
+- `complete`: the result passes every check finalize makes short of the file
+  comparison, including a passed gate the controller recorded for this run and
+  snapshot. Run `run_gate.py finalize`; until then it is still
   pending-external-verification.
 - `missing`: no file at `resultPath`. Nothing says the attempt ended. Resume it
   with `run_manifest.py resume` while the tree is unchanged; when the worker is
@@ -56,8 +57,9 @@ request fare better next time.
 - `blocked`: incomplete, and a reason says the same request would fail again:
   authentication, 401 or 403, an account on hold, a missing CLI or model, a
   preflight that was not established, a dispatch shape the script refused, the
-  agent-attempt cap or the token budget. Change credentials, tooling or limits,
-  then initialize a fresh manifest.
+  agent-attempt cap, the token budget, or a gate the controller saw fail, go
+  missing or go unregistered. Change credentials, tooling, limits or the tree the
+  gate refused, then initialize a fresh manifest.
 - `transient`: incomplete, and a reason says the failure can be outlived: usage
   or session limits, quota, rate limits, 429, 502 to 504, overload, a timeout,
   a cancellation, a network error, a worker that returned nothing or failed to
@@ -124,6 +126,10 @@ requires, besides the identity, snapshot, coverage, dispatch and barrier checks:
 - useful payloads: every successful reviewer's full payload is present, not
   degraded, and each of its findings has a usable file, line range, severity
   and description;
+- gate transport: the result's `gate.state` is `passed` and `gate.report`, the
+  report the controller received from its courier, equals `gate-result.json` on
+  disk, so the controller's decision rested on the durable file and not on a
+  paraphrase, an invented report or a display-only text;
 - artifact existence: the result bytes and the gate report with its captured
   stdout and stderr exist and still hash to what was validated.
 

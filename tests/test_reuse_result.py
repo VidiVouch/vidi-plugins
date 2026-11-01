@@ -27,8 +27,20 @@ def script(name, *args):
 
 
 def review_result(run, findings=()):
+    identity = run if isinstance(run, dict) else {}
     return {
         "run": run,
+        # The controller's record of its gate courier's report; accept() replaces the stand-in with the real one.
+        "gate": {
+            "state": "passed",
+            "reason": "",
+            "report": {
+                "runId": identity.get("id"),
+                "snapshotId": identity.get("snapshotId"),
+                "status": "passed",
+                "checks": [],
+            },
+        },
         "mode": "uncommitted",
         "rounds": 1,
         "boss": ["inherit"],
@@ -98,7 +110,12 @@ def case(tmp_path):
         return manifest
 
     def accept(manifest):
-        assert script("run_gate.py", "run", "--manifest", str(manifest)).returncode == 0
+        measured = script("run_gate.py", "run", "--manifest", str(manifest))
+        assert measured.returncode == 0
+        result = manifest.parent / "review-result.json"
+        data = json.loads(result.read_text())
+        data["gate"]["report"] = json.loads(measured.stdout)  # what the courier carries into the controller
+        result.write_text(json.dumps(data))
         finalized = script(
             "run_gate.py",
             "finalize",

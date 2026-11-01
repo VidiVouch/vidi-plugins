@@ -92,6 +92,8 @@ def run(tmp_path):
             "reviewResults": [
                 {"key": "claude-bugs", "round": 1, "result": {"findings": [], "degraded": False, "reason": ""}}
             ],
+            # What the controller records from its gate courier; measure() fills the report in as the courier would.
+            "gate": {"state": "passed", "reason": "", "report": None},
         }
         result_path = manifest.parent / "review-result.json"
         result_path.write_text(json.dumps(result))
@@ -107,25 +109,76 @@ def gate(manifest, operation="run", result=None):
     return command(args)
 
 
-def test_mocked_workflow_result_finalizes_against_real_manifest(run, tmp_path):
+def measure(manifest, result):
+    """Run the gate and record its printed report in the result, as the workflow's courier unit does."""
+    measured = gate(manifest)
+    if measured.returncode == 0:
+        data = json.loads(result.read_text())
+        data["gate"]["report"] = json.loads(measured.stdout)
+        result.write_text(json.dumps(data))
+    return measured
+
+
+def test_mocked_workflow_runs_the_gate_through_its_courier_and_finalize_binds_the_report(run, tmp_path):
+    """The real workflow under the mock runtime dispatches a courier that runs the real helper: the report the
+    controller recorded is the file on disk, the helper is the executor of record, and finalize accepts it."""
     from test_deep_review import SKILL, prepare, workflow
 
     setup = prepare.prepare(tmp_path, env={})
     _, manifest, result = run(reviewers=setup["reviewers"], workflow_path=SKILL / "deep-review.workflow.js")
     bound_args = json.loads((manifest.parent / "args.json").read_text())
-    completed = workflow(bound_args)["result"]
+    data = workflow(bound_args)
+    completed = data["result"]
+    courier = next(c for c in data["calls"] if c["opts"]["label"] == "gate:run_gate.py#1")
+    assert f'run --manifest "{manifest}"' in courier["prompt"] and courier["opts"]["agentType"] == "gate-courier"
+    on_disk = json.loads((manifest.parent / "gate-result.json").read_text())
+    assert completed["gate"]["state"] == "passed" and completed["gate"]["report"] == on_disk
+    assert on_disk["executor"]["helper"] == "run_gate.py" and on_disk["executor"]["pid"] != os.getpid()
+    assert (manifest.parent / "gate-0.stdout").read_text() == "checked\n"
+    assert not completed["incomplete"]
     result.write_text(json.dumps(completed))
-    assert gate(manifest).returncode == 0
+    # The helper already ran once for this run; a host-side repeat is refused and the first report stands.
+    repeated = gate(manifest)
+    assert repeated.returncode == 2 and "already exists" in repeated.stderr
     accepted = gate(manifest, "finalize", result)
     assert accepted.returncode == 0, accepted.stderr
     assert json.loads(accepted.stdout)["accepted"] is True
     assert json.loads(accepted.stdout)["coverageComplete"] is False
 
 
+@pytest.mark.parametrize("shape", ["absent", "skipped", "failed", "other-snapshot", "paraphrased", "replaced"])
+def test_acceptance_needs_the_gate_report_the_controller_decided_on(run, shape):
+    """finalize accepts only a result whose recorded gate report is the durable one: no record, a skipped or failed
+    gate, a report for another snapshot, a courier's paraphrase, or a file replaced after the run are refused."""
+    _, manifest, result = run()
+    assert measure(manifest, result).returncode == 0
+    data = json.loads(result.read_text())
+    report = data["gate"]["report"]
+    if shape == "absent":
+        del data["gate"]
+    elif shape == "skipped":
+        data["gate"] = {"state": "skipped", "reason": "gate not registered", "report": None}
+    elif shape == "failed":
+        data["gate"] = {"state": "failed", "reason": "gate did not pass", "report": {**report, "status": "failed"}}
+    elif shape == "other-snapshot":
+        data["gate"]["report"] = {**report, "snapshotId": "0" * 64}
+    elif shape == "paraphrased":
+        data["gate"]["report"] = {key: value for key, value in report.items() if key != "registry"}
+    else:
+        replaced = {**report, "executor": {**report["executor"], "pid": 1}}
+        (manifest.parent / "gate-result.json").write_text(json.dumps(replaced, indent=2) + "\n")
+    result.write_text(json.dumps(data))
+    refused = gate(manifest, "finalize", result)
+    assert refused.returncode == 2
+    expected = "disagrees with the durable gate report" if shape in {"paraphrased", "replaced"} else "passed gate"
+    assert expected in refused.stderr, refused.stderr
+    assert not (manifest.parent / "acceptance.json").exists()
+
+
 def test_clean_review_needs_measured_gate(run):
     _, manifest, result = run()
     assert gate(manifest, "finalize", result).returncode != 0
-    measured = gate(manifest)
+    measured = measure(manifest, result)
     assert measured.returncode == 0, measured.stderr
     assert json.loads(measured.stdout)["checks"][0]["exitCode"] == 0
     accepted = gate(manifest, "finalize", result)
@@ -262,7 +315,7 @@ def test_sigterm_cleans_up_and_records_cancellation(run):
 )
 def test_semantically_invalid_review_is_rejected(run, patch):
     _, manifest, result = run()
-    assert gate(manifest).returncode == 0
+    assert measure(manifest, result).returncode == 0
     result.write_text(json.dumps({**json.loads(result.read_text()), **patch}))
     assert gate(manifest, "finalize", result).returncode != 0
     assert not (manifest.parent / "acceptance.json").exists()
@@ -271,7 +324,7 @@ def test_semantically_invalid_review_is_rejected(run, patch):
 @pytest.mark.parametrize("artifact", ["review", "gate"])
 def test_artifact_replacement_during_finalize_cannot_be_certified(run, monkeypatch, artifact):
     _, manifest, result = run()
-    assert gate(manifest).returncode == 0
+    assert measure(manifest, result).returncode == 0
     monkeypatch.syspath_prepend(str(SCRIPTS))
     module = importlib.import_module("run_gate")
     real_verify = module.verify_manifest
@@ -296,7 +349,7 @@ def test_artifact_replacement_during_finalize_cannot_be_certified(run, monkeypat
 
 def test_success_requires_a_matching_returned_review_dispatch(run):
     _, manifest, result = run()
-    assert gate(manifest).returncode == 0
+    assert measure(manifest, result).returncode == 0
     data = json.loads(result.read_text())
     data["admission"]["dispatches"] = [{"label": "unrelated-reviewer#999", "phase": "Review", "state": "failed"}]
     result.write_text(json.dumps(data))
@@ -389,7 +442,7 @@ def test_gate_children_are_registered_for_the_unit_barrier_and_their_cleanup_is_
 
 def test_valid_findings_are_changes_required_not_accepted(run):
     _, manifest, result = run()
-    assert gate(manifest).returncode == 0
+    assert measure(manifest, result).returncode == 0
     data = json.loads(result.read_text())
     data["currentFindings"] = [{**FINDING, "severity": "warning", "sources": ["claude-bugs"]}]
     result.write_text(json.dumps(data))
@@ -401,7 +454,7 @@ def test_valid_findings_are_changes_required_not_accepted(run):
 def test_registered_limits_and_rounds_are_the_scope_a_result_must_echo(run):
     """A request that registers its own limits and round cap accepts only a result that ran under them."""
     _, manifest, result = run(limits={"concurrency": 1}, maxRounds=2)
-    assert gate(manifest).returncode == 0
+    assert measure(manifest, result).returncode == 0
     data = json.loads(result.read_text())
     refused = gate(manifest, "finalize", result)
     assert refused.returncode == 2 and "Admission limits" in refused.stderr
@@ -418,7 +471,7 @@ def test_registered_limits_and_rounds_are_the_scope_a_result_must_echo(run):
 
 def test_changed_gate_logs_or_snapshot_invalidate_acceptance(run):
     repo, manifest, result = run()
-    assert gate(manifest).returncode == 0
+    assert measure(manifest, result).returncode == 0
     (manifest.parent / "gate-0.stdout").write_text("not the captured output")
     assert gate(manifest, "finalize", result).returncode != 0
     (repo / "file.py").write_text("different snapshot\n")

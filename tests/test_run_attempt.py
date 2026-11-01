@@ -91,8 +91,15 @@ def case(tmp_path):
         return Path(json.loads(created.stdout)["manifestPath"])
 
     def finalize(manifest):
-        script("run_gate.py", "run", "--manifest", manifest)
-        return script("run_gate.py", "finalize", "--manifest", manifest, "--result", result_path(manifest))
+        measured = script("run_gate.py", "run", "--manifest", manifest)
+        path = result_path(manifest)
+        if measured.returncode == 0 and path.is_file():
+            # The courier's job in a live run: the report the helper printed is what the controller records.
+            data = json.loads(path.read_text())
+            if isinstance(data.get("gate"), dict):
+                data["gate"]["report"] = json.loads(measured.stdout)
+                path.write_text(json.dumps(data))
+        return script("run_gate.py", "finalize", "--manifest", manifest, "--result", path)
 
     return repo, init, finalize, contract
 
@@ -145,13 +152,23 @@ def test_each_result_meaning_is_named_and_none_but_complete_reaches_acceptance(c
         ),
         "modified": ({"fixed": True, "requiresPostFixReview": True}, True, False),
         "malformed": ({"coverage": {}}, True, True),
+        # A gate the controller saw fail is a ruling against the tree: the same request fails again, so no retry.
+        "blocked-gate": (
+            {
+                "incomplete": True,
+                "gate": {"state": "failed", "reason": 'gate did not pass (["true"] failed exit 4)', "report": None},
+                "degraded": [{"key": "gate", "reason": 'degraded: gate did not pass (["true"] failed exit 4)'}],
+            },
+            True,
+            False,
+        ),
         "complete": ({}, True, False),
     }
     for name, (patch, terminal, retryable) in shapes.items():
         manifest = init()
         write_result(manifest, **patch)
         report = json.loads(classify(manifest).stdout)
-        expected = name.split("-transient")[0].split("-cancelled")[0]
+        expected = re.sub(r"-(transient|cancelled|gate)$", "", name)
         assert report["category"] == expected, (name, report)
         assert (report["terminal"], report["retryable"]) == (terminal, retryable), (name, report)
         assert report["attempt"] == {"number": 1, "priorRunId": None, "cause": None}

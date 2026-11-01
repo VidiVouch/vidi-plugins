@@ -105,6 +105,8 @@ def run_gate(manifest_path, registry=None):
         "runId": manifest["runId"],
         "snapshotId": manifest["snapshotId"],
         "status": "failed",
+        # Who ran the checks: this host process, never the agent that carried the report into the controller.
+        "executor": {"helper": "run_gate.py", "pid": os.getpid()},
         "registry": str(Path(registry).resolve()) if registry else None,
         "checks": [],
     }
@@ -357,6 +359,19 @@ def validate_review(manifest, result):
         # A payload that parses but holds unusable findings is a replayed or truncated value, not evidence.
         for finding in payload["findings"]:
             check_finding(finding)
+    # The controller's own decision rested on a gate report for this exact run and snapshot; a run whose
+    # gate was skipped, failed, or never reached the controller has no such record and is not complete.
+    gate = result.get("gate")
+    report = gate.get("report") if isinstance(gate, dict) else None
+    if (
+        not isinstance(gate, dict)
+        or gate.get("state") != "passed"
+        or not isinstance(report, dict)
+        or report.get("runId") != manifest["runId"]
+        or report.get("snapshotId") != manifest["snapshotId"]
+        or report.get("status") != "passed"
+    ):
+        raise ManifestError("Controller did not record a passed gate for this run and snapshot")
     return not any(f["severity"] != "nit" for f in findings)
 
 
@@ -380,6 +395,10 @@ def finalize(manifest_path, result_path):
         or len(gate.get("checks", [])) != len(commands)
     ):
         raise ManifestError("Missing, failed, or wrong-snapshot gate")
+    # Transport check: the controller decided on exactly the report this file holds. A courier that
+    # paraphrased, a display-only success text, or a report replaced after the run cannot be finalized.
+    if result["gate"]["report"] != gate:
+        raise ManifestError("Gate evidence the controller recorded disagrees with the durable gate report")
     for index, (check, command) in enumerate(zip(gate["checks"], commands, strict=True)):
         if check.get("command") != command or check.get("status") != "passed" or check.get("exitCode") != 0:
             raise ManifestError("Registered gate command did not pass")

@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["exitCode", "stderr"],
+  "properties": {
+    "exitCode": {"type": "integer"},
+    "report": {"type": "object"},
+    "stderr": {"type": "string", "maxLength": 2000}
+  }
+}
