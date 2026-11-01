@@ -1,0 +1,25 @@
+tests/test_model_roles.py
+  s_610be6e94314a7::t_76f26c9bb6fac2 1-134
+skills/deep-review/model-roles.json
+  s_610be6e94314a7::t_617217b284b668 1-51
+skills/deep-review/scripts/model_roles.py
+  s_610be6e94314a7::t_b6c47dc860ed37 1-140
+skills/deep-review/references/models.md
+  s_610be6e94314a7::t_cbf031b5ba6b7d 1-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "620885db3f9354752264511d32a7e0885a4b6b86",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
