@@ -1,0 +1,20 @@
+tests/test_fix_strategy.py
+  s_610be6e94314a7::t_4c3189224d244e 1-69
+  s_610be6e94314a7::t_9f638e1550856f 70-73
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "73df013546d1a1b217d019fc21cb59b44135adc6",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
