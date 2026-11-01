@@ -229,6 +229,40 @@ def test_a_second_rebuttal_of_the_same_finding_is_refused():
     assert result["fixResults"][1]["error"].startswith(f"finding {CANDIDATE['id']} was rebutted in round 1")
 
 
+def test_a_second_rebuttal_rounds_later_is_refused_and_the_first_stays_on_record():
+    """Round 1 rebuts; round 2 confirms over the objection and its fixer leaves the finding partial; round 3
+    re-detects it and judges it on its own merits, and its fixer tries to rebut again. The refusal reads the run's
+    record by identity, not the previous round's candidate, so the round 3 fixer is told both sides, its second
+    objection is refused, and the record keeps the round 1 rebuttal and the round 2 ruling."""
+    data = workflow(
+        {"judges": panel(), "fix": True, "maxRounds": 4},
+        {
+            **ONE,
+            **unanimous("confirmed"),
+            "fix:bucket1/1#1": rebutting(CANDIDATE["id"]),
+            "claude-bugs#2": CLEAN,
+            **{f"{n}#2": judged(round=2, reason="the guard is dead code; the read is reached") for n in PANEL},
+            "fix:bucket1/1#2": {**FIX_PACKET, "disposition": "partial", "unresolved": ["could not reach it"]},
+            "claude-bugs#3": {**CLEAN, "findings": [FINDING]},
+            **unanimous("confirmed", round=3),
+            "fix:bucket1/1#3": rebutting(CANDIDATE["id"], reason="second objection"),
+        },
+    )
+    result = data["result"]
+    assert result["incomplete"] and result["rounds"] == 3
+    assert all('"rebuttal"' not in c["prompt"] for c in judge_calls(data, 3)), "round 3 judges the claim on its merits"
+    (fixer,) = fix_calls(data, 3)
+    assert '"priorRebuttal": {' in fixer["prompt"] and f'"reason": "{REASON}"' in fixer["prompt"]
+    assert '"ruling": "judge-fable: the guard is dead code; the read is reached; judge-astra:' in fixer["prompt"]
+    assert result["fixResults"][2]["error"].startswith(f"finding {CANDIDATE['id']} was rebutted in round 1")
+    assert all(not r["error"] for r in result["fixResults"][:2])
+    (degraded,) = result["disposition"]["degraded"]
+    assert degraded["rebuttal"] == REBUTTAL, "the first rebuttal is the one on record"
+    assert [r["ruling"] for r in degraded["rounds"]] == ["confirmed", "confirmed", "confirmed"]
+    assert degraded["rounds"][1]["reason"].startswith("judge-fable: the guard is dead code")
+    assert degraded["outcomeReason"].startswith("re-detected in round 3 after a fix; fixer dispatched in round 3; ")
+
+
 def test_a_rebuttal_the_run_ends_on_is_degraded_not_fixed():
     result = workflow(
         {"judges": panel(), "fix": True, "maxRounds": 1},
