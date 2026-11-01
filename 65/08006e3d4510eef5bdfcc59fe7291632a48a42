@@ -1,0 +1,27 @@
+tests/test_classifier_check.py
+  s_610be6e94314a7::t_3a9f317941deb2 131,133-135
+  s_610be6e94314a7::t_c8b1df000c3ce9 153-158
+skills/deep-review/scripts/classifier_check.py
+  s_610be6e94314a7::t_ccb53e108ecc70 188-189
+  s_610be6e94314a7::t_56625f483d4491 42-43
+  s_610be6e94314a7::t_ab33e024550b87 190-191,193
+skills/deep-review/references/models.md
+  s_610be6e94314a7::t_f89b4e88da87c2 202-205
+  s_610be6e94314a7::t_e59d302ac1188a 184-191
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6508006e3d4510eef5bdfcc59fe7291632a48a42",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
