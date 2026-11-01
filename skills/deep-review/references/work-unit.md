@@ -104,3 +104,35 @@ every brief opens by telling the agent it is a fresh instance. The agent
 definitions under `agents/` say the same, so a worker that is asked to continue
 earlier work reports a wrong brief instead of guessing. The rebuild skills keep
 their own fresh-spawn rule for implementers and fixers.
+
+## Ordinary workers and temporary teammates
+
+Two different things are called a name. A definition name (`name` in the
+frontmatter under `agents/`, passed as `agentType` to the Workflow runtime or
+`subagent_type` to the Agent tool) selects which definition the instance starts
+from. A runtime instance name (`name` on the Agent tool call) labels one running
+instance so the caller can message, resume or shut it down later. Selecting a
+named definition never requires an instance name: `fixer` or
+`vidi-skills:grok-reviewer` is a type, and an ordinary worker is that type plus
+its brief, with no instance name at all.
+
+The instance name is what turns a worker into a teammate. With
+`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in an interactive session, an Agent
+call from the lead that carries `name` launches a teammate instead of a
+subagent, unless the call is a fork or passes `isolation` itself; team
+availability alone changes nothing. A teammate stays addressable after it
+returns, is brought back with its saved conversation when messaged, and must be
+shut down by name. Each of those is the opposite of a fresh unit, so the
+dispatch layer refuses `name` outright rather than admitting it when teams are
+off: the rule must not depend on how the lead was started, and a named instance
+in a `-p` session is still a standing address a later caller could resume.
+
+A temporary teammate is allowed only inside a phase the lead owns, where the
+work needs discussion or live-tree edits that a returning worker cannot give
+(in deep-review, Phase 3.6 under the explicit `teams` fix strategy). The lead
+spawns each one from its definition with a name unique to that phase (role,
+bucket and round), hands it the same brief an ordinary worker would get, shuts
+every teammate down when the phase ends, and never messages a teammate from an
+earlier phase or run; a replacement gets a new name. The Workflow runtime never
+creates a teammate, so a review or fix lane inside the workflow is always an
+ordinary worker.

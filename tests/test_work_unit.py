@@ -256,3 +256,19 @@ def test_schema_validator_reference_and_gate_ids_agree():
         assert f"`{section}" in reference, section
     assert "\u2014" not in reference and "\u2013" not in reference, "prose for agents uses plain dashes"
     assert "work-unit.md" in (REPO / "skills/deep-review/references/work-ledger.md").read_text()
+
+
+def test_reference_separates_ordinary_workers_from_temporary_teammates():
+    """A definition name selects a type; a runtime instance name makes a teammate under agent teams."""
+    section = " ".join(REFERENCE.read_text().split("## Ordinary workers and temporary teammates")[1].split())
+    assert "`agentType`" in section and "`subagent_type`" in section
+    assert "never requires an instance name" in section
+    assert "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1" in section and "launches a teammate" in section
+    assert "team availability alone changes nothing" in section
+    assert "refuses `name` outright" in section
+    assert "phase the lead owns" in section and "shuts" in section and "replacement gets a new name" in section
+    fixer = (REPO / "agents/fixer.md").read_text()
+    assert "not a standing identity" in fixer and "new teammate, not you resumed" in fixer
+    skill = " ".join((REPO / "skills/deep-review/SKILL.md").read_text().split())
+    assert "Ordinary workers and temporary teammates" in skill
+    assert "`subagent_type` fixer plus" in skill and "Shut every" in skill
