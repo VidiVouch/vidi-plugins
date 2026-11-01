@@ -1,0 +1,39 @@
+agents/fixer.md
+  s_610be6e94314a7::t_621f5c0d382ce8 60-67
+  s_610be6e94314a7::t_043628eb680fd2 21-25,29-32
+  s_610be6e94314a7::t_2a91cfc0902239 50-52
+skills/deep-review/references/disposition.md
+  s_610be6e94314a7::t_dde56b5ba3f3ad 35-40,43-45
+  s_610be6e94314a7::t_49153ea84eaca5 53-66
+skills/deep-review/references/judge-contract.md
+  s_610be6e94314a7::t_db2b879446b6da 88-95
+  s_610be6e94314a7::t_aeb6c14723d529 76-79
+  s_610be6e94314a7::t_044bebdc8f9256 149-186,189-193
+skills/deep-review/fix-output.schema.json
+  s_610be6e94314a7::t_f91ede16581915 4,23-49
+tests/test_judging_panel.py
+  s_610be6e94314a7::t_2d11eaf8118471 3-4
+  s_610be6e94314a7::t_b2b743e95e4d62 301,303-304,307-309,318,321
+  s_610be6e94314a7::t_237b8e6dba640b 622
+skills/deep-review/references/judging.md
+  s_610be6e94314a7::t_92fb831822e5dc 22-29
+tests/test_evidence_merge.py
+  s_610be6e94314a7::t_fdc465bc93978b 1-322
+  s_610be6e94314a7::t_52fdb37fa7b3fb 323-330
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a8ad85e4aba6424f26052ad28bd6006e63ec15b8",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
