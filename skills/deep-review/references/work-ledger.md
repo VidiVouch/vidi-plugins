@@ -60,6 +60,9 @@ other tasks. Give a worker that output, the shared constraints and the notes it
 chooses to read; do not give it the ledger, the plan, or sibling transcripts.
 The packet digest recorded at `init` is checked on every `packet` and `record`,
 so a packet edited mid-run is refused instead of silently changing a task.
+`scripts/work_unit.py build` wraps this output in the full work-unit contract
+(snapshot, allowed actions, decisions, pinned shared contracts, evidence paths,
+output schema, stop condition); work-unit.md describes it.
 
 ## Vocabulary
 
