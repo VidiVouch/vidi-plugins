@@ -1,0 +1,30 @@
+skills/deep-review/reviewers/cubic.md
+  s_610be6e94314a7::t_554c5633e3c0d3 1,3-7
+skills/deep-review/reviewers/coderabbit.md
+  s_610be6e94314a7::t_a57e3ae07cffc9 1,3-10
+tests/test_reviewer_policy.py
+  s_610be6e94314a7::t_204285ce532edb 186-187
+  s_610be6e94314a7::t_4c76e5b94b2f4b 1-15,17-95,97-125,127-160,163-166,171-185,188-202,204-209,211-221
+  s_610be6e94314a7::t_138c8938a65995 161-162,167-170
+  s_610be6e94314a7::t_5bc161855a8c34 16
+  s_610be6e94314a7::t_13785a6b0f514d 96
+  s_610be6e94314a7::t_fc08a8e35520cd 126
+  s_610be6e94314a7::t_34650ae44c495e 203
+  s_610be6e94314a7::t_bf319b58fee304 210
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c3bdc0550a8a1eff0f54bb4b16682cce01dacbd9",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
