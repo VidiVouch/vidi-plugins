@@ -1,0 +1,45 @@
+skills/codex-cli/SKILL.md
+  s_610be6e94314a7::t_cd563775d84090 25
+  s_610be6e94314a7::t_a5c3c1a6711515 26-28
+  s_610be6e94314a7::t_4b4312770f08e3 29-31
+skills/deep-review/references/approvals.md
+  s_610be6e94314a7::t_38b25605c00700 1-98
+tests/test_approvals.py
+  s_610be6e94314a7::t_9eb5cb3978bc64 1-42,44-46,48-50,54-73
+  s_610be6e94314a7::t_484912496787da 43,47,51-53
+skills/html-report/SKILL.md
+  s_610be6e94314a7::t_afd1d6024e1276 167-170
+skills/codex-computer-use/SKILL.md
+  s_610be6e94314a7::t_692d33f13661be 14-18
+skills/deep-eval/SKILL.md
+  s_610be6e94314a7::t_e23efb72c7a4a9 61-64
+skills/codex-review/SKILL.md
+  s_610be6e94314a7::t_2f9d4e58679498 86-89
+skills/rebuild-epoch/SKILL.md
+  s_610be6e94314a7::t_049928fbe7161d 306-308
+skills/rebuild/SKILL.md
+  s_610be6e94314a7::t_36e3e453d2410f 348-349
+  s_610be6e94314a7::t_dc249fd60e1439 350-351
+skills/deep-review/SKILL.md
+  s_610be6e94314a7::t_4c1fb445b53f3c 522-526
+skills/epoch-review/SKILL.md
+  s_610be6e94314a7::t_d4903b6d5d465c 338-341
+skills/rebuild-examine/SKILL.md
+  s_610be6e94314a7::t_5940983f11ee61 418-420
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8b79f28e22ccd8fd5742054b93bbbb9fca85310f",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
