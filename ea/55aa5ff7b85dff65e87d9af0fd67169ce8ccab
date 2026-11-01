@@ -1,0 +1,30 @@
+skills/deep-review/scripts/judging.py
+  s_610be6e94314a7::t_505b5909ff8cbb 1-210
+  s_610be6e94314a7::t_0af9c330983502 211-250
+skills/deep-review/references/judging.md
+  s_610be6e94314a7::t_a9fe9f3da678a4 1-59,67-126
+  s_610be6e94314a7::t_267c1ad840d63d 60-66
+tests/test_judging.py
+  s_610be6e94314a7::t_b31daee84f714d 1-249
+  s_610be6e94314a7::t_bec8d0f7826de5 250-268
+skills/deep-review/judging-output.schema.json
+  s_610be6e94314a7::t_3e7789bbb11745 1-64
+skills/deep-review/references/hand-back.md
+  s_610be6e94314a7::t_73eb248a494b06 17-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ea55aa5ff7b85dff65e87d9af0fd67169ce8ccab",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
