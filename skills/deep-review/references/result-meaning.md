@@ -136,3 +136,64 @@ requires, besides the identity, snapshot, coverage, dispatch and barrier checks:
 A result that fails any of these is `malformed` to classify and refused by
 finalize; it never becomes acceptance by being retried, only by a fresh attempt
 that passes.
+
+## The whole state of a run, four answers kept apart
+
+A completion notification from the host, the value the controller returned and
+the result file on disk all arrive as one blob, and a reader who collapses them
+into "done" mistakes an execution that ended for a review that was accepted.
+`run_status.py status` reads the run directory and answers four questions
+separately, each only from the file that is evidence for it.
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/deep-review/scripts/run_status.py" status \
+  --manifest "$MANIFEST" [--ledger "$LEDGER"] [--write] [--format note]
+```
+
+- `execution`: how far the controller's own dispatching got, from the full
+  result at `resultPath`. Every dispatch is recorded under one vocabulary,
+  `queued`, `running`, `succeeded`, `skipped`, `failed` or `cancelled`, with its
+  label, phase, reason and executor, plus the counts, `started`, and the stop
+  record. The run-level state is `running` while no result exists or a dispatch
+  was still active, `skipped` when nothing was dispatched, `cancelled` when any
+  unit was cut off by a stop, `failed` when dispatch was stopped, otherwise
+  `succeeded`. Execution that succeeded says nothing about findings or acceptance.
+- `coverage`: each reviewer lane's policy and state in the same vocabulary (a
+  lane that was disabled, unavailable or never launched is `skipped`), the
+  per-round `attempts` history, the boss outcome, and `payloadStored` for every
+  lane that succeeded: a succeeded lane with no payload under `reviewResults` is
+  a result that was summarised before it was saved, which finalize refuses.
+- `acceptance`: `status` and `accepted` come from `acceptance.json` for this run
+  and from nothing else; without that file the status is
+  `pending-external-verification` whatever the result claims. The result's own
+  word is shown as `resultClaims`, the gate the controller recorded as `gate`,
+  and the current findings as `openFindings`. A zero-agent return, a host
+  notification or a result that calls itself accepted never changes this field.
+- `recovery`: the classify category, `terminal`, `retryable`, `treeDrift`,
+  `replacedBy`, the artifacts preserved under the declared outputs, and
+  `blocking`: the precise stage the run is stuck at (`result`, `execution`,
+  `dispatch`, `coverage`, `adjudication`, `gate`, `finalize`, `post-fix review`
+  or `inputs`), its reason, and the one command that moves it (resume, retry,
+  abandon, finalize or a fresh manifest). It is null once a decision exists.
+- `history`: every attempt of this request, found by following `priorRunId`
+  backwards and replacements forwards through the sibling manifests, each with
+  its outcome (`missing`, `returned`, `replaced` with the recorded cause,
+  `accepted` or `changes-required`) and which one is the current run.
+- `obligations`: the open findings of the last review, and with `--ledger` the
+  unit the manifest names: its ledger state, the attempt's implementer and
+  verifier records (started, returned, disposition, barrier outcome), the open
+  units, open obligations, gated actions and the verifier's unresolved findings.
+  A unit the barrier closed without a result also sets execution to `failed` or
+  `cancelled` from the recorded outcome, because the ledger is then the only
+  record of how the worker ended.
+- `sources`: the path and sha256 of every artifact the status was read from, so
+  a status can be checked against the bytes and regenerated at any time.
+
+`--write` stores the projection as `status.json` beside the manifest; unlike
+every other file in the run directory it is replaced on each run, because it is
+derived from the others and names them. `--format note` prints the html-report
+note model instead, which `skills/html-report/scripts/render_note.py` renders
+to HTML or, with `--format md`, to Markdown; there is no separate dashboard to
+keep in step. Exit codes follow classify: 0 when the run is complete or decided,
+1 when a retry or decision is needed, 2 when the manifest or ledger cannot be
+read. The helper writes nothing else and never dispatches, resumes or decides.
