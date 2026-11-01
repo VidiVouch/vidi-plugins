@@ -1,0 +1,64 @@
+skills/deep-review/references/work-ledger.md
+  s_610be6e94314a7::t_e580817d8d3f11 50-57
+  s_610be6e94314a7::t_84664331df54c9 77-78
+  s_610be6e94314a7::t_309ae429833a1b 18-19
+tests/test_hand_back.py
+  s_610be6e94314a7::t_4b0dba298969d7 1-152
+  s_610be6e94314a7::t_f2e2d2d989a9dd 153-156
+skills/deep-review/scripts/hand_back.py
+  s_610be6e94314a7::t_8c4aef1cd10613 122-125
+  s_610be6e94314a7::t_fd8bc4e9d2e260 1-9,11-70,73-109,111-121,126-161
+  s_610be6e94314a7::t_dbb9ba86750390 10
+  s_610be6e94314a7::t_07c8c2bc317c30 71-72
+  s_610be6e94314a7::t_1e6f61acdd3154 110
+skills/deep-review/hand-back.schema.json
+  s_610be6e94314a7::t_b6dc944ce8f904 1-35,37-68
+  s_610be6e94314a7::t_6f75498bb05fe4 36
+skills/deep-review/scripts/work_ledger.py
+  s_610be6e94314a7::t_b5e78776e01585 167-169,171-172,178
+  s_610be6e94314a7::t_e2f7fda424175b 102-107,111
+  s_610be6e94314a7::t_6c1337e373e295 269-273
+  s_610be6e94314a7::t_30cb011d33332b 13,16
+  s_610be6e94314a7::t_f48aa74b0cc46a 83,88
+  s_610be6e94314a7::t_a7dc5ed6c64333 298
+tests/test_work_ledger.py
+  s_610be6e94314a7::t_7c6962c6a0f3b9 210
+  s_610be6e94314a7::t_8ac8698977cccf 246
+  s_610be6e94314a7::t_12ac0580df9112 295
+  s_610be6e94314a7::t_c442c51ca77aae 143
+  s_610be6e94314a7::t_8df6456f1502fe 165-166,168
+  s_610be6e94314a7::t_d9bf943ee5ed6f 415,464-465
+  s_610be6e94314a7::t_903328e679ac14 37-42,45,47,49-52,60-71
+  s_610be6e94314a7::t_39be27ac28659a 335-342,344,367-407,410
+  s_610be6e94314a7::t_afeacd587c0a37 408-409,411-414,416-425
+skills/deep-review/references/hand-back.md
+  s_610be6e94314a7::t_8ad19094080d6b 1-82
+skills/deep-review/references/work-unit.md
+  s_610be6e94314a7::t_cdbc9e56e439d9 46-48
+skills/deep-review/scripts/work_unit.py
+  s_610be6e94314a7::t_af1041ba6d435e 166
+  s_610be6e94314a7::t_4aa9640040fcbe 193,195-196
+  s_610be6e94314a7::t_2d939ce18df751 11-12
+  s_610be6e94314a7::t_7d506597ae5150 222-224
+tests/test_work_unit.py
+  s_610be6e94314a7::t_76c8345dda0240 272-274
+  s_610be6e94314a7::t_dfd231a28461ee 77-91
+  s_610be6e94314a7::t_f03f6c2b2e44f2 204,214-223
+  s_610be6e94314a7::t_82cb41d64d74e5 224-225
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "902f7dce04b17228729b82c2780ef86196f3d377",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
