@@ -1,0 +1,49 @@
+tests/test_work_ledger.py
+  s_610be6e94314a7::t_f0304014e9e15c 6
+  s_610be6e94314a7::t_bd8ac3d771d918 514-625,628-634
+  s_610be6e94314a7::t_3af2d7843a1307 626-627,635-639
+tests/test_owned_processes.py
+  s_610be6e94314a7::t_6ba59589ab2642 1-74
+skills/deep-review/scripts/work_unit.py
+  s_610be6e94314a7::t_29ab84d96bcbb9 23-24
+  s_610be6e94314a7::t_b3e5b37e80366c 159-161
+  s_610be6e94314a7::t_0774829424cb2e 162-163
+skills/deep-review/references/work-unit.md
+  s_610be6e94314a7::t_6c2508a9c3743b 77-81
+skills/deep-review/scripts/work_ledger.py
+  s_610be6e94314a7::t_f62ed328b6dab2 284
+  s_610be6e94314a7::t_1549f5ef6ba5c3 380-393
+  s_610be6e94314a7::t_19dd99ea6c810a 10
+  s_610be6e94314a7::t_b3a6ad4462a6f2 89-91,93,99-100,119-127,132-143
+  s_610be6e94314a7::t_4dd53ffd7c20e1 15-16,22-25
+  s_610be6e94314a7::t_ff572c24921f83 192,224-283,285-289,292-293,411
+  s_610be6e94314a7::t_d1c6918d0d402b 186-187,189
+  s_610be6e94314a7::t_151d1c4b80cd0e 144-145,185,190,290-291,294,346,394-398,418
+skills/deep-review/references/work-ledger.md
+  s_610be6e94314a7::t_471181ff0dec5d 18-21
+  s_610be6e94314a7::t_b541af53f594b5 26-29
+  s_610be6e94314a7::t_c61f5d1e1d6c94 66-114
+tests/test_work_unit.py
+  s_610be6e94314a7::t_1622195e1e6117 214-216
+  s_610be6e94314a7::t_49ec2b5d3be49d 94
+  s_610be6e94314a7::t_c0f3e54a53c0e3 189
+  s_610be6e94314a7::t_27f820151efcf7 187-188,190-213,217-218
+skills/deep-review/scripts/owned_processes.py
+  s_610be6e94314a7::t_2014c85466e781 1-129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d8d3c4a8c75ad4bf5469aa89094cd20d4f78f9bb",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
