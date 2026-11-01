@@ -1,0 +1,64 @@
+{
+  "$comment": "The result one judge returns over the candidate findings it was given: one entry per candidate, each with the candidate's stable id and anchor, a disposition that is exactly one of confirmed, refuted, unresolved or unreviewed, the concrete scenario, the evidence behind the call, the impact, the reason and the limits of what was checked. Checked by scripts/judging.py; references/judging.md explains each field and what each disposition must carry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["input", "findings", "limits", "summary"],
+  "properties": {
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshotId", "round"],
+      "properties": {
+        "snapshotId": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "round": {"type": "integer", "minimum": 1}
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "file",
+          "line_start",
+          "line_end",
+          "severity",
+          "disposition",
+          "scenario",
+          "evidence",
+          "impact",
+          "reason",
+          "limits"
+        ],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"},
+          "file": {"type": "string", "minLength": 1, "maxLength": 500},
+          "line_start": {"type": "integer", "minimum": 1},
+          "line_end": {"type": "integer", "minimum": 1},
+          "severity": {"type": "string", "enum": ["critical", "warning", "nit"]},
+          "disposition": {"type": "string", "enum": ["confirmed", "refuted", "unresolved", "unreviewed"]},
+          "scenario": {"type": "string", "maxLength": 500},
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "ref", "note"],
+              "properties": {
+                "kind": {"type": "string", "enum": ["code", "command", "document"]},
+                "ref": {"type": "string", "minLength": 1, "maxLength": 500},
+                "note": {"type": "string", "maxLength": 500}
+              }
+            }
+          },
+          "impact": {"type": "string", "maxLength": 500},
+          "reason": {"type": "string", "maxLength": 500},
+          "limits": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 500}}
+        }
+      }
+    },
+    "limits": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 500}},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 500}
+  }
+}

@@ -14,7 +14,11 @@ deep-review workflow a fix bucket returns the smaller fix packet,
 `skills/deep-review/fix-output.schema.json`: the same words (`disposition`,
 `summary`, `checks`, `unresolved`, `openObligations`) with `files` in place of
 `artifact` and no note, because a fixer in a frozen worktree has no evidence
-directory, and the next review round and the gate measure its work.
+directory, and the next review round and the gate measure its work. A judge
+returns neither: its verdict on other reviewers' candidates is the judging
+result, `skills/deep-review/judging-output.schema.json` (judging.md), one
+disposition per candidate with the scenario, evidence, impact and limits
+behind it.
 
 ## Fields
 
