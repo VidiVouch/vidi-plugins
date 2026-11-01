@@ -1,0 +1,29 @@
+skills/deep-review/scripts/classifier_check.py
+  s_610be6e94314a7::t_0738b584ea5bcf 38-47
+  s_610be6e94314a7::t_67957a80be66dc 236-246
+  s_610be6e94314a7::t_a982a5b323e51f 10-14
+  s_610be6e94314a7::t_4d964cab8f9238 158-223,247
+  s_610be6e94314a7::t_ab279ce71d8757 224-235,260-262,268-270
+tests/test_classifier_check.py
+  s_610be6e94314a7::t_6328e0e8b97068 122-203
+skills/deep-review/references/models.md
+  s_610be6e94314a7::t_358a31e601a507 207-210
+  s_610be6e94314a7::t_de40c9631f6e28 157-206,211-214
+  s_610be6e94314a7::t_36af00edf181cb 121-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9c8ece71ec49772de7d449d096334db1636b48b2",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
