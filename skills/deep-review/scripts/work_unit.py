@@ -25,6 +25,8 @@ HEAD = re.compile(r"[0-9a-f]{40}\Z")
 # The five gate IDs from references/approvals.md; a stop gate outside this list is a typo, not a new gate.
 GATES = ("global-settings", "skill-enablement", "paid-calls", "commits-pushes", "hosted-reports")
 SECTIONS = ("purpose", "input", "allowed", "decisions", "contracts", "evidence", "output", "stop")
+# The projection work_ledger.py packet prints per dependency; the schema requires the same six keys.
+DEPENDENCY_KEYS = ("state", "summary", "notePath", "verifyNote", "openObligations", "gatedActions")
 NOTE_PREFIX = {"implementer": "implement", "verifier": "verify"}
 
 
@@ -54,10 +56,19 @@ def first(mapping, keys):
     return next((mapping[k] for k in keys if isinstance(mapping, dict) and mapping.get(k)), None)
 
 
+def work_statement(brief):
+    """Plan packets state work directly; component packets name the component and the historical need it meets."""
+    stated = first(brief, ("Work", "work"))
+    if stated:
+        return stated
+    parts = [f"{k}: {v}" for k in ("Component", "Historical need") if isinstance(v := first(brief, (k,)), str)]
+    return " ".join(p.rstrip(".") + "." for p in parts) or None
+
+
 def purpose(brief):
     """A packet becomes a unit only when it states what to do and how to tell it is done."""
     return {
-        "work": text(first(brief, ("Work", "work")), "packet work statement"),
+        "work": text(work_statement(brief), "packet work statement"),
         "acceptance": text(first(brief, ("Done when", "Acceptance check", "acceptance")), "packet acceptance"),
         "mode": brief.get("mode") if isinstance(brief.get("mode"), str) else None,
         "context": texts(brief.get("sectionContext", []), "packet context"),
@@ -107,8 +118,12 @@ def validate(contract):
     require(isinstance(contracts["shared"], list), "shared contracts must be a list")
     for item in contracts["shared"]:
         check_reference(item, "shared contract")  # Refuses a contract file that changed since the build.
+    require(isinstance(contracts["dependencies"], dict), "dependencies must map task IDs to recorded outcomes")
     for dep, outcome in contracts["dependencies"].items():
-        require(isinstance(outcome, dict) and "state" in outcome, f"dependency {dep} needs its recorded outcome")
+        require(
+            isinstance(outcome, dict) and set(outcome) >= set(DEPENDENCY_KEYS),
+            f"dependency {dep} needs its recorded outcome: {', '.join(DEPENDENCY_KEYS)}",
+        )
     evidence = contract["evidence"]
     require(
         isinstance(evidence, dict) and set(evidence) == {"dir", "note", "result", "contract"},

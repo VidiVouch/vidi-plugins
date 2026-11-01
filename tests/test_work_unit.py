@@ -21,7 +21,14 @@ TASKS = [
     {"id": "A-1", "deps": [], "mode": "implement"},
     {"id": "A-2", "deps": ["A-1"], "mode": "implement"},
     {"id": "B-1", "deps": ["A-1"], "mode": "prepare-only"},
+    {"id": "C-1", "deps": ["A-1"], "mode": "implement"},
 ]
+# C-1 is shaped like the plan's COMPONENT packets: no Work, a Component and Historical need instead.
+COMPONENT = {
+    "Component": "Decision ledger",
+    "Historical need": "Portal exports spanned rounds.",
+    "Acceptance check": "Stable IDs survive export.",
+}
 SNAPSHOT = {"repo": "/repo", "head": "a" * 40, "indexSha256": "b" * 64, "snapshotId": "c" * 64}
 
 
@@ -49,7 +56,10 @@ def run(tmp_path):
     packets.mkdir()
     for task in TASKS:
         brief = {"id": task["id"], "mode": task["mode"], "sectionContext": ["section context"]}
-        brief |= {"Work": f"secret work statement of {task['id']}", "Done when": f"criterion of {task['id']}"}
+        if task["id"] == "C-1":
+            brief |= COMPONENT
+        else:
+            brief |= {"Work": f"secret work statement of {task['id']}", "Done when": f"criterion of {task['id']}"}
         write(packets / f"{task['id']}.json", brief)
     ledger = tmp_path / "ledger.json"
     cli(
@@ -125,12 +135,31 @@ def test_build_writes_every_section_and_only_this_task(run):
     assert contract["output"]["schema"]["required"] == ["status"] and contract["output"]["path"] == str(run["output"])
     assert contract["stop"] == {"when": ["criteria met and checks pass", "a closed gate"], "gates": ["commits-pushes"]}
     text = json.dumps(contract)
-    assert "secret work statement of A-1" not in text and "B-1" not in text
+    assert "secret work statement of A-1" not in text and "B-1" not in text and "C-1" not in text
     target = Path(contract["evidence"]["contract"])
     assert target == run["evidence"] / "tasks/A-2/contract-implementer-1.json"
     assert json.loads(target.read_text()) == contract and not os.access(target, os.W_OK)
     assert contract["evidence"]["note"].endswith("tasks/A-2/implement-1.md")
     assert contract["evidence"]["result"].endswith("tasks/A-2/result-implementer-1.json")
+
+
+def test_component_packet_without_work_key_still_yields_a_purpose(run):
+    contract = build(run, task="C-1")
+    assert contract["purpose"]["work"] == "Component: Decision ledger. Historical need: Portal exports spanned rounds."
+    assert contract["purpose"]["acceptance"] == "Stable IDs survive export."
+    assert "secret work statement" not in json.dumps(contract)
+
+
+def test_validate_requires_every_dependency_outcome_key(run, tmp_path):
+    contract = json.loads(Path(build(run)["evidence"]["contract"]).read_text())
+    assert set(contract["contracts"]["dependencies"]["A-1"]) == set(
+        json.loads(SCHEMA.read_text())["properties"]["contracts"]["properties"]["dependencies"]["additionalProperties"][
+            "required"
+        ]
+    )
+    del contract["contracts"]["dependencies"]["A-1"]["verifyNote"]
+    tampered = write(tmp_path / "tampered.json", contract)
+    assert "dependency A-1 needs" in cli("work_unit.py", "validate", "--contract", tampered, success=False)
 
 
 def test_each_attempt_and_role_gets_its_own_contract_file(run):
@@ -208,6 +237,11 @@ def test_schema_validator_reference_and_gate_ids_agree():
         "attempt",
         "role",
     }
+    dependency_keys = re.search(r"DEPENDENCY_KEYS = \((.*?)\)", source, re.S).group(1)
+    assert (
+        re.findall(r'"([A-Za-z]+)"', dependency_keys)
+        == (schema["properties"]["contracts"]["properties"]["dependencies"]["additionalProperties"]["required"])
+    )
     gates = re.findall(r"- `([a-z-]+)`:", APPROVALS.read_text())
     assert schema["properties"]["stop"]["properties"]["gates"]["items"]["enum"] == gates
     assert re.findall(r'"([a-z-]+)"', re.search(r"GATES = \((.*?)\)", source, re.S).group(1)) == gates

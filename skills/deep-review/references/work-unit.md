@@ -13,8 +13,11 @@ from one to the other reads the same sections in the same places.
 ## Sections
 
 - `purpose`: the work statement, the acceptance criterion, the packet mode and
-  the plan section's context. A packet without a work statement or an
-  acceptance criterion is refused; a worker cannot stop correctly without both.
+  the plan section's context. The work statement is the packet's `Work`; a
+  component packet has none, so its `Component` and `Historical need` are
+  joined into one instead. Acceptance is `Done when` or `Acceptance check`. A
+  packet missing either one is refused; a worker cannot stop correctly without
+  both.
 - `input`: the exact snapshot the worker starts from: repository path, HEAD,
   index digest, the snapshot id `run_manifest.py` would compute, and the digest
   of the packet. Capture it before dispatch (`work_ledger.py snapshot`), because
