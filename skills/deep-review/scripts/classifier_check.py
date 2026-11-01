@@ -39,7 +39,8 @@ VERSION = re.compile(r"\d+(?:\.\d+)+")
 # Opus 4.6 or later, Sonnet 4.6 or later, Haiku 5.5, or a Fable model; Bedrock, Agent Platform, Foundry and the
 # apps gateway raise the floors to Opus 4.7 and Sonnet 5. "On any other model, the session starts in Manual."
 # An LLM gateway has no row of its own, so a proxy session is graded by the API list and the gap is reported.
-CLAUDE_ID = re.compile(r"^claude-(fable|opus|sonnet|haiku)-(\d+)(?:-(\d+))?(?:-|$)")
+# The minor version is at most two digits so a date suffix (claude-sonnet-4-20250514) is never read as one.
+CLAUDE_ID = re.compile(r"^claude-(fable|opus|sonnet|haiku)-(\d+)(?:-(\d{1,2}))?(?=-|$)")
 API_FLOORS = {"fable": (0, 0), "opus": (4, 6), "sonnet": (4, 6), "haiku": (5, 5)}
 STRICT_FLOORS = {"fable": (0, 0), "opus": (4, 7), "sonnet": (5, 0), "haiku": (5, 5)}
 ALIASES = ("fable", "opus", "sonnet", "haiku")
@@ -184,10 +185,12 @@ def grade_session_model(model, env):
     version = (major, minor)
     ok = version == API_FLOORS[family] if family == "haiku" else version >= API_FLOORS[family]
     if not ok:
-        item.update(
-            supported=False,
-            reason=f"{family} {major}.{minor} is older than the auto mode floor; the session starts in Manual",
+        why = (
+            "is not Haiku 5.5, the only Haiku version listed"
+            if family == "haiku"
+            else "is older than the auto mode floor"
         )
+        item.update(supported=False, reason=f"{family} {major}.{minor} {why}; the session starts in Manual")
     elif family != "haiku" and version < STRICT_FLOORS[family]:
         item.update(
             supported=True,

@@ -128,7 +128,11 @@ def test_matching_request_is_served_only_with_proxy_evidence(tmp_path):
         ("claude-sonnet-4-6", True),
         ("claude-haiku-5-5", True),
         ("claude-haiku-4-5", False),
+        ("claude-haiku-5-6", False),
         ("claude-opus-4-5", False),
+        ("claude-sonnet-4-20250514", False),
+        ("claude-opus-4-20250514", False),
+        ("claude-sonnet-4-5-20250929", False),
         ("claude-3-5-sonnet-20241022", False),
         ("gpt-6-astra[1m]", False),
         ("grok-4.7", False),
@@ -144,6 +148,12 @@ def test_only_listed_claude_families_are_eligible_for_auto_mode(model, supported
 def test_api_only_versions_name_the_stricter_provider_floor():
     assert "Bedrock" in check.grade_session_model("claude-opus-4-6", {})["reason"]
     assert "Bedrock" not in check.grade_session_model("claude-opus-4-7", {})["reason"]
+
+
+def test_a_haiku_that_is_not_5_5_is_named_not_called_older():
+    for model in ("claude-haiku-5-6", "claude-haiku-5", "claude-haiku-4-5"):
+        reason = check.grade_session_model(model, {})["reason"]
+        assert "not Haiku 5.5" in reason and "older" not in reason
 
 
 def test_an_alias_follows_the_profile_default_or_stays_unknown():

@@ -181,10 +181,14 @@ second decides whether a session runs with the classifier at all:
   `gpt-6-astra` or `grok-4.7` session eligible, and the helper reports that
   pin as `affectsEligibility: false`.
 - A subagent runs under the launching session's permission mode. The
-  documentation states eligibility only for the session model and says
-  nothing about subagent models, so a GPT or Grok worker dispatched from a
-  Fable session is reviewed by that session's classifier like any other
-  tool call, and a GPT or Grok main model is what loses auto mode.
+  page's "How auto mode handles subagents" accordion says each subagent
+  action "goes through the same decision order as in the parent session,
+  with the same block and allow rules" and that "any `permissionMode` in the
+  subagent's frontmatter is ignored"; it says nothing about the subagent's
+  model, and eligibility is stated only for the session model. So a GPT or
+  Grok worker dispatched from a Fable session is reviewed by that session's
+  classifier like any other tool call, and a GPT or Grok main model is what
+  loses auto mode.
 
 `scripts/classifier_check.py eligibility --settings <profile>` reads the
 session model a settings file would launch with (`ANTHROPIC_MODEL`, then the
@@ -195,7 +199,10 @@ when the file sets no model or an alias Claude Code resolves elsewhere. It
 also lists the roles whose provider is not `claude`. Exit 0 only for `auto`.
 
 Recorded on this machine (2026-11-01, model keys only): the team profile
-(`claude-fable-5-1[1m]`) and the user settings (`fable`) are eligible; the
+(`claude-fable-5-1[1m]`) is eligible, and so are the user settings while
+their `model` alias is `fable`; that alias follows `/model`, and once it read
+`opus` the same file graded `unknown`, because the helper never guesses what
+Claude Code resolves a bare alias to. The
 judge profile (`gpt-6-astra`), the codex profile (`gpt-6-astra[1m]`) and the
 xai profile (`grok-4.7`) are expected to start in Manual whatever classifier
 they pin, and switching a team session to a GPT or Grok picker row would put
