@@ -65,6 +65,28 @@ may not rebut again. A false claim therefore ends after one fix step, with the
 judges' answer kept, instead of being sent to a fixer every round. A rebuttal
 the run ended on, with no round to rule on it, leaves the finding `degraded`.
 
+## Escalations
+
+Fixers are grouped by the file a finding is anchored in, and each owns a
+disjoint set of files. A finding is sometimes reported where it shows (a test,
+a document, a caller) while its cause is in a file another fixer owns or no
+fixer owns this round. The fixer that sees this does not edit outside its
+bucket and does not patch around the defect in its own files: the fix packet's
+`escalations` names the finding's id, the one file holding the cause, a reason
+and evidence. The controller then dispatches, in the same round, one fresh
+fixer owning that file for the escalated findings, after every fixer of the
+first stage has returned. Only the cause file is routed; files the evidence
+cites stay where they are, and no other bucket or reviewer is rerun. From then
+on the finding is grouped under the cause file, so a re-detection in a later
+round goes straight to that file's owner. An escalation is made once per
+finding per run: the fixer that receives a routed finding sees `escalatedFrom`
+(the anchor file, round, reason and evidence) and fixes it or leaves it
+unresolved, so a finding cannot be passed around until the round cap. A packet
+that escalates a finding to a file inside its own bucket, with no evidence, or a
+second time is a failed fixer and stops the loop like any other failed packet.
+The finding carries `escalation` in this record and its `outcomeReason` names
+the file the repair was routed to.
+
 ## Identity
 
 A finding is the same finding across rounds when `dedupKey` matches: file,

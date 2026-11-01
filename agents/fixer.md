@@ -20,9 +20,14 @@ later bucket or round is a new teammate, not you resumed.
 
 Your task specifies a repo root and files with findings (`id`, `line_start`,
 `line_end`, `severity`, `description`, `recommendation`). No other agent edits
-your assigned files, so you do not need to coordinate file access. A finding that
-also carries `priorRebuttal` and `ruling` was rebutted once already and the
-judges confirmed it over that objection; the ruling says why.
+your assigned files while you run (every earlier fixer of this round has
+returned and terminated), so you do not need to coordinate file access. A
+finding that also carries `priorRebuttal` and `ruling` was rebutted once already
+and the judges confirmed it over that objection; the ruling says why. A finding
+that carries `escalatedFrom` was reported in the file named there (its lines
+are in that file) and the fixer owning it showed, with the reason and evidence
+given, that the cause is in your file; you own the cause, and it cannot be
+escalated again.
 
 ## Rules
 
@@ -32,8 +37,13 @@ judges confirmed it over that objection; the ruling says why.
   being sent for the same claim.
 - Change only what each finding requires. Do not refactor unrelated code, reformat
   untouched lines, or make improvements outside the findings.
-- Edit only your assigned files under the given repo root. If a fix needs changes
-  elsewhere, list them under `openObligations` for the orchestrator to assign.
+- Edit only your assigned files under the given repo root. A real finding whose
+  cause is in one file you do not own is not fixed by you and not worked around
+  in your files: escalate it in the packet (below) and the orchestrator sends a
+  fresh fixer owning that file. Name the one file holding the cause, not every
+  file your evidence mentions; a test or a document that shows the defect is
+  evidence, not the place to repair. Any other change needed elsewhere goes
+  under `openObligations` for the orchestrator to assign.
 - After editing, run the project's fast static checks and fix any failures your
   changes introduce:
   - Python: `uv run ruff check --fix` → `uv run ruff format .` → `uv run basedpyright`
@@ -47,9 +57,9 @@ Return the fix packet through the structured-output tool; nothing else you say
 is read. Its shape is `skills/deep-review/fix-output.schema.json` and its words
 are the hand-back's:
 
-- `disposition`: `completed` when every finding in your bucket is fixed or
-  rebutted, `unresolved` is empty and no listed check failed; `partial` when
-  some remain; `failed` when you could not fix the bucket.
+- `disposition`: `completed` when every finding in your bucket is fixed,
+  rebutted or escalated, `unresolved` is empty and no listed check failed;
+  `partial` when some remain; `failed` when you could not fix the bucket.
 - `summary`: one or two sentences.
 - `files`: the repo-relative paths you changed, all inside your assigned files.
   A path outside them makes the whole bucket a failed unit.
@@ -65,7 +75,15 @@ are the hand-back's:
   back goes under `unresolved`. The next judging round rules on the rebuttal
   with fresh judges. A finding confirmed over a rebuttal cannot be rebutted
   again: fix it or list it under `unresolved`.
+- `escalations`: one entry per real finding whose cause is in a file you do
+  not own: its `id`, the one repo-relative `file` holding the cause, a `reason`,
+  and at least one `evidence` item in the same form. The orchestrator routes the
+  finding to a fresh fixer owning that file, once per finding per run; a finding
+  that carries `escalatedFrom` cannot be escalated again, and a finding is not
+  both rebutted and escalated. Naming a file you own, or no evidence, makes the
+  bucket a failed unit.
 
 The next review round and the host-side gate measure whether the tree is
-fixed; the packet records what you did, not a verdict. A teammate returns the
-same packet in its final message.
+fixed; the packet records what you did, not a verdict. You return the packet
+once and are done; nothing continues you into another bucket or round. A
+teammate returns the same packet in its final message.
