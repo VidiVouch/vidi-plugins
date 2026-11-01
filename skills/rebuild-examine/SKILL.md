@@ -415,4 +415,7 @@ Whole-branch examination before merge. Same phases with these substitutions:
   degraded judge is named in the report.
 - **Blocking needs a B-category; missing-work needs a matrix citation;
   ruled-on needs new evidence.** Everything else is a follow-up or void.
+- Approval gates. Fix commits and ACCEPT bookkeeping are the invoked contract.
+  Pushing, enabling reviewers, editing user settings, and paid reviewer calls
+  beyond the run follow deep-review/references/approvals.md and wait for the user.
 - **Claude-only skill** (`!` injection + Workflow); not usable from Codex.

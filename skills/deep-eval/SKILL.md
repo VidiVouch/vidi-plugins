@@ -58,3 +58,7 @@ mechanical checks, artifacts, or explicit human notes.
   outputs, parser errors, or unavailable tools directly in the grading evidence.
 - Prefer static review HTML for sharing; use the local server only while
   actively reviewing and saving feedback.
+- Paid evaluation runs are an approval gate. Agree inputs, model, trial count,
+  stopping condition, and total cost before any metered call, and get explicit
+  approval for that scope; see deep-review/references/approvals.md, gate
+  `paid-calls`. Hosting a review page beyond localhost follows `hosted-reports`.

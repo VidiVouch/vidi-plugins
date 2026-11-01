@@ -22,6 +22,13 @@ Three invocation paths:
   Agent C). Resolve it with
   `ls "$HOME/.claude/plugins/cache/openai-codex/codex/"*/scripts/codex-companion.mjs | sort -V | tail -1`.
 
+Codex runs are metered. A run the user asked for in the current request is
+authorized by that request. Evaluation campaigns, repeated trials, model
+comparisons, extra reviewers, and smoke tests the task did not name need their
+own approval first; see deep-review/references/approvals.md, gate `paid-calls`.
+Inexpensive is not free, and `--dangerously-bypass-approvals-and-sandbox` is
+never the answer to a closed gate.
+
 ## Repo targeting
 
 Never rely on the shell's cwd. The Bash tool spawns a fresh shell per call, so

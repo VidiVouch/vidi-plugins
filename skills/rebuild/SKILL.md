@@ -345,5 +345,9 @@ decides), or plan coverage (the coverage script decides).
 - **The ledger is never committed.** Excluded at setup; not re-litigable.
 - **Never merge; never rewrite accepted history silently.** Accepted epoch
   boundaries come from the ledger; reopening one is a user decision.
+- Approval gates. The dispatcher never pushes, merges, publishes, enables
+  reviewers, or edits user settings on its own; each of those follows
+  deep-review/references/approvals.md and waits for the user. Child epoch
+  commits are the invoked contract and nothing beyond them.
 - **Claude-only skill** (`!` injection, Skill/Agent/Workflow dispatch); not
   usable from Codex.

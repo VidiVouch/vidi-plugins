@@ -83,3 +83,7 @@ Before relaying a Codex finding, inspect the cited code or diff enough to decide
 If Codex finds nothing (from a run that passed the checks above), say that clearly and mention what review target it inspected.
 
 If `codex` is not installed, say so and offer to review the changes directly instead.
+
+A review the user asked for is authorized by that request. Do not add extra Codex
+passes, model comparisons, or retries on other models without approval; see
+deep-review/references/approvals.md, gate `paid-calls`.

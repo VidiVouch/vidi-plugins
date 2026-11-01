@@ -11,6 +11,11 @@ For native app control, require Codex to first call `computer-use.list_apps({})`
 
 Do not use this for ordinary code reading, typechecking, linting, or tests Claude can run directly. Launching apps, simulators, or browsers to verify the requested work is fine without asking; ask first only if the run could disrupt the user's environment beyond that (closing their apps, changing system settings, acting on real accounts or data).
 
+A verification run the user asked for is authorized by that request. Repeated
+trials, additional models, and runs that change user settings or act on real
+accounts follow deep-review/references/approvals.md (gates `paid-calls` and
+`global-settings`) and wait for explicit approval.
+
 ## Failure is not a clean pass
 
 A "verification passed" from a codex run that never actually executed is the worst false positive this skill can produce — it green-lights shipping unverified work. Before relaying any verification verdict, confirm the run itself completed per the codex-cli skill's degradation ladder: exit code 0, no error/`turn.failed` events, and output that describes the requested verification (what was launched, what was observed), not a crash trace. Known trap: `failed to initialize in-process app-server client: Operation not permitted` — the codex run died before doing anything; some sandbox configurations block the gpt-5.6 app-server. Any such failure is a **degraded** run: report the error verbatim and say plainly that the verification did NOT happen — never fold it into a pass, and never retry with `--dangerously-bypass-approvals-and-sandbox`.

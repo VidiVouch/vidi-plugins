@@ -335,4 +335,8 @@ range-diff); otherwise inline markdown:
   invariant deep-review has. It also enlarges fix commits beyond the epoch's
   own scope, raising rebase-conflict odds; if mid-stack lint noise is expected,
   passing `toolchain: "none"` suppresses the gate for the run.
+- Approval gates. Invoking this skill authorizes the fix commits and rebase it
+  documents on the named branch, nothing more. Pushing, merging, rewriting
+  accepted history, enabling reviewers, and editing user settings each follow
+  deep-review/references/approvals.md and wait for the user.
 - **Claude-only skill** (`!` injection + Workflow); not usable from Codex.

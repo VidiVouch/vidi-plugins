@@ -303,4 +303,7 @@ exactly as in build mode — the findings don't change the routing rule.
   `--no-verify`; never delete safety refs (that is `rebuild-examine`'s ACCEPT
   step).
 - **The ledger stays untracked** — verified in Phase 0; the gate re-verifies.
+- Approval gates. Epoch commits on the rebuild branch are the invoked contract.
+  Pushes, merges, user settings edits, and paid calls outside the run follow
+  deep-review/references/approvals.md and wait for the user.
 - **Claude-only skill** (Agent orchestration); not usable from Codex.

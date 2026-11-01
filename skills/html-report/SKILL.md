@@ -164,6 +164,10 @@ just checked.
   previews `.html` without executing any JS. If the report must reach a phone, host it
   (Cloudflare Pages or similar) and send a link — after flagging that hosted = anyone
   with the link, which is why sensitive docs don't ship this way.
+- Hosting is an approval gate. Before any upload (Cloudflare Pages, gist, pull
+  request or Slack attachment, shared drive) get the user's explicit go-ahead for
+  that artifact and that destination; see deep-review/references/approvals.md,
+  gate `hosted-reports`. Loopback serving on 127.0.0.1 is local and needs none.
 - Any interactive viewer needs a **visible failure state**: a staged status/diagnostic
   overlay ("Decompressing… → Building… → Rendering…") so a blank page is never silent
   and a remote user can report exactly where it stuck.

@@ -519,3 +519,8 @@ there for why. Nothing to write here.)
 - **Always read REVIEW.md** — the convention reviewer and the boss both consult it,
   and you need it for Phase 4 judgment.
 - **Degraded ≠ clean.** Surface every degraded reviewer in the output.
+- Approval gates. Enabling a reviewer or external service, choosing teams
+  live-tree fixing, editing permission rules or user settings, running paid
+  reviewer calls the user did not request, and any commit or push each need
+  their own authorization. Follow [approval gates](references/approvals.md); a
+  completed workflow or a clean gate never grants one.
