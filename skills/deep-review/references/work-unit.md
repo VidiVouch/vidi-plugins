@@ -148,3 +148,46 @@ every teammate down when the phase ends, and never messages a teammate from an
 earlier phase or run; a replacement gets a new name. The Workflow runtime never
 creates a teammate, so a review or fix lane inside the workflow is always an
 ordinary worker.
+
+## The lead stays thin
+
+The lead is the session that owns a run: it builds units, dispatches them and
+reads what comes back. It stays thin because everything it reads becomes
+context it carries into every later decision, and a lead that has investigated
+one unit's problem in its own window is no longer a neutral reader of the next
+unit's result. Four rules keep it thin.
+
+Child execution returns a typed result packet. Every unit is dispatched with
+the schema of its result pinned before it starts: a reviewer returns the
+findings schema, the boss the rulings schema, a fixer the fix packet
+(`fix-output.schema.json`, the hand-back's words for one bucket), a task
+worker the hand-back (`hand-back.schema.json`). The lead reads the packet and,
+when it needs more, the note the packet names; it does not read the worker's
+transcript. The deep-review dispatch layer refuses a unit with no schema the
+way it refuses a named or forked one, and `fixResults` in the workflow result
+keeps every fix packet beside `reviewResults`.
+
+Loading a Skill is not context isolation. The Skill tool and a slash command
+inject a skill's instructions into the caller's own context; the files that
+procedure reads and the commands it runs land in the lead's window exactly as
+if the lead had typed them. A skill is a procedure the lead follows, not a
+worker, so a skill the lead loads should be a thin front end that gathers
+facts, builds arguments and dispatches, which is what deep-review's SKILL.md
+is. Only a dispatched agent (the Agent tool, or the Workflow runtime's
+`agent()`, started from a definition with its brief) has a context of its own,
+and only a script has none.
+
+Heavy investigation stays in workers or deterministic runners. Reading a diff
+end to end, tracing a defect, running a long command, comparing two trees:
+each of those goes to a fresh worker that returns a packet, or to a
+deterministic runner (`run_manifest.py`, `run_gate.py`, `work_ledger.py`,
+`hand_back.py`) that returns a small JSON object. The lead's own tool calls
+are for the packet, the note it names, and the runner's output.
+
+No extra permanent coordinators. The state a coordinator would hold already
+lives in the ledger, the manifest, the contracts and the notes, so a standing
+agent between the lead and its workers, or a teammate kept alive across phases
+to remember things, is a second lead that would also need keeping thin, with
+nothing to show for it. The Workflow script is the one coordinator a run has,
+and it is a program with no context at all. A temporary teammate exists inside
+one phase and is shut down with it, as the previous section says.

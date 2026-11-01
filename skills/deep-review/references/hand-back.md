@@ -9,7 +9,12 @@ the worker's note, which is a file outside the repository. The shape is
 `skills/deep-review/hand-back.schema.json`; `scripts/hand_back.py check` refuses
 a hand-back that breaks the rules below, and `scripts/work_ledger.py record`
 runs the same check before storing one. The work-unit contract pins this schema
-as a task unit's `output` unless the run names another result shape.
+as a task unit's `output` unless the run names another result shape. Inside the
+deep-review workflow a fix bucket returns the smaller fix packet,
+`skills/deep-review/fix-output.schema.json`: the same words (`disposition`,
+`summary`, `checks`, `unresolved`, `openObligations`) with `files` in place of
+`artifact` and no note, because a fixer in a frozen worktree has no evidence
+directory, and the next review round and the gate measure its work.
 
 ## Fields
 

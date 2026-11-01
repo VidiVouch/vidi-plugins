@@ -366,3 +366,18 @@ def test_reference_separates_ordinary_workers_from_temporary_teammates():
     skill = " ".join((REPO / "skills/deep-review/SKILL.md").read_text().split())
     assert "Ordinary workers and temporary teammates" in skill
     assert "`subagent_type` fixer plus" in skill and "Shut every" in skill
+
+
+def test_reference_keeps_the_lead_thin_and_every_child_result_typed():
+    """A Skill loads into the lead's own context; investigation goes to workers or runners that return typed packets."""
+    section = " ".join(REFERENCE.read_text().split("## The lead stays thin")[1].split())
+    assert "typed result packet" in section and "refuses a unit with no schema" in section
+    assert "not context isolation" in section and "caller's own context" in section
+    assert "`fix-output.schema.json`" in section and "`hand-back.schema.json`" in section
+    assert "workers or deterministic runners" in section and "No extra permanent coordinators" in section
+    assert "\u2014" not in section and "\u2013" not in section, "prose for agents uses plain dashes"
+    fixer = (REPO / "agents/fixer.md").read_text()
+    assert "fix-output.schema.json" in fixer and "`openObligations`" in fixer and "structured-output tool" in fixer
+    skill = " ".join((REPO / "skills/deep-review/SKILL.md").read_text().split())
+    assert "The lead stays thin" in skill and "fix-output.schema.json" in skill and "fixResults" in skill
+    assert "fix-output.schema.json" in (REPO / "skills/deep-review/references/hand-back.md").read_text()

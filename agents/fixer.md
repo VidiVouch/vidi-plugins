@@ -27,7 +27,7 @@ files, so you do not need to coordinate file access.
 - Change only what each finding requires. Do not refactor unrelated code, reformat
   untouched lines, or make improvements outside the findings.
 - Edit only your assigned files under the given repo root. If a fix needs changes
-  elsewhere, report them in your summary for the orchestrator to assign.
+  elsewhere, list them under `openObligations` for the orchestrator to assign.
 - After editing, run the project's fast static checks and fix any failures your
   changes introduce:
   - Python: `uv run ruff check --fix` → `uv run ruff format .` → `uv run basedpyright`
@@ -37,6 +37,21 @@ files, so you do not need to coordinate file access.
 
 ## Return
 
-Give one line per file explaining what changed and which finding it addresses.
-List any findings you could not fix, why, and any changes needed outside your
-assigned files. Keep the summary short; the orchestrator combines these reports.
+Return the fix packet through the structured-output tool; nothing else you say
+is read. Its shape is `skills/deep-review/fix-output.schema.json` and its words
+are the hand-back's:
+
+- `disposition`: `completed` when every finding in your bucket is fixed,
+  `unresolved` is empty and no listed check failed; `partial` when some remain;
+  `failed` when you could not fix the bucket.
+- `summary`: one or two sentences.
+- `files`: the repo-relative paths you changed, all inside your assigned files.
+  A path outside them makes the whole bucket a failed unit.
+- `checks`: the commands you actually ran, each with `passed` and an optional
+  short `note`. Do not list a check you skipped.
+- `unresolved`: one line per finding you did not fix and why.
+- `openObligations`: one line per change needed outside your files.
+
+The next review round and the host-side gate measure whether the tree is
+fixed; the packet records what you did, not a verdict. A teammate returns the
+same packet in its final message.
