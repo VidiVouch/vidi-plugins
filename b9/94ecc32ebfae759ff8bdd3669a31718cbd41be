@@ -1,0 +1,33 @@
+tests/test_boss_compat.py
+  s_610be6e94314a7::t_55d130a996fd32 1-141
+  s_610be6e94314a7::t_0adec5eff6ba6c 142-149
+tests/test_final_disposition.py
+  s_610be6e94314a7::t_02f69bc330702a 82-85,87-94,97-100
+  s_610be6e94314a7::t_7ed130d7bb40e4 8
+  s_610be6e94314a7::t_9d3fb5c50a2c19 18
+skills/deep-review/references/judge-contract.md
+  s_610be6e94314a7::t_c157bcca2b5657 145-161
+skills/deep-review/scripts/run_manifest.py
+  s_610be6e94314a7::t_04a70bcfb37d56 113-115
+  s_610be6e94314a7::t_8b6c1e46abb9f4 116-118
+skills/deep-review/references/judging.md
+  s_610be6e94314a7::t_785c89ad60ffc3 14-17
+tests/test_run_manifest.py
+  s_610be6e94314a7::t_a1edf9f5b88d83 506,513
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b994ecc32ebfae759ff8bdd3669a31718cbd41be",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
