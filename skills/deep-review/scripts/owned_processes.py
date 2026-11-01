@@ -67,27 +67,42 @@ def register(path, pid):
     return entry
 
 
+def members(pgid):
+    """Pids of the processes still running in a group. A group id is not reallocated while the group has
+    members, so once the registered leader has exited these are still the children it left behind."""
+    result = subprocess.run(["ps", "-axo", "pid=,pgid=,stat="], capture_output=True, text=True, check=False)
+    rows = (line.split() for line in result.stdout.splitlines())
+    return [int(pid) for pid, group, state, *_ in rows if int(group) == pgid and not state.startswith("Z")]
+
+
 def owned(entry):
     """True while the registered process is alive and still the one we registered; None once gone; False if reused."""
     info = inspect(entry["pid"])
     if info is None or info["state"].startswith("Z"):
-        return None  # exited, or a zombie waiting for its parent to reap it; nothing is running
+        return None  # exited, or a zombie waiting for its parent to reap it
     if info["pgid"] != entry["pgid"] or info["started"] != entry["started"]:
         return False  # the pid now belongs to a process the run never started
     return True
+
+
+def running(entry):
+    """True while the registered process is ours and alive, or, once it has exited, while its group still has members."""
+    state = owned(entry)
+    if state is None:
+        return bool(members(entry["pgid"]))
+    return state
 
 
 def stop(path, grace=1.0):
     """Stop each registered process group still alive and report every entry; the registry stays as evidence."""
     report = []
     for entry in load(path):
-        state = owned(entry)
-        if state is None:
-            outcome = "gone"
-        elif state is False:
-            outcome = "reused"
+        if owned(entry) is False:
+            outcome = "reused"  # a reused pid says nothing about the group, so it is not consulted
         elif entry["pgid"] in (os.getpgrp(), 1):
             outcome = "refused"  # never the caller's own session, however it got into the registry
+        elif not running(entry):
+            outcome = "gone"
         else:
             for signum in (signal.SIGTERM, signal.SIGKILL):
                 try:
@@ -95,11 +110,11 @@ def stop(path, grace=1.0):
                 except ProcessLookupError:
                     break
                 deadline = time.monotonic() + grace
-                while owned(entry) and time.monotonic() < deadline:
+                while running(entry) and time.monotonic() < deadline:
                     time.sleep(0.05)
-                if not owned(entry):
+                if not running(entry):
                     break
-            outcome = "survived" if owned(entry) else "stopped"
+            outcome = "survived" if running(entry) else "stopped"
         report.append({**entry, "outcome": outcome})
     return report
 

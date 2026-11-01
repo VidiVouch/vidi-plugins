@@ -3,6 +3,7 @@ stops exactly those, identified by pid, group and start time, and never anything
 
 import json
 import os
+import signal
 import subprocess
 import sys
 
@@ -11,8 +12,21 @@ from conftest import REPO
 
 SCRIPT = REPO / "skills/deep-review/scripts/owned_processes.py"
 SLEEPER = [sys.executable, "-c", "import time; time.sleep(60)"]
+# A session leader that starts a background sleeper in its own group, then exits as soon as stdin closes.
+LEAVER = [
+    sys.executable,
+    "-c",
+    "import subprocess, sys; subprocess.Popen(sys.argv[1:], stdin=subprocess.DEVNULL); sys.stdin.read()",
+    *SLEEPER,
+]
 
 pytestmark = pytest.mark.skipif(os.name != "posix", reason="POSIX process groups")
+
+
+def group_members(pgid):
+    """Live pids in a process group, read independently of the module under test."""
+    rows = subprocess.run(["ps", "-axo", "pid=,pgid=,stat="], capture_output=True, text=True).stdout.splitlines()
+    return [int(pid) for pid, group, state in map(str.split, rows) if int(group) == pgid and not state.startswith("Z")]
 
 
 def cli(*args, success=True):
@@ -26,11 +40,13 @@ def cli(*args, success=True):
 
 @pytest.fixture
 def children():
-    started = []
+    started, sessions = [], []
 
-    def start(own_session=True):
-        child = subprocess.Popen(SLEEPER, start_new_session=own_session)
+    def start(own_session=True, command=SLEEPER, **popen):
+        child = subprocess.Popen(command, start_new_session=own_session, **popen)
         started.append(child)
+        if own_session:
+            sessions.append(child.pid)  # the child leads a group of its own, so its pid is that group's id
         return child
 
     yield start
@@ -38,6 +54,9 @@ def children():
         if child.poll() is None:
             child.kill()
             child.wait()
+    for pgid in sessions:  # members a leader left behind when a test failed before the barrier ran
+        for pid in group_members(pgid):
+            os.kill(pid, signal.SIGKILL)
 
 
 def test_register_refuses_a_child_in_the_callers_own_group(tmp_path, children):
@@ -61,6 +80,19 @@ def test_stop_ends_registered_sessions_and_leaves_everything_else(tmp_path, chil
     assert owned.wait(timeout=5) != 0 and unrelated.poll() is None
     assert cli("stop", "--registry", registry) == [{**entry, "outcome": "gone"}]
     assert cli("stop", "--registry", tmp_path / "missing.json") == []
+
+
+def test_stop_ends_group_members_a_finished_leader_left_behind(tmp_path, children):
+    registry = tmp_path / "processes.json"
+    leader = children(command=LEAVER, stdin=subprocess.PIPE)
+    entry = cli("register", "--registry", registry, "--pid", leader.pid)
+    leader.stdin.close()
+    assert leader.wait(timeout=10) == 0  # the leader is gone before the barrier runs
+    orphans = [pid for pid in group_members(leader.pid) if pid != leader.pid]
+    assert orphans, "the leader should have left a sleeper in its group"
+    assert cli("stop", "--registry", registry) == [{**entry, "outcome": "stopped"}]
+    assert group_members(leader.pid) == []
+    assert cli("stop", "--registry", registry) == [{**entry, "outcome": "gone"}]
 
 
 def test_stop_skips_a_pid_that_now_belongs_to_another_process(tmp_path, children):

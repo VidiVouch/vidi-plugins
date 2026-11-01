@@ -83,7 +83,11 @@ run registered for the unit under `tasks/<ID>/processes-<role>-<N>.json`:
 each entry is checked by pid, process group and start time, so a pid the
 operating system has reused is skipped and reported as `reused`, and a group
 that is the caller's own is refused rather than killed; processes the run never
-registered are never touched, which is how unrelated sessions stay up. Register
+registered are never touched, which is how unrelated sessions stay up. When the
+registered process has already exited, the barrier still looks for members of
+its group and stops them, because a crashed or timed-out child often leaves a
+tool server or helper behind and a group id is not reallocated while the group
+has members; only an entry with nothing left in its group is `gone`. Register
 only children started in their own session (`start_new_session`, `setsid`); a
 child in the caller's group is refused at `register`. Agents the Workflow
 runtime ran are stopped by the runtime; the deep-review script records its own
