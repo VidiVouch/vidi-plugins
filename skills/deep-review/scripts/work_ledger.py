@@ -8,7 +8,7 @@ import os
 import sys
 import tempfile
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from hand_back import DISPOSITIONS, HandBackError, check, disposition, files, unresolved
@@ -87,11 +87,12 @@ def derive(task):
         impl = next((a for a in attempts if a["attempt"] == last and a["role"] == "implementer"), None)
         ver = next((a for a in attempts if a["attempt"] == last and a["role"] == "verifier"), None)
         if impl["result"] is None:
-            state = UNRETURNED[impl["barrier"]["outcome"]]
+            # Started and neither returned nor closed is a running worker; closed without a result follows the barrier.
+            state = UNRETURNED[impl["barrier"]["outcome"]] if impl.get("barrier") else "running"
         elif disposition(impl["result"]) == "failed":
             state = "failed"
         elif ver is None or ver["result"] is None:
-            state = "in-progress"
+            state = "running" if ver is not None and not ver.get("barrier") else "in-progress"
         else:
             verdict = disposition(ver["result"])
             state = {"accepted": "accepted", "blocked-approval": "awaiting-approval"}.get(verdict, verdict)
@@ -134,13 +135,40 @@ def unit(task_id, attempt, role):
 
 
 def open_units(ledger):
-    """Recorded units whose cleanup barrier has not run; no new unit starts while one exists."""
+    """Units started or recorded whose cleanup barrier has not run; no new unit starts while one exists."""
     return [
         unit(task_id, a["attempt"], a["role"])
         for task_id, entry in ledger["tasks"].items()
         for a in entry["attempts"]
         if not a.get("barrier")
     ]
+
+
+def overdue_units(ledger, at=None):
+    """Open units whose recorded deadline has passed without a result: the watchdog's fallback signal."""
+    at = at or datetime.now(timezone.utc)
+    return [
+        unit(task_id, a["attempt"], a["role"])
+        for task_id, entry in ledger["tasks"].items()
+        for a in entry["attempts"]
+        if a["result"] is None
+        and not a.get("barrier")
+        and (a.get("start") or {}).get("deadline")
+        and datetime.fromisoformat(a["start"]["deadline"]) <= at
+    ]
+
+
+def require_closed(ledger):
+    unclosed = open_units(ledger)
+    require(not unclosed, f"close every open unit before the next starts (work_ledger.py close): {', '.join(unclosed)}")
+
+
+def find_unit(task, attempt, role):
+    return next((a for a in task["attempts"] if a["attempt"] == attempt and a["role"] == role), None)
+
+
+def has_implementer(task, attempt):
+    return find_unit(task, attempt, "implementer") is not None
 
 
 def init(options):
@@ -177,45 +205,107 @@ def snapshot_input(options):
     }
 
 
+def start_unit(ledger_path, task_id, attempt, role, owner, snap=None, contract=None, timeout=None):
+    """Record a unit before its worker is dispatched, so the attempt number is taken and a duplicate is refused.
+
+    The record is the only thing that makes a running worker visible to a restarted controller, and the
+    deadline it carries is the fallback a watchdog reads when no completion notification ever arrives."""
+    ledger = load(ledger_path)
+    task = task_entry(ledger, task_id)
+    require(role in ROLES, "role must be implementer or verifier")
+    require(attempt >= 1, "attempt numbers start at 1")
+    require(snap is None or isinstance(snap, dict), "input snapshot must be a JSON object")
+    require(timeout is None or timeout >= 0, "timeout must be a number of seconds")
+    require(
+        find_unit(task, attempt, role) is None,
+        "this attempt and role was already started; a replacement takes the next attempt number",
+    )
+    require_closed(ledger)  # the old attempt is terminal, and nothing else is running, before this one starts
+    require(
+        role == "implementer" or has_implementer(task, attempt),
+        "a verifier unit needs the implementer record for the same attempt",
+    )
+    started = datetime.now(timezone.utc)
+    entry = {
+        "attempt": attempt,
+        "role": role,
+        "owner": None,
+        "recordedAt": None,
+        "input": snap,
+        "result": None,
+        "start": {
+            "owner": owner,
+            "startedAt": started.isoformat(timespec="seconds"),
+            "contract": contract,
+            "deadline": (
+                (started + timedelta(seconds=timeout)).isoformat(timespec="seconds") if timeout is not None else None
+            ),
+        },
+    }
+    task["attempts"].append(entry)
+    derive(task)
+    save(ledger_path, ledger)
+    return {
+        "task": task_id,
+        "unit": unit(task_id, attempt, role),
+        "state": task["state"],
+        "deadline": entry["start"]["deadline"],
+    }
+
+
+def start(options):
+    snap = load_json(options.input, "input snapshot") if options.input else None
+    return start_unit(
+        options.ledger,
+        options.task,
+        options.attempt,
+        options.role,
+        options.owner,
+        snap,
+        options.contract,
+        options.timeout,
+    )
+
+
 def record(options):
     ledger = load(options.ledger)
     task = task_entry(ledger, options.task)
     require(options.role in ROLES, "role must be implementer or verifier")
     require(options.attempt >= 1, "attempt numbers start at 1")
-    existing = next(
-        (a for a in task["attempts"] if a["attempt"] == options.attempt and a["role"] == options.role), None
-    )
+    existing = find_unit(task, options.attempt, options.role)
     require(
         existing is None or not existing.get("barrier"),
         "this unit was closed by its cleanup barrier; a late result is not recorded, start a new attempt",
     )
-    require(existing is None, "this attempt and role is already recorded; a retry needs a new attempt number")
+    require(
+        existing is None or existing["result"] is None,
+        "this attempt and role is already recorded; a retry needs a new attempt number",
+    )
     if options.role == "verifier":
         require(
-            any(a["attempt"] == options.attempt and a["role"] == "implementer" for a in task["attempts"]),
+            has_implementer(task, options.attempt),
             "a verification needs the implementer record for the same attempt first",
         )
     result = load_json(options.result, "result")
     require(isinstance(result, dict), "result must be a JSON object")
     reject_secrets(result)
     snap = load_json(options.input, "input snapshot") if options.input else None
+    if existing is not None and existing["input"] is not None:
+        # A started unit already knows what its worker was given; a different snapshot now is a different unit.
+        require(snap is None or snap == existing["input"], "input snapshot differs from the one recorded at start")
+        snap = existing["input"]
     if options.legacy:
         require(disposition(result) in DISPOSITIONS[options.role], f"{options.role} result needs a known disposition")
     else:
         # The ledger stores only hand-backs whose claims point at a note, a range and checks that ran.
         check(result, options.role, repo=snap.get("repo") if isinstance(snap, dict) else None)
-    entry = {
-        "attempt": options.attempt,
-        "role": options.role,
-        "owner": options.owner,
-        "recordedAt": now(),
-        "input": snap,
-        "result": result,
-    }
+    entry = existing if existing is not None else {"attempt": options.attempt, "role": options.role}
+    entry.update(owner=options.owner, recordedAt=now(), input=snap, result=result)
     if options.packet:
         entry["packetSha256"] = sha256(options.packet)
         require(entry["packetSha256"] == task.get("packetSha256", entry["packetSha256"]), "packet changed since init")
-    task["attempts"].append(entry)
+    if existing is None:
+        task["attempts"].append(entry)
     derive(task)
     save(options.ledger, ledger)
     return {"task": options.task, "state": task["state"], "terminal": task["terminal"]}
@@ -248,14 +338,16 @@ def close(options):
     require(options.role in ROLES, "role must be implementer or verifier")
     require(options.outcome in OUTCOMES, f"outcome must be one of {list(OUTCOMES)}")
     require(not options.repo or options.evidence_root, "--repo needs --evidence-root to hold the patch")
-    entry = next((a for a in task["attempts"] if a["attempt"] == options.attempt and a["role"] == options.role), None)
+    entry = find_unit(task, options.attempt, options.role)
     require(entry is None or not entry.get("barrier"), "this unit is already closed")
+    require(
+        options.outcome != "success" or (entry is not None and entry["result"] is not None),
+        "success needs the unit's recorded result; record it first",
+    )
     if entry is None:
         # A unit that never returned still gets its record, so the barrier is visible and the number is not reused.
-        require(options.outcome != "success", "success needs the unit's recorded result; record it first")
         require(
-            options.role == "implementer"
-            or any(a["attempt"] == options.attempt and a["role"] == "implementer" for a in task["attempts"]),
+            options.role == "implementer" or has_implementer(task, options.attempt),
             "a verifier unit needs the implementer record for the same attempt",
         )
         entry = {
@@ -318,7 +410,12 @@ def packet(options):
             "state": entry["state"],
             "summary": entry.get("summary"),
             "notePath": next(
-                (a["result"].get("notePath") for a in reversed(entry["attempts"]) if a["role"] == "implementer"), None
+                (
+                    a["result"].get("notePath")
+                    for a in reversed(entry["attempts"])
+                    if a["role"] == "implementer" and a["result"] is not None
+                ),
+                None,
             ),
             "verifyNote": entry["verification"]["notePath"] if entry.get("verification") else None,
             "openObligations": entry.get("openObligations", []),
@@ -344,6 +441,7 @@ def summary(options):
         "counts": dict(sorted(counts.items())),
         "open": sorted(t for t, e in ledger["tasks"].items() if not e["terminal"]),
         "openUnits": open_units(ledger),
+        "overdue": overdue_units(ledger),
         "openObligations": {t: e["openObligations"] for t, e in ledger["tasks"].items() if e.get("openObligations")},
         "gatedActions": {t: e["gatedActions"] for t, e in ledger["tasks"].items() if e.get("gatedActions")},
     }
@@ -363,6 +461,21 @@ def main(argv=None):
     )
     snap = commands.add_parser("snapshot", help="print the repository input identity to record before dispatch")
     snap.add_argument("--repo", required=True)
+    begin = commands.add_parser(
+        "start", help="record a unit before dispatch so its attempt number is taken and a duplicate is refused"
+    )
+    begin.add_argument("--ledger", required=True)
+    begin.add_argument("--task", required=True)
+    begin.add_argument("--attempt", type=int, required=True)
+    begin.add_argument("--role", required=True, choices=ROLES)
+    begin.add_argument("--owner", required=True, help="who is dispatching the unit, normally the run owner")
+    begin.add_argument("--input", help="snapshot JSON captured before the worker starts")
+    begin.add_argument("--contract", help="the work-unit contract the worker receives")
+    begin.add_argument(
+        "--timeout",
+        type=float,
+        help="seconds until the unit counts as overdue when no completion notification has arrived; not a poll interval",
+    )
     rec = commands.add_parser("record", help="append one worker result to a task")
     rec.add_argument("--ledger", required=True)
     rec.add_argument("--task", required=True)
@@ -407,6 +520,7 @@ def main(argv=None):
     handlers = {
         "init": init,
         "snapshot": snapshot_input,
+        "start": start,
         "record": record,
         "close": close,
         "mark": mark,

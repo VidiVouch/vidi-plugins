@@ -123,6 +123,18 @@ def build(run, *extra, task="A-2", success=True):
     return cli("work_unit.py", *run["base"], "--task", task, "--input", run["snap"], *extra, success=success)
 
 
+def close(run, task, attempt, role, outcome):
+    """The cleanup barrier a dispatcher runs before any next unit; a never-returned unit is closed the same way."""
+    ledger = run["base"][run["base"].index("--ledger") + 1]
+    args = ("--ledger", ledger, "--task", task, "--attempt", attempt, "--role", role, "--owner", "overseer")
+    return cli("work_ledger.py", "close", *args, "--outcome", outcome)
+
+
+def ledger_task(run, task):
+    ledger = run["base"][run["base"].index("--ledger") + 1]
+    return json.loads(Path(ledger).read_text())["tasks"][task]
+
+
 def test_build_writes_every_section_and_only_this_task(run):
     contract = build(run)
     schema = json.loads(SCHEMA.read_text())
@@ -172,16 +184,42 @@ def test_validate_requires_every_dependency_outcome_key(run, tmp_path):
 
 def test_each_attempt_and_role_gets_its_own_contract_file(run):
     first = build(run)
-    assert "exists" in build(run, success=False)
+    assert "A-2 attempt 1 implementer" in build(run, success=False)  # the same unit is already running
     # A retry is a fresh unit: the same brief against the same inputs, its own evidence
-    # files, and nothing from attempt 1's note, result or contract.
+    # files, and nothing from attempt 1's note, result or contract. It starts only once
+    # the old attempt is terminal.
+    assert "A-2 attempt 1 implementer" in build(run, "--attempt", 2, success=False)
+    close(run, "A-2", 1, "implementer", "retry")
     retry = build(run, "--attempt", 2)
     assert retry["attempt"] == 2 and "implementer-1" not in json.dumps(retry["evidence"])
     strip = lambda c: {k: v for k, v in c.items() if k not in ("attempt", "evidence")}  # noqa: E731
     assert strip(retry) == strip(first)
+    close(run, "A-2", 2, "implementer", "cancellation")
     second = build(run, "--attempt", 2, "--role", "verifier")
     assert second["evidence"]["note"].endswith("tasks/A-2/verify-2.md")
     assert second["evidence"]["contract"].endswith("tasks/A-2/contract-verifier-2.json")
+
+
+def test_build_records_the_running_unit_so_a_duplicate_worker_is_refused(run):
+    """The ledger takes the unit before the contract exists; recorded state, not the file, stops a second worker."""
+    contract = build(run, "--owner", "overseer", "--timeout", 3600)
+    task = ledger_task(run, "A-2")
+    assert task["state"] == "running" and task["terminal"] is False
+    [attempt] = task["attempts"]
+    assert attempt["result"] is None and attempt["owner"] is None and "barrier" not in attempt
+    assert attempt["input"] == SNAPSHOT and attempt["start"]["contract"] == contract["evidence"]["contract"]
+    assert attempt["start"]["owner"] == "overseer" and attempt["start"]["startedAt"]
+    assert attempt["start"]["deadline"] > attempt["start"]["startedAt"]
+    Path(contract["evidence"]["contract"]).unlink()  # even without the file, the recorded start refuses a rebuild
+    assert "A-2 attempt 1 implementer" in build(run, success=False)
+    assert not Path(contract["evidence"]["contract"]).exists()
+    # A build that fails validation records nothing, so a refused unit leaves no running worker behind.
+    close(run, "A-2", 1, "implementer", "cancellation")
+    inside = write(Path(run["snap"]).with_name("inside.json"), SNAPSHOT | {"repo": str(run["evidence"].parent)})
+    assert "outside the repository" in cli(
+        "work_unit.py", *run["base"], "--task", "A-2", "--attempt", 2, "--input", inside, success=False
+    )
+    assert [a["attempt"] for a in ledger_task(run, "A-2")["attempts"]] == [1]
 
 
 def test_build_refuses_to_start_a_unit_while_a_finished_one_is_not_closed(run, tmp_path):
@@ -207,10 +245,12 @@ def test_build_refuses_to_start_a_unit_while_a_finished_one_is_not_closed(run, t
     args = ("--ledger", ledger, "--task", "B-1", "--attempt", 1, "--role", "implementer", "--owner", "w")
     cli("work_ledger.py", "record", *args, "--result", result)
     refused = build(run, success=False)  # another task's finished unit blocks this one too
-    assert "close every finished unit" in refused and "B-1 attempt 1 implementer" in refused
+    assert "close every open unit" in refused and "B-1 attempt 1 implementer" in refused
     assert not (run["evidence"] / "tasks/A-2").exists()
     cli("work_ledger.py", "close", *args, "--outcome", "retry")
     assert build(run)["task"] == "A-2"
+    assert "A-2 attempt 1 implementer" in build(run, "--attempt", 2, task="B-1", success=False)  # still running
+    close(run, "A-2", 1, "implementer", "cancellation")
     unreturned = ("--ledger", ledger, "--task", "B-1", "--attempt", 2, "--role", "implementer", "--owner", "w")
     cli("work_ledger.py", "close", *unreturned, "--outcome", "cancellation")  # never returned: closed, not left open
     assert build(run, "--attempt", 3, task="B-1")["attempt"] == 3

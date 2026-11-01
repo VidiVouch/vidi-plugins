@@ -20,7 +20,7 @@ from run_manifest import (
     reject_secrets,
     write_exclusive,
 )
-from work_ledger import ROLES, LedgerError, load_json, open_units, sha256, snapshot_input
+from work_ledger import ROLES, LedgerError, load_json, require_closed, sha256, snapshot_input, start_unit
 from work_ledger import load as load_ledger
 from work_ledger import packet as ledger_packet
 
@@ -156,11 +156,8 @@ def build(options):
     shared = load_json(options.shared, "shared contract")
     require(isinstance(shared, dict), "shared contract must be a JSON object")
     reject_secrets(shared)
-    # A finished unit's workers and children are stopped by its cleanup barrier; no new unit starts before that.
-    unclosed = open_units(load_ledger(options.ledger))
-    require(
-        not unclosed, f"close every finished unit before the next starts (work_ledger.py close): {', '.join(unclosed)}"
-    )
+    # A running or finished unit is stopped by its cleanup barrier; no new unit starts before that.
+    require_closed(load_ledger(options.ledger))
     unit = ledger_packet(
         SimpleNamespace(ledger=options.ledger, task=options.task, packets=options.packets, attempt=options.attempt)
     )
@@ -206,6 +203,9 @@ def build(options):
     validate(contract)
     target = Path(contract["evidence"]["contract"])
     require(not target.exists(), f"{target} exists; a new attempt gets a new contract file")
+    # The ledger takes the unit before the contract exists, so a second build of the same unit is refused by
+    # recorded state and a restarted controller sees a running worker, not an unexplained contract file.
+    start_unit(options.ledger, options.task, attempt, role, options.owner, snap, str(target), options.timeout)
     target.parent.mkdir(parents=True, exist_ok=True)
     write_exclusive(target, contract)
     return contract
@@ -231,6 +231,12 @@ def main(argv=None):
     make.add_argument("--evidence-root", required=True, help="run directory outside the repository; gets tasks/<ID>/")
     make.add_argument("--attempt", type=int, default=1)
     make.add_argument("--role", default="implementer", choices=ROLES)
+    make.add_argument("--owner", default="dispatcher", help="who is dispatching the unit; recorded with its start")
+    make.add_argument(
+        "--timeout",
+        type=float,
+        help="seconds until the unit counts as overdue without a completion notification; the watchdog's fallback",
+    )
     source = make.add_mutually_exclusive_group(required=True)
     source.add_argument("--input", help="snapshot JSON already captured by work_ledger.py snapshot")
     source.add_argument("--repo", help="measure the snapshot now, before the worker starts")

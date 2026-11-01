@@ -74,15 +74,20 @@ python3 "$SCRIPTS/work_unit.py" build --ledger "$RUN_DIR/ledger.json" --task "$I
 python3 "$SCRIPTS/work_unit.py" validate --contract "$RUN_DIR/tasks/$ID/contract-implementer-$N.json"
 ```
 
-`build` first refuses if any recorded unit in the ledger has not passed its
-cleanup barrier (`work_ledger.py close`, described in work-ledger.md), because
-a new unit must not start while a finished worker or its child processes may
-still be active. It then
+`build` first refuses if any unit in the ledger is open, whether it is still
+running or has finished without passing its cleanup barrier (`work_ledger.py
+close`, described in work-ledger.md), because a new unit must not start while
+a worker or its child processes may still be active. It then
 reads the task's packet and dependency outcomes through the ledger, so
-the packet digest is checked against `init`, merges the shared document, writes
+the packet digest is checked against `init`, merges the shared document,
+records the unit as started in the ledger (`--owner` names the dispatcher,
+`--timeout` sets the deadline after which it counts as overdue), writes
 `tasks/<ID>/contract-<role>-<N>.json` read-only, refuses to overwrite an earlier
 attempt's contract, and prints the contract. Hand the printed contract to the
-worker as its brief. The evidence root must be outside the repository, the stop
+worker as its brief. From that moment the ledger shows the unit as `running`,
+and a second build of the same attempt is refused by that record even if the
+contract file is gone; a retry is built only after the old attempt is closed.
+The evidence root must be outside the repository, the stop
 gates must be the five IDs from `approvals.md`, and the contract is run through
 the same credential filter as run manifests.
 
@@ -100,7 +105,9 @@ dispatcher pastes a previous worker's conversation into a new unit; a retry gets
 a new attempt number and a freshly built contract against the current snapshot.
 
 Every dispatch, including a repair round and a replacement after a stall, is a
-new instance started from its agent definition and its brief. A completed agent
+new instance started from its agent definition and its brief, and a
+replacement is built only after the stalled unit is closed (work-ledger.md,
+"Retries and replacement"). A completed agent
 is never handed a second unit, and no unit is a fork of the controller, because
 a fork carries the controller's conversation, which is the context this contract
 exists to exclude. The deep-review workflow enforces this in its dispatch layer:

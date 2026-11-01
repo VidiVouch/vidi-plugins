@@ -506,7 +506,7 @@ def test_summary_lists_counts_open_tasks_obligations_and_gated_actions(case, tmp
     )
     out = cli("summary", "--ledger", ledger)
     assert out["counts"] == {"in-progress": 1, "not-started": 1, "pending": 1}
-    assert out["open"] == ["A-1", "A-2"]
+    assert out["open"] == ["A-1", "A-2"] and out["overdue"] == []
     assert out["openObligations"] == {"A-1": ["A-2: reuse the helper"]}
     assert out["gatedActions"] == {"A-1": ["commits-pushes: push withheld"]}
 
@@ -635,6 +635,94 @@ def test_close_stops_only_the_registered_processes_and_keeps_the_patch(case, tmp
             if child.poll() is None:
                 child.kill()
                 child.wait()
+
+
+def start(ledger, task, attempt, role, *extra, success=True):
+    args = ("start", "--ledger", ledger, "--task", task, "--attempt", attempt, "--role", role, "--owner", "overseer")
+    return cli(*args, *extra, success=success)
+
+
+def test_start_takes_the_unit_before_dispatch_and_record_fills_it(case, tmp_path):
+    """A started unit is a running worker in the ledger: visible, counted, and never started twice."""
+    ledger, packets = case
+    snap = write(tmp_path / "snap.json", {"head": "abc", "snapshotId": "s1"})
+    out = start(ledger, "A-1", 1, "implementer", "--input", snap, "--contract", "/run/contract.json")
+    assert out == {"task": "A-1", "unit": "A-1 attempt 1 implementer", "state": "running", "deadline": None}
+    task = load(ledger)["A-1"]
+    [attempt] = task["attempts"]
+    assert (
+        attempt["result"] is None
+        and attempt["owner"] is None
+        and attempt["input"] == {"head": "abc", "snapshotId": "s1"}
+    )
+    assert attempt["start"]["owner"] == "overseer" and attempt["start"]["contract"] == "/run/contract.json"
+    assert task["terminal"] is False and task["summary"] is None and task["artifacts"] == []
+    summary = cli("summary", "--ledger", ledger)
+    assert summary["counts"] == {"pending": 2, "running": 1} and summary["openUnits"] == ["A-1 attempt 1 implementer"]
+    assert "already started" in start(ledger, "A-1", 1, "implementer", success=False)
+    assert "A-1 attempt 1 implementer" in start(ledger, "A-2", 1, "implementer", success=False)
+    assert "A-1 attempt 1 implementer" in start(ledger, "A-1", 2, "implementer", success=False)
+    assert "record it first" in close(ledger, "A-1", 1, "implementer", "success", success=False)
+    other = write(tmp_path / "other.json", {"head": "def", "snapshotId": "s2"})
+    assert "differs" in record(ledger, "A-1", 1, "implementer", implement(tmp_path), "--input", other, success=False)
+    assert record(ledger, "A-1", 1, "implementer", implement(tmp_path), "--packet", packets / "A-1.json") == {
+        "task": "A-1",
+        "state": "in-progress",
+        "terminal": False,
+    }
+    task = load(ledger)["A-1"]
+    [attempt] = task["attempts"]  # the result fills the started record instead of adding a second one
+    assert attempt["owner"] == "w" and attempt["recordedAt"] and attempt["result"]["summary"] == "did the work"
+    assert attempt["input"] == {"head": "abc", "snapshotId": "s1"} and attempt["start"]["owner"] == "overseer"
+    assert len(attempt["packetSha256"]) == 64
+    assert "already recorded" in record(ledger, "A-1", 1, "implementer", implement(tmp_path), success=False)
+    close(ledger, "A-1", 1, "implementer", "success")
+    assert "implementer record" in start(ledger, "A-1", 2, "verifier", success=False)
+    assert start(ledger, "A-1", 1, "verifier")["state"] == "running"
+    close(ledger, "A-1", 1, "verifier", "cancellation")
+    assert load(ledger)["A-1"]["state"] == "in-progress"
+
+
+def test_a_replacement_starts_only_after_the_old_attempt_is_closed(case, tmp_path):
+    """Watchdog replacement: close the stalled unit, start the next number, and refuse the stalled worker's late result."""
+    ledger, packets = case
+    start(ledger, "A-1", 1, "implementer")
+    assert "A-1 attempt 1 implementer" in start(ledger, "A-1", 2, "implementer", success=False)
+    out = close(ledger, "A-1", 1, "implementer", "retry")
+    assert out["state"] == "cancelled" and out["openUnits"] == []
+    assert start(ledger, "A-1", 2, "implementer")["state"] == "running"
+    assert "late result is not recorded" in record(ledger, "A-1", 1, "implementer", implement(tmp_path), success=False)
+    assert record(ledger, "A-1", 2, "implementer", implement(tmp_path))["state"] == "in-progress"
+    task = load(ledger)["A-1"]
+    assert [
+        (a["attempt"], a["result"] is None, a["barrier"]["outcome"] if a.get("barrier") else None)
+        for a in task["attempts"]
+    ] == [
+        (1, True, "retry"),
+        (2, False, None),
+    ]
+    # A dependent built now sees the replacement's note, not a crash on the result-less attempt.
+    close(ledger, "A-1", 2, "implementer", "success")
+    start(ledger, "A-1", 2, "verifier")
+    record(ledger, "A-1", 2, "verifier", verify(tmp_path))
+    close(ledger, "A-1", 2, "verifier", "success")
+    dependency = cli("packet", "--ledger", ledger, "--task", "A-2", "--packets", packets)["dependencies"]["A-1"]
+    assert dependency["state"] == "accepted" and dependency["notePath"] == str(tmp_path / "implement-1.md")
+
+
+def test_deadline_marks_an_overdue_unit_as_the_fallback_for_a_missing_notification(case, tmp_path):
+    ledger, _ = case
+    assert (
+        start(ledger, "A-1", 1, "implementer", "--timeout", 3600)["deadline"]
+        > load(ledger)["A-1"]["attempts"][0]["start"]["startedAt"]
+    )
+    assert cli("summary", "--ledger", ledger)["overdue"] == []
+    close(ledger, "A-1", 1, "implementer", "retry")
+    start(ledger, "A-1", 2, "implementer", "--timeout", 0)
+    assert cli("summary", "--ledger", ledger)["overdue"] == ["A-1 attempt 2 implementer"]
+    record(ledger, "A-1", 2, "implementer", implement(tmp_path))  # a result that did arrive ends the alarm
+    assert cli("summary", "--ledger", ledger)["overdue"] == []
+    assert "timeout" in start(ledger, "A-2", 1, "implementer", "--timeout", -1, success=False)
 
 
 def test_snapshot_identity_matches_run_manifest(tmp_path):
