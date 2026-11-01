@@ -110,6 +110,12 @@ def validate_args(args, repo):
     require(isinstance(args.get("mode"), str) and args["mode"] in MODES, "invalid review mode")
     boss = args.get("boss", [])
     require(isinstance(boss, list) and all(isinstance(m, str) for m in boss), "boss must be a list of model ids")
+    # One boss at most. The retired two-model form (one boss per domain, merged by the label the bosses
+    # gave) was neither one arbiter nor a panel; several judges over the same candidates is the panel.
+    require(
+        len(boss) <= 1,
+        "boss takes one model; the two-model logic,taste merge is retired, a multi-judge adjudication is judges",
+    )
     judges = args.get("judges")
     require(
         judges is None or (isinstance(judges, dict) and all(isinstance(j, dict) for j in judges.values())),

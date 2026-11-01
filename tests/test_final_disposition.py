@@ -5,6 +5,7 @@ import re
 import pytest
 from conftest import REPO
 from test_deep_review import CLEAN, FINDING, FIX_PACKET, direct, workflow
+from test_judging_panel import CANDIDATE, PANEL, candidate, judged, panel
 
 SKILL = REPO / "skills/deep-review"
 OUTCOMES = {"open", "fixed", "refuted", "unruled", "degraded"}
@@ -14,7 +15,7 @@ OTHER = {**FINDING, "file": "src/b.py", "description": "Second reachable defect"
 
 
 def ruling(id, real, severity="warning", reason="ruled"):
-    return {"id": id, "real": real, "severity": severity, "reason": reason, "domain": "logic"}
+    return {"id": id, "real": real, "severity": severity, "reason": reason}
 
 
 def only(result, outcome):
@@ -78,14 +79,25 @@ def test_open_is_a_confirmed_finding_nobody_was_sent_to_fix():
     assert nit["severity"] == "nit" and nit["outcomeReason"] == "confirmed in round 1; nits are not sent to fixers"
     assert len(both["confirmed"]) == 2  # history holds both; only one is open now
 
-    # Two bosses, one invalid: the finding the valid boss confirmed is open (the loop stopped before fixing),
-    # which is a different state from unruled.
+    # The loop stopped before fixing (under --panel, a second candidate split the judges, so the round ended
+    # fail-closed): the finding the panel did confirm is open, which is a different state from unruled.
+    second = candidate(OTHER)
+    words = dict(zip(PANEL, ("confirmed", "confirmed", "refuted"), strict=True))
     stopped = workflow(
-        {"fix": True, "boss": ["logic", "taste"]},
-        {**ONE, "boss:logic#1": {"rulings": [ruling(0, True)]}, "boss:taste#1": {"rulings": []}},
+        {"fix": True, "judges": panel()},
+        {
+            "claude-bugs#1": {**CLEAN, "findings": [FINDING, OTHER]},
+            **{
+                f"{name}#1": judged((CANDIDATE, second), {CANDIDATE["id"]: "confirmed", second["id"]: word})
+                for name, word in words.items()
+            },
+        },
     )["result"]
     assert stopped["incomplete"] and not stopped["fixed"]
-    assert only(stopped, "open")["outcomeReason"].endswith("the loop stopped before a fixer was dispatched")
+    (open_finding,) = stopped["disposition"]["open"]
+    assert open_finding["outcomeReason"].endswith("the loop stopped before a fixer was dispatched")
+    (split,) = stopped["disposition"]["unruled"]
+    assert split["file"] == OTHER["file"] and split["dispositions"] == words
 
 
 @pytest.mark.parametrize(

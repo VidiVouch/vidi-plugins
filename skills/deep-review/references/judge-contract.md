@@ -142,12 +142,20 @@ cross-family comparison, not for every small diff. The flag does three things:
 
 ## Outside this contract
 
-How disagreeing results are merged and rebutted (REVIEW-3, REVIEW-4), what
-happens when a required judge fails (REVIEW-5), and the run-record identity
-fields `resolvedModel` and `upstreamModel` (MODEL-3) are specified by those
-tasks. Until they land the workflow rules a candidate only when all three
-results agree on confirmed or on refuted; any split, any unresolved or
-unreviewed entry and any missing or invalid result leaves it unruled, nothing
-is fixed or cleared, and the run is incomplete. A missing judge is not yet
-replaced. Without `--panel` the boss stage keeps its `rulings` shape, and
-judging.md says how to read it through this contract.
+How disagreeing results are merged and rebutted (REVIEW-4), what happens when
+a required judge fails (REVIEW-5), and the run-record identity fields
+`resolvedModel` and `upstreamModel` (MODEL-3) are specified by those tasks.
+Until they land the workflow rules a candidate only when all three results
+agree on confirmed or on refuted; any split, any unresolved or unreviewed entry
+and any missing or invalid result leaves it unruled, nothing is fixed or
+cleared, and the run is incomplete. A missing judge is not yet replaced.
+
+Without `--panel` one boss adjudicates and the boss stage keeps its `rulings`
+shape; judging.md says how to read it through this contract. The earlier
+two-model boss form (one boss per domain, merged by taking the voice of
+whichever boss the finding's self-reported domain pointed at, with any third
+entry ignored) is retired and refused at the start by the workflow and by
+`run_manifest.py`: a list of bosses was neither one arbiter nor a panel, and
+it must never be read as a consensus of three. The panel is the one
+multi-judge mode, selected by definition and merged from identical records;
+the alias-selected boss was not generalized into a second one.

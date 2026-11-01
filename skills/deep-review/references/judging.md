@@ -11,8 +11,10 @@ refuses a result that breaks the rules below. The same shape serves a single
 boss and each member of a judging panel, so merging several judges is a merge
 of identical records, not a translation between formats.
 
-The deep-review workflow's boss stage, the default without `--panel`, returns
-`rulings` with `real` and `severity`. Read them through this contract:
+The deep-review workflow's boss stage, the default without `--panel`, runs one
+boss and returns `rulings` with `real` and `severity`; a request naming more
+than one boss is refused, because the retired two-model domain merge was
+neither one arbiter nor a panel. Read the rulings through this contract:
 `real=true` is confirmed without the evidence this schema demands, `real=false`
 is refuted, and an `UNRULED` finding is unreviewed. With `--panel` the workflow
 dispatches the three judges of judge-contract.md on one identical brief, each

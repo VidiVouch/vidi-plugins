@@ -503,14 +503,14 @@ def test_unit_models_and_rubric_are_recorded_and_cannot_be_rewritten(case):
         },
         "codex-native": {"policy": "disabled", "available": False},
     }
-    case.args.write_text(json.dumps({**case.original, "boss": ["codex", "opus"], "reviewers": reviewers}))
+    case.args.write_text(json.dumps({**case.original, "boss": ["codex"], "reviewers": reviewers}))
     run = initialize(case, "--task-id", "FLOW-1", "--attempt", "2")
     stored = load_manifest(run)
     assert stored["unit"] == {"taskId": "FLOW-1", "attempt": 2}
     assert verify(run)["unit"] == {"taskId": "FLOW-1", "attempt": 2}
     # The request's model lanes are readable without the arguments, and only the request: no catalog claims.
     assert stored["models"] == {
-        "boss": ["codex", "opus"],
+        "boss": ["codex"],
         "judges": {},
         "reviewers": {
             "claude-bugs": {"policy": "required", "agentType": None, "requestedModel": "opus"},
