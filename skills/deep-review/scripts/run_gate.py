@@ -215,6 +215,16 @@ def validate_review(manifest, result):
     # Scope: the result must say it ran the registered request, not a wider or narrower one.
     if result.get("boss") != manifest["models"]["boss"]:
         raise ManifestError("Boss lanes disagree with the registered request")
+    # A panel run must name the judges the request registered, by definition and requested model; a result
+    # from a boss run against a panel request, or the reverse, is a different adjudication than was asked for.
+    judges = result.get("judges") or {}
+    requested = (
+        {k: {"agentType": j.get("agentType"), "requestedModel": j.get("requestedModel")} for k, j in judges.items()}
+        if isinstance(judges, dict) and all(isinstance(j, dict) for j in judges.values())
+        else None
+    )
+    if requested != manifest["models"].get("judges", {}):
+        raise ManifestError("Judging panel disagrees with the registered request")
     limits, max_rounds = registered_scope(manifest["originalArgs"])
     rounds = result.get("rounds")
     if (

@@ -11,12 +11,16 @@ refuses a result that breaks the rules below. The same shape serves a single
 boss and each member of a judging panel, so merging several judges is a merge
 of identical records, not a translation between formats.
 
-The deep-review workflow's current boss stage returns `rulings` with `real`
-and `severity`. Read them through this contract: `real=true` is confirmed
-without the evidence this schema demands, `real=false` is refuted, and an
-`UNRULED` finding is unreviewed. The judging panel replaces that stage with
-results in this shape; nothing about the candidates, the dedup step or the
-fix lane changes.
+The deep-review workflow's boss stage, the default without `--panel`, returns
+`rulings` with `real` and `severity`. Read them through this contract:
+`real=true` is confirmed without the evidence this schema demands, `real=false`
+is refuted, and an `UNRULED` finding is unreviewed. With `--panel` the workflow
+dispatches the three judges of judge-contract.md on one identical brief, each
+returns this shape, and the result keeps the candidates of every round beside
+each judge's checked result or error under `judgeResults`. Until the evidence
+merge lands, only a unanimous confirmed or refuted disposition rules a
+candidate; everything else is unruled. Nothing about the candidates, the dedup
+step or the fix lane changes between the two modes.
 
 ## Top level
 
@@ -45,7 +49,12 @@ Every field is required and no other field is allowed.
   candidate's content (file, anchor and merged description), never from its
   position in a list, so two judges, a resumed run and a later fixer all name
   the same thing by the same id. 1 to 64 characters of letters, digits, `.`,
-  `_`, `:` or `-`, unique within the result.
+  `_`, `:` or `-`, unique within the result. The deep-review workflow derives
+  it from the same key disposition.md uses for identity across rounds (file,
+  line range and the first 80 characters of the merged description) with two
+  32-bit FNV-1a passes over that string, written `c-` plus 16 hex digits; the
+  Workflow runtime has no sha256, and a collision within a round is refused
+  rather than resolved by position.
 - `file`, `line_start`, `line_end`: the candidate's anchor, repo-relative, and
   also unchanged. A judge that wants to point at narrower lines cites them as
   code evidence; moving the anchor would make the entry a different finding

@@ -131,7 +131,7 @@ def test_unchanged_run_and_public_api(case):
         "acceptancePath": str(run_dir / "acceptance.json"),
     }
     assert stored["rubricId"] == manifest_api.identity(manifest_api.rubric(stored))
-    assert stored["models"] == {"boss": ["inherit"], "reviewers": {}}
+    assert stored["models"] == {"boss": ["inherit"], "judges": {}, "reviewers": {}}
     assert stored["unit"] is None
     assert stored["workflow"]["path"] == str(case.workflow)
     assert stored["contracts"][0]["path"] == str(case.contract)
@@ -511,6 +511,7 @@ def test_unit_models_and_rubric_are_recorded_and_cannot_be_rewritten(case):
     # The request's model lanes are readable without the arguments, and only the request: no catalog claims.
     assert stored["models"] == {
         "boss": ["codex", "opus"],
+        "judges": {},
         "reviewers": {
             "claude-bugs": {"policy": "required", "agentType": None, "requestedModel": "opus"},
             "astra-standard": {
@@ -532,7 +533,7 @@ def test_unit_models_and_rubric_are_recorded_and_cannot_be_rewritten(case):
     assert "attempt numbers" in initialize(case, "--task-id", "FLOW-1", "--attempt", "0", success=False)
     assert "non-empty" in initialize(case, "--task-id", " ", "--attempt", "1", success=False)
     for key, value, message in (
-        ("models", {"boss": ["inherit"], "reviewers": stored["models"]["reviewers"]}, "requested models"),
+        ("models", {"boss": ["inherit"], "judges": {}, "reviewers": stored["models"]["reviewers"]}, "requested models"),
         ("unit", {"taskId": "FLOW-2", "attempt": 2, "role": "verifier"}, "invalid unit"),
         ("unit", {}, "invalid unit"),
         ("rubricId", "0" * 64, "rubric identity"),

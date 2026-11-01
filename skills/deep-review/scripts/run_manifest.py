@@ -110,6 +110,12 @@ def validate_args(args, repo):
     require(isinstance(args.get("mode"), str) and args["mode"] in MODES, "invalid review mode")
     boss = args.get("boss", [])
     require(isinstance(boss, list) and all(isinstance(m, str) for m in boss), "boss must be a list of model ids")
+    judges = args.get("judges")
+    require(
+        judges is None or (isinstance(judges, dict) and all(isinstance(j, dict) for j in judges.values())),
+        "judges must map judge roles to evidence objects",
+    )
+    require(not (boss and judges), "judges replace the boss; a request names one or the other")
     reviewers = args.get("reviewers", {})
     require(
         isinstance(reviewers, dict) and all(isinstance(r, dict) for r in reviewers.values()),
@@ -120,11 +126,17 @@ def validate_args(args, repo):
 def models(args):
     """The requested model and provider lanes, read out of the arguments so a manifest says who was asked.
 
-    The boss list and each reviewer's policy, agent type and requested model are what prepare_reviewers.py
-    and the operator chose; verify recomputes this from originalArgs, so it cannot be edited to say otherwise.
-    Catalog and self-reported identities are not here because they are not the request."""
+    The boss list (empty when a judging panel replaces the boss), the panel's judge roles, and each reviewer's
+    policy, agent type and requested model are what prepare_reviewers.py and the operator chose; verify
+    recomputes this from originalArgs, so it cannot be edited to say otherwise. Catalog and self-reported
+    identities are not here because they are not the request."""
+    judges = args.get("judges") or {}
     return {
-        "boss": args.get("boss") or ["inherit"],
+        "boss": args.get("boss") or ([] if judges else ["inherit"]),
+        "judges": {
+            key: {"agentType": j.get("agentType"), "requestedModel": j.get("requestedModel")}
+            for key, j in judges.items()
+        },
         "reviewers": {
             key: {"policy": r.get("policy"), "agentType": r.get("agentType"), "requestedModel": r.get("requestedModel")}
             for key, r in args.get("reviewers", {}).items()

@@ -15,7 +15,9 @@ every earlier finding look either still outstanding or quietly resolved.
 `result.disposition` holds five lists. A finding appears in exactly one, sorted
 severity-first, carrying the finding fields, `outcome` (the list it is in),
 `outcomeReason` (one line saying why) and `rounds`, one entry per round the
-finding was judged with `round`, `ruling`, `severity` and the boss `reason`.
+finding was judged with `round`, `ruling`, `severity` and the boss `reason`
+(under `--panel`, the three judges' reasons joined, each prefixed with the
+judge's name).
 
 - `open`: the boss confirmed it in the last round it appeared and no fixer was
   sent for it. That happens in a report-only run, for a nit (nits are never
@@ -29,8 +31,12 @@ finding was judged with `round`, `ruling`, `severity` and the boss `reason`.
   a cause and the reason is kept, which is what lets a false claim die in one
   round instead of being re-detected as new.
 - `unruled`: no boss ruled it in the last round it appeared, because the boss
-  was unavailable or returned an invalid result. The run is already incomplete
-  and the finding is neither confirmed nor cleared.
+  was unavailable or returned an invalid result. Under `--panel` it also covers
+  a candidate the three judges did not unanimously confirm or refute, or one a
+  missing or invalid judge result left undecided; the finding then carries
+  `dispositions`, what each judge said, with `missing` for a judge that
+  returned nothing usable. The run is already incomplete and the finding is
+  neither confirmed nor cleared.
 - `degraded`: a fixer was dispatched for it and nothing verified the result:
   the loop hit its round limit before a re-review, the fixer failed and its
   partial edits were not re-reviewed, or a lane that reported the finding did
@@ -48,8 +54,9 @@ A finding is the same finding across rounds when `dedupKey` matches: file,
 line range and the first 80 characters of the merged description, the same key
 the loop's `seen` set uses. A fix that moves lines or a re-detection worded
 differently appears as a new open finding beside the old one marked fixed. The
-judging panel (judging.md) assigns content-derived ids before judges run; when
-it replaces the boss stage the same ids should key this record.
+judging panel (judging.md) derives each candidate's id from that same key
+before the judges run, so under `--panel` a finding's `id` and this record's
+identity name the same thing.
 
 ## Reading it
 

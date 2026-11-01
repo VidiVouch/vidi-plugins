@@ -94,10 +94,16 @@ Exactly the shape of `judging-output.schema.json`, through the structured-output
 tool: one entry per candidate with the id and anchor unchanged, a disposition
 that is one of `confirmed`, `refuted`, `unresolved` or `unreviewed`, and the
 scenario, evidence, impact, reason and limits that disposition needs
-(judging.md lists them). Before any merge, the orchestrator runs
-`scripts/judging.py check --result <file> --candidates <file> --snapshot <id>
---repo <review root>`; a result that fails the check is recorded as no result
-from that judge, not downgraded and not read partially.
+(judging.md lists them). The workflow checks every result in the run against
+the candidates it sent, with the rules of `scripts/judging.py check` short of
+the tree: exact shape, the snapshot and round echoed under `input`, one entry
+per candidate id at the candidate's own anchor, and the fields each
+disposition must carry. The host then runs `scripts/judging.py check --result
+<file> --candidates <file> --snapshot <id> --repo <review root>` on the saved
+results, which also confirms that every code reference names a file and line
+range that exist in the judged tree, something the Workflow runtime cannot
+read. A result that fails either check is recorded as no result from that
+judge, not downgraded and not read partially.
 
 ## Fail closed
 
@@ -110,11 +116,38 @@ from that judge, not downgraded and not read partially.
 - No judge is retried on a different model or harness. A replacement judge is
   a new fresh instance of the same definition, dispatched the same way.
 
+## The opt-in
+
+The panel is off by default and turned on per run with `--panel` (deep-review
+SKILL.md). It costs three judgments per round, so it is for decisions worth a
+cross-family comparison, not for every small diff. The flag does three things:
+
+- `prepare_reviewers.py --panel` adds `judges` to its output: for each of the
+  three definitions, the `agentType`, the `requestedModel` from the
+  definition, whether the proxy catalog advertises the bare ID (the `[1m]`
+  marker is stripped before the ID reaches the provider, models.md),
+  `catalogModel`, the reason, and `resolvedModel` and `upstreamModel` as null.
+  Without the flag `judges` is null and the workflow runs its boss stage.
+- The workflow receives that object as `judges` and refuses to start when it
+  names anything but the three roles, when any judge is unavailable, when a
+  definition lacks catalog evidence, or when `boss` is also given. A panel that
+  quietly ran with two families, or a boss and a panel over the same
+  candidates, is not the mode that was asked for. The run manifest records
+  the requested judges under `models.judges` with an empty boss list, and
+  finalize refuses a result whose judges differ from it.
+- Each round, the workflow derives every candidate's id from its content,
+  builds one brief, dispatches the three judges on it in parallel by
+  `agentType` alone, checks each result as described above, and keeps the
+  candidates and every checked result or error under `judgeResults`.
+
 ## Outside this contract
 
-Panel membership and the opt-in that turns three judges on (REVIEW-2), how
-disagreeing results are merged and rebutted (REVIEW-3, REVIEW-4), what happens
-when a required judge fails (REVIEW-5), and the run-record identity fields
-(MODEL-3) are specified by those tasks. Until REVIEW-2 lands, the workflow's
-boss stage keeps its `rulings` shape; judging.md says how to read it through
-this contract.
+How disagreeing results are merged and rebutted (REVIEW-3, REVIEW-4), what
+happens when a required judge fails (REVIEW-5), and the run-record identity
+fields `resolvedModel` and `upstreamModel` (MODEL-3) are specified by those
+tasks. Until they land the workflow rules a candidate only when all three
+results agree on confirmed or on refuted; any split, any unresolved or
+unreviewed entry and any missing or invalid result leaves it unruled, nothing
+is fixed or cleared, and the run is incomplete. A missing judge is not yet
+replaced. Without `--panel` the boss stage keeps its `rulings` shape, and
+judging.md says how to read it through this contract.

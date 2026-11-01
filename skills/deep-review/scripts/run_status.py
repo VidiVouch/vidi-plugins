@@ -147,8 +147,11 @@ def coverage(result):
             # A succeeded lane whose payload is absent was summarised before it was saved; that is a truncated result.
             "payloadStored": (key in stored) if state == "succeeded" else None,
         }
+    # Adjudication failures: a boss slot, or under --panel a judge or the split panel itself.
     boss = [
-        d for d in result.get("degraded") or [] if isinstance(d, dict) and str(d.get("key", "")).startswith("boss:")
+        d
+        for d in result.get("degraded") or []
+        if isinstance(d, dict) and str(d.get("key", "")).startswith(("boss:", "judge:"))
     ]
     return {
         "complete": result.get("coverageComplete") is True,
@@ -246,7 +249,8 @@ def blocking(report, result, manifest_path):
         return {"stage": "gate", "reason": gate.get("reason"), "command": retry}
     lanes = set(result.get("coverage") or {})
     degraded = [d for d in result.get("degraded") or [] if isinstance(d, dict)]
-    for stage, match in (("coverage", lambda key: key in lanes), ("adjudication", lambda key: key.startswith("boss:"))):
+    stages = (("coverage", lambda key: key in lanes), ("adjudication", lambda key: key.startswith(("boss:", "judge:"))))
+    for stage, match in stages:
         hit = next((d for d in degraded if match(str(d.get("key", "")))), None)
         if hit:
             return {"stage": stage, "reason": hit.get("reason"), "command": retry}
