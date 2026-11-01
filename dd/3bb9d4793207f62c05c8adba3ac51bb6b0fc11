@@ -1,0 +1,35 @@
+agents/fixer.md
+  s_610be6e94314a7::t_70fd7b299f52bc 60-62
+  s_610be6e94314a7::t_2338a0207b63f7 78-84,87-89
+  s_610be6e94314a7::t_a1efd2e094ecbf 40-46
+  s_610be6e94314a7::t_cdfe9631d43663 23-30
+tests/test_fixer_ownership.py
+  s_610be6e94314a7::t_ba66e9db06154e 254
+  s_610be6e94314a7::t_1061dfa4281dfc 74
+  s_610be6e94314a7::t_7751a146182fbf 262
+  s_610be6e94314a7::t_46fb416410ef03 1-73,75-95,100-107,110-113,115-120,124-127,131-207,209-253,255-261
+  s_610be6e94314a7::t_99373ec0ee38b5 96-99,108-109,114,121-123,128-130
+  s_610be6e94314a7::t_cdc6e9f4f50b84 208
+  s_610be6e94314a7::t_04c7f401ff86ed 263-301
+skills/deep-review/references/disposition.md
+  s_610be6e94314a7::t_a5621ed7eae721 68-89
+skills/deep-review/fix-output.schema.json
+  s_610be6e94314a7::t_63a125b5b1e7a7 4
+  s_610be6e94314a7::t_6646f86453aeff 49-75
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dd3bb9d4793207f62c05c8adba3ac51bb6b0fc11",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
