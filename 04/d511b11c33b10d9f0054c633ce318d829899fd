@@ -1,0 +1,28 @@
+tests/test_work_unit.py
+  s_610be6e94314a7::t_f98bf6266f83ef 369-383
+skills/deep-review/references/work-unit.md
+  s_610be6e94314a7::t_26821837cde5e4 151-193
+skills/deep-review/fix-output.schema.json
+  s_610be6e94314a7::t_c9f360d2086a9e 1-25
+skills/deep-review/references/hand-back.md
+  s_610be6e94314a7::t_3c625406e5f852 12-17
+agents/fixer.md
+  s_610be6e94314a7::t_45818906d061fc 30
+  s_610be6e94314a7::t_9e2deabe8ba6df 40-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "04d511b11c33b10d9f0054c633ce318d829899fd",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
