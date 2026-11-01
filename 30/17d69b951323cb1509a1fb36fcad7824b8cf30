@@ -1,0 +1,53 @@
+tests/test_work_ledger.py
+  s_610be6e94314a7::t_1d24085292e4e4 676
+  s_610be6e94314a7::t_a4b0895c11e8d0 509
+  s_610be6e94314a7::t_d76d70e6ce6f99 684
+  s_610be6e94314a7::t_cd1e9fa3024f20 640-675,677-683,685-719
+  s_610be6e94314a7::t_5bdc03e469127e 720-727
+skills/deep-review/scripts/work_unit.py
+  s_610be6e94314a7::t_c7685dae69ba91 159-160
+  s_610be6e94314a7::t_0062e34376420d 23
+  s_610be6e94314a7::t_0457e12177270c 206-208
+  s_610be6e94314a7::t_5b227d08f07104 234-239
+tests/test_work_unit.py
+  s_610be6e94314a7::t_b6c1a66977cdfb 248,253
+  s_610be6e94314a7::t_3d4663b69e2343 252
+  s_610be6e94314a7::t_92f1b341709b1c 187,189-192,197,203-222
+  s_610be6e94314a7::t_153d028470288b 126-137
+  s_610be6e94314a7::t_6ca458b11aef55 223-224
+skills/deep-review/references/work-unit.md
+  s_610be6e94314a7::t_4180d46e5a8eb7 77-80,82-84,87-90
+  s_610be6e94314a7::t_b672351100faf4 108-110
+skills/deep-review/scripts/work_ledger.py
+  s_610be6e94314a7::t_bbeaf22e310eff 240-242
+  s_610be6e94314a7::t_8c2f523ad01ca5 90-91,95
+  s_610be6e94314a7::t_44c78d7714f3bb 138,147-171
+  s_610be6e94314a7::t_3e1962a07d4915 444
+  s_610be6e94314a7::t_c27d0fc31b6d34 223
+  s_610be6e94314a7::t_40e6626badfb98 11
+  s_610be6e94314a7::t_b23c62329a0ab0 208-222,224-239,243-269,275,280-283,286,293-296,302-303,307-308
+  s_610be6e94314a7::t_d0c11da1ed6e8f 413-418
+  s_610be6e94314a7::t_f7a9677b257c18 464-478
+  s_610be6e94314a7::t_f41b0af53b059d 523
+  s_610be6e94314a7::t_84faf2ec41f3e0 341,343-346,350
+  s_610be6e94314a7::t_337915b265e63c 172-173
+skills/deep-review/references/work-ledger.md
+  s_610be6e94314a7::t_ced6863d9b757d 21-23,25-26
+  s_610be6e94314a7::t_b167dc85e3beed 116-162
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3017d69b951323cb1509a1fb36fcad7824b8cf30",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
