@@ -17,7 +17,7 @@ import json
 import sys
 from pathlib import Path
 
-from run_manifest import ManifestError, identity, parse_json, read_bytes, verify_manifest
+from run_manifest import ManifestError, identity, parse_json, read_bytes, rubric, verify_manifest
 
 
 class ReuseError(ValueError):
@@ -27,21 +27,6 @@ class ReuseError(ValueError):
 def require(condition, message):
     if not condition:
         raise ReuseError(message)
-
-
-# Where the frozen tree lived is not part of the request: a worktree path changes per
-# attempt while its content, the snapshot, does not.
-PATH_ONLY = {"repoRoot"}
-
-
-def rubric(manifest):
-    """Everything the run was asked to do: the request arguments, the workflow and the contracts."""
-    args = {key: value for key, value in manifest["originalArgs"].items() if key not in PATH_ONLY}
-    return {
-        "args": args,
-        "workflow": manifest["workflow"]["sha256"],
-        "contracts": sorted(contract["sha256"] for contract in manifest["contracts"]),
-    }
 
 
 def load(path, label):

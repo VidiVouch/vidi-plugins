@@ -53,7 +53,8 @@ input under the same rules:
 - rubric: the workflow digest, the set of contract digests (reviewer specs,
   output schemas, reference prose) and every other original argument (mode,
   target, reviewer policy and availability, boss, focus, limits, gate commands)
-  are equal.
+  are equal. The manifest records this identity as `rubricId`, so two manifests
+  can be compared by eye before either tree is checked.
 
 The current manifest is verified against the live tree first, so the identity
 being matched is what is on disk now, not what a stale manifest says:
