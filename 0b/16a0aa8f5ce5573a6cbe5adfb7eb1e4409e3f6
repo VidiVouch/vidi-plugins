@@ -1,0 +1,47 @@
+skills/deep-review/scripts/run_attempt.py
+  s_610be6e94314a7::t_a18453359b3fe2 39-40
+  s_610be6e94314a7::t_2402f0d04a7cb0 62-65
+  s_610be6e94314a7::t_1a40c689afa76e 48
+agents/gate-courier.md
+  s_610be6e94314a7::t_32d8cfe40b196c 1-45
+skills/deep-review/scripts/run_gate.py
+  s_610be6e94314a7::t_69e6b29275aa56 398-401
+  s_610be6e94314a7::t_71314dc22a8135 108-109
+  s_610be6e94314a7::t_16eb35088ea5f9 362-374
+skills/deep-review/gate-output.schema.json
+  s_610be6e94314a7::t_cc2dbc4d5e5045 1-10
+tests/test_run_attempt.py
+  s_610be6e94314a7::t_0183a8242d4b20 155-164,171
+  s_610be6e94314a7::t_3d64b1e9aa9986 94-102
+tests/test_run_gate.py
+  s_610be6e94314a7::t_4a2f3e3aa76f2b 95-96,112-124,130-138,140-142,149-177,181
+  s_610be6e94314a7::t_b86c23bd0b5f0b 318
+  s_610be6e94314a7::t_120a270425895f 352
+  s_610be6e94314a7::t_ce12cd256f61dd 327
+  s_610be6e94314a7::t_7b69c1c9b656de 474
+  s_610be6e94314a7::t_43cf35cb486f22 457
+  s_610be6e94314a7::t_a61dbfabb529ef 445
+skills/deep-review/references/result-meaning.md
+  s_610be6e94314a7::t_c24c1463bcc05e 129-132
+  s_610be6e94314a7::t_6e3c457bf6eceb 60-62
+  s_610be6e94314a7::t_afe2a466a97513 35-37
+tests/test_reuse_result.py
+  s_610be6e94314a7::t_d2e66f7c3dccd2 113-118
+  s_610be6e94314a7::t_ea162f1547de43 30,33-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0b16a0aa8f5ce5573a6cbe5adfb7eb1e4409e3f6",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
