@@ -1,0 +1,28 @@
+tests/test_model_roles.py
+  s_610be6e94314a7::t_8976bd372596b3 94
+  s_610be6e94314a7::t_1be2e006823b80 95-97
+  s_610be6e94314a7::t_94088193b89120 99
+tests/test_named_agents.py
+  s_610be6e94314a7::t_53a604753ce110 1-3
+  s_610be6e94314a7::t_7f065319acd59e 22-26,29-45
+skills/deep-review/references/judge-contract.md
+  s_610be6e94314a7::t_a763421edef4e4 41-56
+skills/deep-review/references/models.md
+  s_610be6e94314a7::t_59b59268b23b11 84,86-95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ff55e2a5cc200b0c4e6cd3f0b26c6231c156b9a3",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
