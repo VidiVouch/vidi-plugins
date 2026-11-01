@@ -19,7 +19,9 @@ neither one arbiter nor a panel. Read the rulings through this contract:
 is refuted, and an `UNRULED` finding is unreviewed. With `--panel` the workflow
 dispatches the three judges of judge-contract.md on one identical brief, each
 returns this shape, and the result keeps the candidates of every round beside
-each judge's checked result or error under `judgeResults`. The three records
+each judge's checked result or error under `judgeResults`, with the packet and
+error of a first instance that a fresh one replaced under `replaced`
+(judge-contract.md, "When a judge slot fails"). The three records
 are merged by their evidence, never by count (judge-contract.md, "Merging and
 rebuttals"): confirmations with no refutation confirm, refutations with no
 confirmation refute, a confirmation beside a refutation is a conflict that

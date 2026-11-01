@@ -120,7 +120,58 @@ judge, not downgraded and not read partially.
   missing judge result. It is never read as "no real findings", and it never
   becomes a set of refuted entries.
 - No judge is retried on a different model or harness. A replacement judge is
-  a new fresh instance of the same definition, dispatched the same way.
+  a new fresh instance of the same definition, dispatched the same way, and
+  the next section says when one is dispatched.
+
+## When a judge slot fails
+
+Every judge of the panel is required; there is no optional third. The older
+rebuild acceptance panel (rebuild-examine, Phase 5) treats its non-Claude judge
+as optional and proceeds two of two when that judge degrades. This panel does
+not inherit that fallback: a judge that returns nothing usable is a family the
+panel lacks, and a ruling made without it is a different ruling than the one
+`--panel` asked for. The workflow therefore does the following, in order, each
+round:
+
+- When a slot's instance returns null, is cancelled, or returns a result the
+  check refuses, the workflow logs the panel as incomplete, naming the judge
+  and the cause, and dispatches one fresh instance of the same definition on
+  the same brief, by `agentType` alone. It does this only after every first
+  instance has returned, so the replacement receives the identical brief and
+  no result can reach it. The first instance stays on record under
+  `judgeResults[].replaced[<judge>]` with its raw packet and the error; the
+  slot's standing result is under `results[<judge>]`.
+- A slot filled by its replacement is a complete slot: its status is `ok`, the
+  merge runs on three checked results, and nothing about the failed first
+  instance is hidden, because `replaced` and the dispatch record keep it.
+- A slot still empty after the replacement is not filled again. Two fresh
+  instances of one definition failing on the same brief is a capability
+  problem (the model, the proxy, the budget) that the attempt series handles
+  (run-lifecycle.md), not something a third call in the same round would
+  answer, and every call is a paid one. By default the round's candidates are
+  all `unruled` with `missing` for that judge in `dispositions`, the judge's
+  key is `degraded` with both errors, and the run is incomplete: nothing is
+  fixed or cleared on a partial panel.
+- Ruling with the two remaining judges is reduced coverage and requires
+  explicit authorization in the request: the argument `reducedPanel` (SKILL.md
+  `--reduced-panel "<text>"`), carrying the user's own words that allow a
+  two-judge ruling and where they were given (approvals.md, "What counts as
+  authorization"). No agent supplies that text, and no result, report or
+  completed review stands in for it. With it registered and exactly one slot
+  empty, the two remaining judges rule by the merge below, each candidate's
+  `dispositions` says `missing` for the absent judge, the judge's key is
+  `reduced coverage: ...` under `degraded` (the report shows it as absent
+  data, never as a judge that ruled), and the run is not incomplete for it.
+  `run_gate.py finalize` accepts a `judge:` entry under `degraded` only when
+  the manifest registered `reducedPanel` and the result echoes the same text,
+  so a result cannot claim an authorization the request did not carry, and an
+  acceptance under reduced coverage is never reused for a request without it
+  because the authorization is part of the rubric.
+- Two empty slots are never a panel, authorization or not. One judge is a boss
+  run; request one with `--boss`. A judge the proxy does not advertise before
+  the run is not a failed slot either: the workflow still refuses to start
+  (The opt-in), because a panel known to be short a family is a different
+  request, and `reducedPanel` covers a judge that was available and failed.
 
 ## The opt-in
 
@@ -143,8 +194,10 @@ cross-family comparison, not for every small diff. The flag does three things:
   finalize refuses a result whose judges differ from it.
 - Each round, the workflow derives every candidate's id from its content,
   builds one brief, dispatches the three judges on it in parallel by
-  `agentType` alone, checks each result as described above, and keeps the
-  candidates and every checked result or error under `judgeResults`.
+  `agentType` alone, checks each result as described above, replaces a failed
+  judge once (When a judge slot fails), and keeps the candidates, every
+  checked result or error and every replaced first instance under
+  `judgeResults`.
 
 ## Merging and rebuttals
 
@@ -156,9 +209,10 @@ verdicts: each is an examination with evidence the checker required. An
 and the merged reason but carries no verdict, so it neither confirms, refutes
 nor blocks. The rules, in order:
 
-- A missing or invalid result leaves every candidate unruled, the run
-  incomplete and nothing fixed or cleared, as before; replacing a failed judge
-  is REVIEW-5.
+- A judge still missing after its one replacement leaves every candidate
+  unruled, the run incomplete and nothing fixed or cleared, unless the request
+  registered `reducedPanel` and exactly one judge is missing, in which case the
+  rules below run on the two remaining results (When a judge slot fails).
 - A confirmation beside a refutation is conflicting evidence. The candidate
   stays unruled and open, with both sides in the record, the loop stops and the
   run is incomplete. A demonstrated defect is not outvoted by refutations and a
@@ -186,11 +240,8 @@ costing a round per fixer that declines it.
 
 ## Outside this contract
 
-What happens when a required judge fails (REVIEW-5) and the run-record
-identity fields `resolvedModel` and `upstreamModel` (MODEL-3) are specified by
-those tasks. Until they land a missing or invalid judge result leaves the
-round's candidates unruled and the run incomplete, and a missing judge is not
-replaced.
+The run-record identity fields `resolvedModel` and `upstreamModel` (MODEL-3)
+are specified by that task and stay null until it lands.
 
 Without `--panel` one boss adjudicates and the boss stage keeps its `rulings`
 shape; judging.md says how to read it through this contract. The earlier

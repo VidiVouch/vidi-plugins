@@ -34,10 +34,11 @@ judge's name).
   was unavailable or returned an invalid result. Under `--panel` it also covers
   a candidate whose judges' evidence conflicts (one confirmed it and another
   refuted it, which no count resolves), one that no judge demonstrated or
-  refuted, or one a missing or invalid judge result left undecided; the finding
-  then carries `dispositions`, what each judge said, with `missing` for a judge
-  that returned nothing usable. The run is already incomplete and the finding
-  is neither confirmed nor cleared.
+  refuted, or one a judge still missing after its one fresh replacement left
+  undecided (unless the request authorized a two-judge ruling, judge-contract.md
+  "When a judge slot fails"); the finding then carries `dispositions`, what each
+  judge said, with `missing` for a judge that returned nothing usable. The run
+  is already incomplete and the finding is neither confirmed nor cleared.
 - `degraded`: a fixer was dispatched for it and nothing verified the result:
   the loop hit its round limit before a re-review, the fixer failed and its
   partial edits were not re-reviewed, a lane that reported the finding did not

@@ -113,7 +113,10 @@ def test_a_judge_result_the_host_check_would_refuse_is_refused_in_the_run(bad, r
     data = workflow({"judges": panel(), "fix": True}, {**ONE, **unanimous("confirmed"), "judge-astra#1": bad})
     result = data["result"]
     assert result["incomplete"] and not any(c["opts"]["phase"] == "Fix" for c in data["calls"])
-    assert reason in result["judgeResults"][0]["results"]["judge-astra"]["error"]
+    # The refused first instance is on record under `replaced`; the fresh instance that filled the slot (the
+    # mock's default review packet here) is the slot's standing result, and it fails the same check.
+    assert reason in result["judgeResults"][0]["replaced"]["judge-astra"]["error"]
+    assert result["judgeResults"][0]["results"]["judge-astra"]["error"] == "invalid judging result"
     assert result["disposition"]["unruled"][0]["dispositions"]["judge-astra"] == "missing"
 
 

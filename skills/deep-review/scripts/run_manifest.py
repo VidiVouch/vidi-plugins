@@ -122,6 +122,15 @@ def validate_args(args, repo):
         "judges must map judge roles to evidence objects",
     )
     require(not (boss and judges), "judges replace the boss; a request names one or the other")
+    # A two-judge ruling after one judge slot fails twice is reduced coverage, authorized per request by the
+    # user's recorded words; it is part of the rubric, so an acceptance under it is never reused for a request
+    # without it. It has no meaning without a panel.
+    reduced = args.get("reducedPanel")
+    require(
+        reduced is None or (isinstance(reduced, str) and reduced.strip()),
+        "reducedPanel must be the recorded authorization for a two-judge ruling, or null",
+    )
+    require(not (reduced and not judges), "reducedPanel authorizes a two-judge panel ruling; it needs judges")
     reviewers = args.get("reviewers", {})
     require(
         isinstance(reviewers, dict) and all(isinstance(r, dict) for r in reviewers.values()),

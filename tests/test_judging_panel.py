@@ -367,8 +367,9 @@ def test_conflicting_or_absent_evidence_rules_nothing_and_stops_the_run(words, w
     ],
 )
 def test_a_missing_or_unbacked_judge_result_is_no_result_and_leaves_the_round_unruled(bad, reason):
-    """One judge fails its check: that judge is degraded with the cause, its raw packet is kept beside the error, the
-    candidate is unruled with `missing` for that judge, no fixer runs and the run is incomplete."""
+    """One judge fails its check: that judge is degraded with the cause, its raw packet is kept beside the error under
+    `replaced`, one fresh instance fills the slot (test_judge_replacement.py; here the mock's default packet fails the
+    same check), the candidate is unruled with `missing` for that judge, no fixer runs and the run is incomplete."""
     data = workflow({"judges": panel(), "fix": True}, {**ONE, **unanimous("confirmed"), "judge-astra#1": bad})
     result = data["result"]
     assert result["incomplete"] and not result["fixed"]
@@ -378,8 +379,9 @@ def test_a_missing_or_unbacked_judge_result_is_no_result_and_leaves_the_round_un
     (unruled,) = result["disposition"]["unruled"]
     assert unruled["dispositions"] == {"judge-fable": "confirmed", "judge-astra": "missing", "judge-grok": "confirmed"}
     assert "judge-astra missing" in unruled["outcomeReason"]
-    astra = result["judgeResults"][0]["results"]["judge-astra"]
+    astra = result["judgeResults"][0]["replaced"]["judge-astra"]
     assert reason in astra["error"] and astra["result"] == (bad if isinstance(bad, dict) else None)
+    assert result["judgeResults"][0]["results"]["judge-astra"]["error"] == "invalid judging result"
     assert result["judgeResults"][0]["results"]["judge-fable"] == {
         "result": unanimous("confirmed")["judge-fable#1"],
         "error": "",

@@ -147,12 +147,16 @@ def coverage(result):
             # A succeeded lane whose payload is absent was summarised before it was saved; that is a truncated result.
             "payloadStored": (key in stored) if state == "succeeded" else None,
         }
-    # Adjudication failures: a boss slot, or under --panel a judge or the split panel itself.
-    boss = [
+    # Adjudication failures: a boss slot, or under --panel a judge or the split panel itself. A judge the panel
+    # ruled around under the request's reduced-coverage authorization is reduced, not failed, and still named.
+    adjudication = [
         d
         for d in result.get("degraded") or []
         if isinstance(d, dict) and str(d.get("key", "")).startswith(("boss:", "judge:"))
     ]
+    boss = [d for d in adjudication if not str(d.get("reason", "")).startswith("reduced coverage:")]
+    if not boss and adjudication:
+        boss = [{"reason": adjudication[0].get("reason"), "state": "reduced"}]
     return {
         "complete": result.get("coverageComplete") is True,
         "rounds": result.get("rounds"),
@@ -163,7 +167,9 @@ def coverage(result):
             for a in result.get("attempts") or []
             if isinstance(a, dict)
         ],
-        "boss": {"state": "failed", "reason": boss[0].get("reason")} if boss else {"state": "succeeded", "reason": ""},
+        "boss": {"state": boss[0].get("state", "failed"), "reason": boss[0].get("reason")}
+        if boss
+        else {"state": "succeeded", "reason": ""},
     }
 
 

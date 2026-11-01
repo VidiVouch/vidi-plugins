@@ -225,6 +225,8 @@ def validate_review(manifest, result):
     )
     if requested != manifest["models"].get("judges", {}):
         raise ManifestError("Judging panel disagrees with the registered request")
+    if result.get("reducedPanel") != manifest["originalArgs"].get("reducedPanel"):
+        raise ManifestError("Reduced-coverage authorization disagrees with the registered request")
     limits, max_rounds = registered_scope(manifest["originalArgs"])
     rounds = result.get("rounds")
     if (
@@ -304,12 +306,28 @@ def validate_review(manifest, result):
     if result.get("coverageComplete") is not complete:
         raise ManifestError("Coverage summary disagrees with reviewer states")
     degraded = result.get("degraded")
-    if not isinstance(degraded, list) or any(
-        not isinstance(d, dict)
-        or d.get("key") not in expected
+    if not isinstance(degraded, list) or any(not isinstance(d, dict) for d in degraded):
+        raise ManifestError("Required review or gate failure cannot be accepted")
+    # One judge of a registered panel with no usable result from two fresh instances, ruled around by the
+    # other two: acceptable only as the reduced coverage the request itself authorized, and only one such
+    # judge. A short panel the request did not authorize, two missing judges, or a divided panel
+    # (`judge:panel`) is not accepted, whatever the result's own word.
+    short = [d for d in degraded if str(d.get("key", "")).startswith("judge:")]
+    if short and (
+        len(short) > 1
+        or not manifest["originalArgs"].get("reducedPanel")
+        or short[0]["key"].removeprefix("judge:") not in manifest["models"].get("judges", {})
+        or not str(short[0].get("reason", "")).startswith("reduced coverage:")
+    ):
+        raise ManifestError(
+            "Judging panel short a judge cannot be accepted without the registered reduced-coverage authorization"
+        )
+    if any(
+        d.get("key") not in expected
         or expected[d["key"]]["policy"] != "optional"
         or coverage[d["key"]]["state"] not in {"failed", "cancelled"}
         for d in degraded
+        if d not in short
     ):
         raise ManifestError("Required review or gate failure cannot be accepted")
     if succeeded != set(successful):
