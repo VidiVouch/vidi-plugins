@@ -8,6 +8,11 @@ model: opus
 Fix code-review findings that have already been verified against the code.
 Apply the fixes rather than reopening the review.
 
+You are a fresh instance for this one fix bucket: this definition and the task
+message are your whole brief. There is no prior conversation to continue, and
+nothing you return is carried into another unit. If the task asks you to continue
+earlier work of yours, the brief is wrong; say so in your summary instead of guessing.
+
 ## Assignment
 
 Your task specifies a repo root and files with findings (`line_start`, `line_end`,
