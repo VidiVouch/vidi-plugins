@@ -1,0 +1,38 @@
+skills/rebuild-epoch/SKILL.md
+  s_610be6e94314a7::t_939a62b1658e26 95
+  s_610be6e94314a7::t_e16ac3927792f3 215-219
+  s_610be6e94314a7::t_512c435135662f 310-312
+  s_610be6e94314a7::t_b3c3ac029b6ff6 113-118
+  s_610be6e94314a7::t_b3dfd04bee977d 86-94
+  s_610be6e94314a7::t_4d911d30224759 96
+  s_610be6e94314a7::t_574ea3c7968079 280-284
+skills/rebuild-plan/SKILL.md
+  s_610be6e94314a7::t_0f22ac4ae0d898 219-225
+  s_610be6e94314a7::t_6dad20ca20bfe5 365-367
+  s_610be6e94314a7::t_3cc961d4a41970 411-412
+  s_610be6e94314a7::t_25d6eaaff4fff6 302-304
+  s_610be6e94314a7::t_6e737a717d245a 403-404
+  s_610be6e94314a7::t_ba10fc52786c55 425-427
+  s_610be6e94314a7::t_8fe51e7092e8ca 311-318
+tests/test_rebuild_skills.py
+  s_610be6e94314a7::t_d1a48b5384bb85 97-98
+  s_610be6e94314a7::t_43a3855fa09229 87-96,99-122
+skills/deep-review/references/work-unit.md
+  s_610be6e94314a7::t_e6a5a10e685dc1 117-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "eca05ca6b5e6d1ca9a935b61493b69712f501e62",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
