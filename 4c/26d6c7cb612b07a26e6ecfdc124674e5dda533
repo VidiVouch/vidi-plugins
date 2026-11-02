@@ -1,0 +1,42 @@
+skills/rebuild-epoch/SKILL.md
+  s_610be6e94314a7::t_2c809816f7a8b1 96-110
+  s_610be6e94314a7::t_819fe6779aa78a 307-308
+  s_610be6e94314a7::t_7b69cd6bd1f019 340-344
+  s_610be6e94314a7::t_d1791435c8b404 3
+  s_610be6e94314a7::t_7f2746fc4b9481 240-241
+  s_610be6e94314a7::t_de9d3e9567dec3 126-137
+  s_610be6e94314a7::t_5d9233d3682dc6 114-116
+skills/deep-review/scripts/model_roles.py
+  s_610be6e94314a7::t_46ce639c705a9a 133-134,138-143
+  s_610be6e94314a7::t_4b909eb98f64ad 151-160
+  s_610be6e94314a7::t_4ff8240971eeca 15
+  s_610be6e94314a7::t_2f12845bb9a267 46-51,122-132
+skills/rebuild-plan/SKILL.md
+  s_610be6e94314a7::t_b6e52d08cc80dc 325-327
+  s_610be6e94314a7::t_016cfe78d0fd5c 225-228
+  s_610be6e94314a7::t_b7dff38b524aaa 142-146
+tests/test_rebuild_skills.py
+  s_610be6e94314a7::t_14de1e063b9f88 131-151
+  s_610be6e94314a7::t_1e6bbc90fa078c 6
+tests/test_model_roles.py
+  s_610be6e94314a7::t_14732745d5224e 183-210,214-219,221,223-224
+  s_610be6e94314a7::t_40ce33042b9a08 211-213,220,222
+skills/deep-review/references/models.md
+  s_610be6e94314a7::t_25da096f02f3b9 245-253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4c26d6c7cb612b07a26e6ecfdc124674e5dda533",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
