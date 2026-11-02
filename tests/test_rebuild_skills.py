@@ -3,6 +3,7 @@ SKILL.md must carry the required frontmatter keys, the four skills must stay
 mutually consistent on the ledger/gate contract, and the deterministic gate
 script must stay syntactically valid and executable."""
 
+import json
 import os
 import re
 import shutil
@@ -125,6 +126,27 @@ def test_every_dispatch_is_fresh_from_a_written_handoff():
     assert "handoff-<epoch>-judge-<n>.md" in examine and "handoff-final-judge-<n>.md" in examine
     assert FRESH_LINE in examine and "never messaged or resumed" in examine
     assert "one handoff file per judge" in examine and "the JUDGING round" not in examine
+
+
+def test_implementer_and_fixer_run_as_pinned_definitions_in_the_run_record():
+    # The implementer is dispatched by agent type, so it runs on the ID the packaged
+    # definition pins (the actual Opus 5.5 ID), never the session model or an alias, and
+    # the ledger's registry row carries that requested model read from the definition.
+    # The fixers a rebuild runs are the workflow's packaged fixer. The IDs asserted are
+    # the roles file's, so a role change that forgets the skills is caught here.
+    roles = json.loads((SKILLS / "deep-review" / "model-roles.json").read_text())
+    texts = {s: " ".join((SKILLS / s / "SKILL.md").read_text().split()) for s in REBUILD_SKILLS}
+    epoch = texts["rebuild-epoch"]
+    assert "`subagent_type: vidi-skills:implementer`" in epoch and "(session model)" not in epoch
+    assert 'model_roles.py" --dispatch implementer' in epoch and roles["implementer-opus"]["model"] in epoch
+    assert "no `model`, `name`, fork or resume option" in epoch
+    assert "The implementer is the packaged definition" in epoch
+    for skill in REBUILD_SKILLS:
+        assert "requestedModel" in texts[skill], f"{skill}: every registry writer must fill requestedModel"
+    assert "`requestedModel` is what the dispatch asked for" in texts["rebuild"]
+    examine = texts["rebuild-examine"]
+    assert "agents/fixer.md" in examine and roles["fixer-opus"]["model"] in examine
+    assert "dispatches no fixer of its own" in examine
 
 
 def test_canonical_bookkeeping_token():

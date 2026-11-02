@@ -139,8 +139,11 @@ Required sections, in order. §§1–5 are authored by the architect; §§6–10
    one per line: `R<n> · <date> · <ruling> · <origin>`. **A judge finding
    that contradicts an existing ruling is void unless it presents new
    evidence.** Seed with any rulings already made for this project.
-6. **Agent registry** — table `epoch · role · agentId/taskId · outputPath ·
-   spawnedAt · lastKnownCommit · lastProgressAt · status`. Initialized empty.
+6. **Agent registry** — table `epoch · role · requestedModel · agentId/taskId ·
+   outputPath · spawnedAt · lastKnownCommit · lastProgressAt · status`.
+   Initialized empty. `requestedModel` is the request the spawning skill
+   made: a packaged definition's pinned ID, the alias passed, or `session`
+   (`rebuild`, "Agent registry").
    The spawning skill writes its own agent's row (it holds the handle); the
    orchestrator owns the watchdog columns (`lastProgressAt`, `status`) and the
    Rulings appends.
@@ -219,8 +222,10 @@ author them exactly, tag = the word immediately after the three backticks,
 Spawn ONE fresh architect agent (default: the session model) from a written
 handoff, per `rebuild`'s fresh-spawn rule: `mkdir -p` the `.rebuild/` directory
 next to the ledger, write `handoff-plan-architect-<n>.md` there (`<n>` = this
-run's architect dispatch count, first spawn included), write the registry row,
-then spawn with the file's content as the whole task message. The file opens
+run's architect dispatch count, first spawn included), write the registry row
+(`requestedModel` is `session`: the architect has no packaged definition and
+inherits the session model), then spawn with the file's content as the whole
+task message. The file opens
 with `You are a fresh instance with no prior conversation; this message and
 your agent definition are your whole brief.` and contains:
 the Phase 1 facts, this schema (paste the ledger section above), the `--guide`
@@ -317,7 +322,9 @@ handoff, `.rebuild/handoff-plan-plan-judge-<n>.md` next to the ledger (`<n>` =
 this run's plan-judge dispatch count, so round 1 writes files 1 and 2 with the
 same content, round 2 writes 3 and 4, and a single judge the watchdog respawns
 takes the next number alone), whose content is the task message and opens with
-the fresh-instance line the architect's handoff opens with. A later round
+the fresh-instance line the architect's handoff opens with. Each judge's
+registry row carries `requestedModel` as the call made it: `session` for judge
+A, `fable` for judge B. A later round
 spawns a new pair from new files and never messages or resumes the earlier
 judges. Each judge gets: the full ledger, the Phase 1 facts, the Phase 3 report
 (counts, warnings), and this brief, verbatim:

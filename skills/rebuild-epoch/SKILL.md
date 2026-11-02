@@ -1,6 +1,6 @@
 ---
 name: rebuild-epoch
-description: Fresh-author exactly ONE epoch of a rebuild (or revise it as a clean replacement range after a REVISE verdict) — spawns an implementer agent bound to the ledger's epoch contract, runs the deterministic rebuild-gate.sh, and accepts ONLY the gate's JSON report, never the implementer's self-report. Returns IMPLEMENTED@sha, REVISED@sha, or PLAN-DEFECT.
+description: Fresh-author exactly ONE epoch of a rebuild (or revise it as a clean replacement range after a REVISE verdict) — spawns the packaged implementer agent definition (pinned model, never the session model) bound to the ledger's epoch contract, runs the deterministic rebuild-gate.sh, and accepts ONLY the gate's JSON report, never the implementer's self-report. Returns IMPLEMENTED@sha, REVISED@sha, or PLAN-DEFECT.
 argument-hint: "--ledger <path> --epoch <id> --worktree <path> --target <ref> [ --fix <findings-file> ] [ --gate <cmd> ]"
 allowed-tools: Agent, Read, Write, Edit, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskOutput, Bash(git *), Bash(bash *), Bash(sh *), Bash(mkdir *), Bash(mktemp *), Bash(echo *), Bash(printf *), Bash(cat *), Bash(ls *), Bash(cut *), Bash(sed *), Bash(awk *), Bash(tr *), Bash(test *), Bash(command *), Bash(wc *), Bash(sort *), Bash(head *), Bash(tail *), Bash(grep *), Bash(date *), Bash(python3 *)
 ---
@@ -93,14 +93,27 @@ restarted controller can read exactly what every implementer was told. This is
 earlier agent's conversation.
 
 Then write the **agent registry row** (§6) *before* spawning (`epoch, role
-(implementer), agentId/taskId, outputPath, spawnedAt, lastKnownCommit=LO`), so
-the orchestrator's watchdog and any post-crash recovery read state from the
-ledger, never from a file hunt.
+(implementer), requestedModel, agentId/taskId, outputPath, spawnedAt,
+lastKnownCommit=LO`), so the orchestrator's watchdog and any post-crash
+recovery read state from the ledger, never from a file hunt. `requestedModel`
+is the ID the packaged implementer definition pins, read from the definition
+rather than typed in:
+
+```bash
+REQUESTED=$(python3 "${CLAUDE_PLUGIN_ROOT}/skills/deep-review/scripts/model_roles.py" --dispatch implementer) \
+  || stop "CLAUDE_CODE_SUBAGENT_MODEL_FORCE is on: every definition's model would be replaced by the session model, so the row would be false"
+```
+
+It prints `claude-opus-5-5[1m]` (`agents/implementer.md`, role
+`implementer-opus` in `skills/deep-review/model-roles.json`) and nothing else.
+It is the request, not proof of what answered; the agent's own transcript is
+the harness record (deep-review/references/models.md, "Run-record identity").
 
 ## Phase 1: The implementer spawn (build mode)
 
-Spawn **one fresh implementer agent** (session model) with
-**`run_in_background: true`**, then await its completion **idly** — return to
+Spawn **one fresh implementer agent** with the `Agent` tool,
+`subagent_type: vidi-skills:implementer`, **`run_in_background: true`**, and
+no `model`, `name`, fork or resume option, then await its completion **idly** — return to
 the loop / let the turn go idle and resume on the task-completion notification;
 do **not** sit in a blocking foreground wait. This is load-bearing for the
 watchdog: a synchronous foreground agent (`run_in_background: false`, or a
@@ -109,6 +122,18 @@ blocking `TaskOutput`) pins the conversation mid-turn, and the orchestrator's
 foreground implementer would re-open the exact silent-stall failure this design
 exists to prevent. Record the returned `agentId`/`taskId` in the registry row
 (Phase 0) so the watchdog and any recovery read the handle from the ledger.
+
+The agent type is the whole model selection. `agents/implementer.md` pins
+`claude-opus-5-5[1m]`, the actual Opus 5.5 ID, and a dispatch by agent type
+runs that definition fresh on that model. The session model is not used
+because it is whatever the launching profile maps it to, which in the user's
+CCS profiles can be another vendor's model; and a per-call `model` takes only
+a family alias (`opus`, `sonnet`) that Claude Code resolves ahead of the
+definition, so passing one would silently replace the pinned ID with the
+alias's mapping. Phase 0 already stopped if `CLAUDE_CODE_SUBAGENT_MODEL_FORCE`
+is on. The model is therefore visible twice, in the definition's frontmatter
+and in the registry row's `requestedModel`, and the two are the same string
+by construction.
 
 The brief is the handoff file from Phase 0, sent as the task message. It opens
 with `You are a fresh instance with no prior conversation; this message and
@@ -212,7 +237,8 @@ safety-ref declarations from the ledger's fenced blocks. Read `$REPORT`
 
 - **Pass** → Phase 3.
 - **Fail** → hand the failing checks' `detail` back to a **fresh** implementer
-  spawn (never resume the first one; resumed agents go idle, a fresh spawn
+  spawn of the same `vidi-skills:implementer` type, with its own registry row
+  carrying `requestedModel` (never resume the first one; resumed agents go idle, a fresh spawn
   with a written handoff works): a new handoff file with the next `<n>` and a
   new registry row, exactly as in Phase 0, holding the same brief plus the
   current candidate range and the report excerpt, never the first agent's
@@ -278,7 +304,8 @@ the shape the gate's commit-shape check rejects. So:
 3. **Fresh implementer spawn — never resume the original.** The transcript
    record is 3-for-3: resumed agents go idle without finishing; a fresh spawn
    with a written handoff works every time. The handoff is a new handoff file
-   (next `<n>`, written and registered as in Phase 0) holding the full Phase 1
+   (next `<n>`, written and registered as in Phase 0, spawned by agent type as
+   in Phase 1) holding the full Phase 1
    brief, the rejected range `LO..BAD_HI` named as what the prior attempt left
    and the safety ref that keeps it, **plus**, verbatim, the class-scoped
    findings file: each class names
@@ -310,6 +337,11 @@ exactly as in build mode — the findings don't change the routing rule.
 - **Fresh spawn for every implementer round** (initial, gate-fix, revision,
   watchdog replacement): never resume; one written handoff file per dispatch,
   as `rebuild`'s fresh-spawn rule says.
+- **The implementer is the packaged definition.** Every implementer dispatch
+  selects `vidi-skills:implementer` by agent type with no per-call `model`,
+  so it runs on the ID `agents/implementer.md` pins, and its registry row's
+  `requestedModel` is read from that definition. Neither the session model
+  nor an alias is ever the implementer.
 - **`PLAN-DEFECT` is a first-class result**, not a failure to route around.
   Verify the citation, return it upward; never stub, reorder, or amend here.
 - **Final names, not final wiring** — target vocabulary from the first commit;

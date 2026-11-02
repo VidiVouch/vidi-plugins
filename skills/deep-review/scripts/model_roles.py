@@ -12,7 +12,7 @@ import os
 import sys
 from pathlib import Path
 
-from prepare_reviewers import agent_model, proxy_models
+from prepare_reviewers import agent_model, named_agents, proxy_models
 
 SKILL = Path(__file__).resolve().parents[1]
 ROLES = SKILL / "model-roles.json"
@@ -43,7 +43,12 @@ def split_model(model):
         unverified = f"{EXTENDED}{tail}"
         if tail:
             unverified += " after the context suffix is not a documented spelling"
-    return {"requestedModel": model, "catalogId": catalog_id, "extendedContext": extended, "unverifiedSuffix": unverified}
+    return {
+        "requestedModel": model,
+        "catalogId": catalog_id,
+        "extendedContext": extended,
+        "unverifiedSuffix": unverified,
+    }
 
 
 def _fold(model):
@@ -114,9 +119,28 @@ def check(roles_path=ROLES, settings=(), probe_proxy=False, env=None):
     return report
 
 
+def dispatch_model(agent, env=None):
+    """The model a dispatch of a packaged definition by agent type requests.
+
+    Read from the definition's own frontmatter so a run record (deep-review's dispatches, a
+    rebuild's agent registry row) carries the ID the definition pins and never a hand-copied
+    value. Raises RuntimeError when CLAUDE_CODE_SUBAGENT_MODEL_FORCE is on, because the
+    definition's model would then be ignored and recording it would be false."""
+    blocked = named_agents(os.environ if env is None else env)
+    if blocked["blocked"]:
+        raise RuntimeError(blocked["reason"])
+    return agent_model(agent)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--roles", default=str(ROLES))
+    parser.add_argument(
+        "--dispatch",
+        metavar="AGENT",
+        help="print only the model a dispatch of this packaged definition by agent type requests; "
+        "exit 1 when CLAUDE_CODE_SUBAGENT_MODEL_FORCE would replace it",
+    )
     parser.add_argument("--settings", action="append", default=[], help="settings JSON to check; repeatable")
     parser.add_argument(
         "--probe-proxy",
@@ -124,6 +148,16 @@ def main():
         help="GET /v1/models using ANTHROPIC_BASE_URL and token from the first --settings env, else the environment",
     )
     args = parser.parse_args()
+    if args.dispatch:
+        try:
+            print(dispatch_model(args.dispatch))
+        except RuntimeError as reason:
+            print(reason, file=sys.stderr)
+            return 1
+        except (OSError, ValueError):
+            print(f"No packaged agent definition pins a model for {args.dispatch}", file=sys.stderr)
+            return 2
+        return 0
     env = None
     if args.settings and args.probe_proxy:
         env = json.loads(Path(args.settings[0]).read_text()).get("env", {})

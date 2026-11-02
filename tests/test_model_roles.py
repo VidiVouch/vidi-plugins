@@ -180,6 +180,48 @@ def test_without_probe_nothing_is_claimed_and_no_request_is_made():
     assert all(item["advertised"] is None and item["catalogModel"] is None for item in report["roles"].values())
 
 
+def test_dispatch_model_is_read_from_the_definition_and_refused_under_force():
+    # A run record (a rebuild's registry row) takes the requested model from the definition
+    # itself; when the force switch is on the definition is ignored, so no value is given.
+    data = json.loads(roles.ROLES.read_text())
+    assert roles.dispatch_model("implementer", env={}) == data["implementer-opus"]["model"]
+    assert roles.dispatch_model("fixer", env={"CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "off"}) == data["fixer-opus"]["model"]
+    with pytest.raises(RuntimeError, match="CLAUDE_CODE_SUBAGENT_MODEL_FORCE"):
+        roles.dispatch_model("implementer", env={"CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "on"})
+    with pytest.raises(OSError):
+        roles.dispatch_model("no-such-agent", env={})
+
+
+@pytest.mark.parametrize(
+    ("force", "code", "stdout"),
+    [("", 0, "claude-opus-5-5[1m]\n"), ("0", 0, "claude-opus-5-5[1m]\n"), ("1", 1, ""), ("Yes", 1, "")],
+)
+def test_cli_dispatch_prints_only_the_requested_model_or_refuses(force, code, stdout):
+    env = {"PATH": "/usr/bin:/bin", "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": force}
+    result = subprocess.run(
+        [sys.executable, str(SCRIPTS / "model_roles.py"), "--dispatch", "implementer"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+        env=env,
+    )
+    assert (result.returncode, result.stdout) == (code, stdout), result.stderr
+    assert ("CLAUDE_CODE_SUBAGENT_MODEL_FORCE" in result.stderr) is (code == 1)
+
+
+def test_cli_dispatch_of_an_unpackaged_agent_is_a_usage_error():
+    missing = subprocess.run(
+        [sys.executable, str(SCRIPTS / "model_roles.py"), "--dispatch", "no-such-agent"],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+        env={"PATH": "/usr/bin:/bin"},
+    )
+    assert missing.returncode == 2 and missing.stdout == "" and "no-such-agent" in missing.stderr
+
+
 def test_cli_emits_json_without_network(tmp_path):
     result = subprocess.run(
         [sys.executable, str(SCRIPTS / "model_roles.py")], capture_output=True, text=True, check=False, timeout=30

@@ -242,6 +242,15 @@ for each other:
   (approvals.md, `global-settings`). Without it the field stays null and the
   record says why.
 
+A rebuild dispatches its implementer with the `Agent` tool rather than through
+the workflow, so its run record is the ledger's agent registry (`rebuild`,
+"Agent registry"): the spawning skill writes `requestedModel` into the row
+from `model_roles.py --dispatch implementer`, which prints the definition's
+pinned ID and nothing else, and exits nonzero under
+`CLAUDE_CODE_SUBAGENT_MODEL_FORCE` so a false row is never written. The fixers
+a rebuild examination runs come from the deep-review workflow and are recorded
+in its `admission.dispatches` like any other unit.
+
 `scripts/model_evidence.py` fills the record after a run:
 
 ```
