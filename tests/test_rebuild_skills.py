@@ -106,6 +106,10 @@ def test_every_dispatch_is_fresh_from_a_written_handoff():
     assert "never messaged, reopened, or handed a second unit" in rule
     assert "never means reattaching to an old conversation" in rule
     assert "never reopened, messaged, or handed further work" in texts["rebuild"]  # Phase 0 probe
+    # One file per agent, <n> per role and unit: a judge panel never shares a file, a
+    # single respawned judge takes the next number, and --final has a unit of its own.
+    assert "one file per agent" in rule and "`final` for the final examination's judges" in rule
+    assert "takes the next `<n>` alone" in rule
 
     epoch = texts["rebuild-epoch"]
     assert "handoff-$EPOCH-implementer-<n>.md" in epoch and FRESH_LINE in epoch
@@ -114,10 +118,13 @@ def test_every_dispatch_is_fresh_from_a_written_handoff():
     plan = texts["rebuild-plan"]
     assert "handoff-plan-architect-<n>.md" in plan and "handoff-plan-plan-judge-<n>.md" in plan
     assert FRESH_LINE in plan and plan.count("new pair of judges") >= 2  # revision round and amend mode
+    assert "each spawned from its own written handoff" in plan and "the judging round" not in plan
+    assert "the architect's dispatches" in plan  # guide-mining sub-agents are not an unregistered path
 
     examine = texts["rebuild-examine"]
-    assert "handoff-<epoch>-judge-<n>.md" in examine and FRESH_LINE in examine
-    assert "never messaged or resumed" in examine
+    assert "handoff-<epoch>-judge-<n>.md" in examine and "handoff-final-judge-<n>.md" in examine
+    assert FRESH_LINE in examine and "never messaged or resumed" in examine
+    assert "one handoff file per judge" in examine and "the JUDGING round" not in examine
 
 
 def test_canonical_bookkeeping_token():

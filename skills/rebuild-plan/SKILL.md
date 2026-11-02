@@ -225,7 +225,10 @@ with `You are a fresh instance with no prior conversation; this message and
 your agent definition are your whole brief.` and contains:
 the Phase 1 facts, this schema (paste the ledger section above), the `--guide`
 log if any, and the project docs (`AGENTS.md`, any rebuild notes). If `--guide`
-is large, fan the *mining* out over slices with sub-agents, but one architect
+is large, the architect may fan the *mining* out over slices to sub-agents of
+its own (each a fresh agent briefed in writing with one slice, returning
+extracts only; they are the architect's dispatches, not this skill's, so the
+registry row and handoff file stay the single architect's), but one architect
 writes the ledger. Brief, verbatim requirements:
 
 - Decompose `FROM..TARGET` into dependency-ordered epochs; every epoch buildable
@@ -309,13 +312,15 @@ panel never sees a plan that hasn't passed this check.
 Spawn the judges **in parallel** via the Agent tool: judge A = the session
 model, judge B = `model: 'fable'`. No external/CLI judges here (planning is
 Claude-only; a third perspective is the examine skill's concern). Both judges
-are fresh instances for this judging round, spawned from one written handoff,
-`.rebuild/handoff-plan-plan-judge-<n>.md` next to the ledger (`<n>` = the
-judging round), whose content is the task message and opens with the
-fresh-instance line the architect's handoff opens with. A later round spawns a
-new pair from a new file and never messages or resumes the earlier judges. Each
-judge gets: the full ledger, the Phase 1 facts, the Phase 3 report (counts,
-warnings), and this brief, verbatim:
+are fresh instances for this judging round, each spawned from its own written
+handoff, `.rebuild/handoff-plan-plan-judge-<n>.md` next to the ledger (`<n>` =
+this run's plan-judge dispatch count, so round 1 writes files 1 and 2 with the
+same content, round 2 writes 3 and 4, and a single judge the watchdog respawns
+takes the next number alone), whose content is the task message and opens with
+the fresh-instance line the architect's handoff opens with. A later round
+spawns a new pair from new files and never messages or resumes the earlier
+judges. Each judge gets: the full ledger, the Phase 1 facts, the Phase 3 report
+(counts, warnings), and this brief, verbatim:
 
 > Review this rebuild plan for: (1) decomposition soundness — does every epoch
 > build green as-of-itself given only its `dependsOn` closure; (2) dependency
@@ -408,8 +413,8 @@ plan doesn't supply) or a user-directed scope change. Delta, not re-plan:
    under §5 rulings or §8 deviations, whichever fits.
 3. Re-run **Phase 3 in full** (it is cheap; a delta coverage check is a false
    economy).
-4. Re-judge **the delta only**: a new pair of judges (fresh, from a new
-   handoff file) gets the reason + a diff of the
+4. Re-judge **the delta only**: a new pair of judges (fresh, from new
+   handoff files, next `<n>`s) gets the reason + a diff of the
    ledger (before/after) + the fresh Phase 3 report, same result shape, same
    rubric, same decision rule, cap = `--max-rounds`.
 5. On PASS: bump the header to `Plan-status: ACCEPTED round=<n+amend>
