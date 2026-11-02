@@ -1,0 +1,23 @@
+skills/rebuild-plan/SKILL.md
+  s_610be6e94314a7::t_bb539cd93716e2 315-323
+  s_610be6e94314a7::t_055805d4b0e36e 228-231
+  s_610be6e94314a7::t_a45b5770922a44 416-417
+tests/test_rebuild_skills.py
+  s_610be6e94314a7::t_6397e45c6c0e9d 109-112,121-122,125-127
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c5cbd543dccddda40b88699bddbcd12d99e270ef",
+  "prompts": {},
+  "sessions": {
+    "s_610be6e94314a7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c092a417-2d38-4cf2-bd0c-163e4f00b55c",
+        "model": "claude-fable-5-1"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
