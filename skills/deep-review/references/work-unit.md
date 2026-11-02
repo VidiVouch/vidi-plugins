@@ -114,8 +114,10 @@ exists to exclude. The deep-review workflow enforces this in its dispatch layer:
 only label, phase, schema, model, effort and agent type reach the runtime, and
 every brief opens by telling the agent it is a fresh instance. The agent
 definitions under `agents/` say the same, so a worker that is asked to continue
-earlier work reports a wrong brief instead of guessing. The rebuild skills keep
-their own fresh-spawn rule for implementers and fixers.
+earlier work reports a wrong brief instead of guessing. The rebuild skills apply
+the same rule to every role they dispatch (architect, plan judge, implementer,
+examiner, judge), each dispatch from its own written handoff file under the
+worktree's `.rebuild/` directory, first attempts included.
 
 ## Ordinary workers and temporary teammates
 

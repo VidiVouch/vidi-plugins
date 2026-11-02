@@ -83,8 +83,17 @@ State checks on the bookkeeping row:
   `BAD_HI` (revision mode). Any other sha → **stop**: the worktree genuinely
   drifted from the ledger; report, never "adopt" the drift.
 
-Write the **agent registry row** (§6) *before* spawning — `epoch, role
-(implementer), agentId/taskId, outputPath, spawnedAt, lastKnownCommit=LO` — so
+Write the **handoff file** before anything else: `mkdir -p "$WT/.rebuild"`,
+then `$WT/.rebuild/handoff-$EPOCH-implementer-<n>.md`, where `<n>` is one more
+than the number of implementer rows this epoch already has in the registry
+(build, gate-fix, revision and watchdog replacements all count). It holds the
+whole Phase 1 brief, and the agent is sent its content and nothing else, so a
+restarted controller can read exactly what every implementer was told. This is
+`rebuild`'s fresh-spawn rule; the file is why a later round never needs the
+earlier agent's conversation.
+
+Then write the **agent registry row** (§6) *before* spawning (`epoch, role
+(implementer), agentId/taskId, outputPath, spawnedAt, lastKnownCommit=LO`), so
 the orchestrator's watchdog and any post-crash recovery read state from the
 ledger, never from a file hunt.
 
@@ -101,7 +110,12 @@ foreground implementer would re-open the exact silent-stall failure this design
 exists to prevent. Record the returned `agentId`/`taskId` in the registry row
 (Phase 0) so the watchdog and any recovery read the handle from the ledger.
 
-The brief contains the Phase 0 extracts plus these binding rules, verbatim:
+The brief is the handoff file from Phase 0, sent as the task message. It opens
+with `You are a fresh instance with no prior conversation; this message and
+your agent definition are your whole brief.`, names the epoch id, the ledger
+path, the round and the exact sha the agent starts from (`LO`; candidate range
+"none"), and then contains the Phase 0 extracts plus these binding rules,
+verbatim:
 
 > **Fresh-author only.** Study the target with `git -C <WT> show <TARGET>:<path>`
 > and `git -C <WT> ls-tree -r <TARGET> <dir>` — **never** check the target out,
@@ -198,9 +212,11 @@ safety-ref declarations from the ledger's fenced blocks. Read `$REPORT`
 
 - **Pass** → Phase 3.
 - **Fail** → hand the failing checks' `detail` back to a **fresh** implementer
-  spawn (never resume the first one — resumed agents go idle; a fresh spawn
-  with a written handoff works) with the same brief plus the report excerpt,
-  cap at **2** gate-fix rounds, re-run the gate after each. Still failing →
+  spawn (never resume the first one; resumed agents go idle, a fresh spawn
+  with a written handoff works): a new handoff file with the next `<n>` and a
+  new registry row, exactly as in Phase 0, holding the same brief plus the
+  current candidate range and the report excerpt, never the first agent's
+  conversation. Cap at **2** gate-fix rounds, re-run the gate after each. Still failing →
   update the row to `GATED(fail)` and stop with the report; the orchestrator
   escalates.
 - Any `skipped`/`not_assessed` check → name it in the final report verbatim
@@ -261,8 +277,11 @@ the shape the gate's commit-shape check rejects. So:
 
 3. **Fresh implementer spawn — never resume the original.** The transcript
    record is 3-for-3: resumed agents go idle without finishing; a fresh spawn
-   with a written handoff works every time. The handoff = the full Phase 1
-   brief **plus**, verbatim, the class-scoped findings file: each class names
+   with a written handoff works every time. The handoff is a new handoff file
+   (next `<n>`, written and registered as in Phase 0) holding the full Phase 1
+   brief, the rejected range `LO..BAD_HI` named as what the prior attempt left
+   and the safety ref that keeps it, **plus**, verbatim, the class-scoped
+   findings file: each class names
    a pattern and its known instances and requires fixing **every instance and
    sweeping the whole epoch for siblings of the pattern** — not just the
    listed instances (instance-by-instance fixing is how each round only fixed
@@ -288,8 +307,9 @@ exactly as in build mode — the findings don't change the routing rule.
   `excludes` or later epochs; everything in `scope`.
 - **Revisions are replacement ranges** — safety-ref, reset to `LO`, fresh
   commits. Appended fix commits are a contract violation the gate rejects.
-- **Fresh spawn for every implementer round** (initial, gate-fix, revision) —
-  never resume; hand off in writing.
+- **Fresh spawn for every implementer round** (initial, gate-fix, revision,
+  watchdog replacement): never resume; one written handoff file per dispatch,
+  as `rebuild`'s fresh-spawn rule says.
 - **`PLAN-DEFECT` is a first-class result**, not a failure to route around.
   Verify the citation, return it upward; never stub, reorder, or amend here.
 - **Final names, not final wiring** — target vocabulary from the first commit;

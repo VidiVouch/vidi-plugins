@@ -84,6 +84,42 @@ def test_fresh_spawn_rule_is_preserved():
     assert "never resume the original" in epoch and "Fresh spawn for every implementer round" in epoch
 
 
+FRESH_LINE = (
+    "You are a fresh instance with no prior conversation; this message and your agent definition are your whole brief."
+)
+
+
+def test_every_dispatch_is_fresh_from_a_written_handoff():
+    # Every rebuild dispatch, first attempt included and whatever the role, is a new
+    # instance briefed from its own handoff file; no path resumes a completed or stalled
+    # agent. The opening line is the one deep-review's dispatch layer writes, so the agent
+    # definitions' "wrong brief" rule reads the same in both places.
+    # Whitespace is normalised so that wrapped and list-indented prose compares as one line.
+    texts = {s: " ".join((SKILLS / s / "SKILL.md").read_text().split()) for s in REBUILD_SKILLS}
+    workflow = (SKILLS / "deep-review" / "deep-review.workflow.js").read_text()
+    assert FRESH_LINE in workflow
+
+    rule = texts["rebuild"].split("## Fresh-spawn rule", 1)[1].split(" ## ", 1)[0]
+    for role in ("architect", "plan-judge", "implementer", "examiner", "judge"):
+        assert f"`{role}`" in rule, f"rebuild's fresh-spawn rule must cover {role}"
+    assert "first attempt" in rule and "handoff-<unit>-<role>-<n>.md" in rule and FRESH_LINE in rule
+    assert "never messaged, reopened, or handed a second unit" in rule
+    assert "never means reattaching to an old conversation" in rule
+    assert "never reopened, messaged, or handed further work" in texts["rebuild"]  # Phase 0 probe
+
+    epoch = texts["rebuild-epoch"]
+    assert "handoff-$EPOCH-implementer-<n>.md" in epoch and FRESH_LINE in epoch
+    assert epoch.count("new handoff file") >= 2, "gate-fix and revision rounds each get a new handoff file"
+
+    plan = texts["rebuild-plan"]
+    assert "handoff-plan-architect-<n>.md" in plan and "handoff-plan-plan-judge-<n>.md" in plan
+    assert FRESH_LINE in plan and plan.count("new pair of judges") >= 2  # revision round and amend mode
+
+    examine = texts["rebuild-examine"]
+    assert "handoff-<epoch>-judge-<n>.md" in examine and FRESH_LINE in examine
+    assert "never messaged or resumed" in examine
+
+
 def test_canonical_bookkeeping_token():
     # The ledger status is IMPLEMENTED@<sha> for both build and --fix re-entry;
     # REVISED@ must never be introduced as a ledger status (only a spoken verb).

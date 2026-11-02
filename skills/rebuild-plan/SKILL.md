@@ -216,7 +216,13 @@ author them exactly, tag = the word immediately after the three backticks,
 
 ## Phase 2: The architect
 
-Spawn ONE architect agent (default: the session model) whose prompt contains:
+Spawn ONE fresh architect agent (default: the session model) from a written
+handoff, per `rebuild`'s fresh-spawn rule: `mkdir -p` the `.rebuild/` directory
+next to the ledger, write `handoff-plan-architect-<n>.md` there (`<n>` = this
+run's architect dispatch count, first spawn included), write the registry row,
+then spawn with the file's content as the whole task message. The file opens
+with `You are a fresh instance with no prior conversation; this message and
+your agent definition are your whole brief.` and contains:
 the Phase 1 facts, this schema (paste the ledger section above), the `--guide`
 log if any, and the project docs (`AGENTS.md`, any rebuild notes). If `--guide`
 is large, fan the *mining* out over slices with sub-agents, but one architect
@@ -293,16 +299,23 @@ Run the same glob loop over each epoch's `pure-data-allowlist` entries: an
 allowlist glob matching zero target paths is a WARN with the same rationale.
 
 On FAIL: hand the exact failing lines back to the architect (a fresh spawn
-with a written handoff, not a resumed one) and re-run this phase. The judge
+from a new handoff file with the next `<n>`, not a resumed one; the file
+carries the failing lines and the current ledger, never the earlier
+architect's conversation) and re-run this phase. The judge
 panel never sees a plan that hasn't passed this check.
 
 ## Phase 4: The judge panel
 
 Spawn the judges **in parallel** via the Agent tool: judge A = the session
 model, judge B = `model: 'fable'`. No external/CLI judges here (planning is
-Claude-only; a third perspective is the examine skill's concern). Each judge
-gets: the full ledger, the Phase 1 facts, the Phase 3 report (counts,
-warnings), and this brief — verbatim:
+Claude-only; a third perspective is the examine skill's concern). Both judges
+are fresh instances for this judging round, spawned from one written handoff,
+`.rebuild/handoff-plan-plan-judge-<n>.md` next to the ledger (`<n>` = the
+judging round), whose content is the task message and opens with the
+fresh-instance line the architect's handoff opens with. A later round spawns a
+new pair from a new file and never messages or resumes the earlier judges. Each
+judge gets: the full ledger, the Phase 1 facts, the Phase 3 report (counts,
+warnings), and this brief, verbatim:
 
 > Review this rebuild plan for: (1) decomposition soundness — does every epoch
 > build green as-of-itself given only its `dependsOn` closure; (2) dependency
@@ -349,8 +362,9 @@ by the rubric, not by whoever spoke last):**
 
 **Decision rule:** ACCEPTED requires **unanimous PASS** with zero open
 BLOCKING findings. Any REVISE → collect both judges' findings, dedupe by
-`class`, hand the merged class-scoped list to a **fresh** architect spawn to
-revise the ledger, re-run Phase 3, re-judge. Round cap = `--max-rounds`
+`class`, hand the merged class-scoped list to a **fresh** architect spawn (a
+new handoff file, next `<n>`) to revise the ledger, re-run Phase 3, and
+re-judge with a new pair of judges. Round cap = `--max-rounds`
 (default 3); on cap exceeded, stop and escalate to the user via
 AskUserQuestion with the surviving findings — never self-certify past the cap.
 MAJOR findings the architect *rejects* with reasoning go to the user with the
@@ -386,14 +400,16 @@ plan doesn't supply) or a user-directed scope change. Delta, not re-plan:
    restructured. Accepted epochs are frozen history — if the defect implicates
    one, stop and escalate to the user (that is a rebuild-level decision, not a
    plan edit).
-2. Spawn one architect (fresh) with: the reason, the current ledger, the Phase
+2. Spawn one architect (fresh, from a new handoff file with the next `<n>`)
+   with: the reason, the current ledger, the Phase
    1 facts. It revises **only** the implicated epoch entries, the coverage-map
    lines whose epoch column changed, and (if the defect revealed a missing
    global rule or ruling) §1/§5 appends. Every edit is logged as a dated entry
    under §5 rulings or §8 deviations, whichever fits.
 3. Re-run **Phase 3 in full** (it is cheap; a delta coverage check is a false
    economy).
-4. Re-judge **the delta only**: both judges get the reason + a diff of the
+4. Re-judge **the delta only**: a new pair of judges (fresh, from a new
+   handoff file) gets the reason + a diff of the
    ledger (before/after) + the fresh Phase 3 report, same result shape, same
    rubric, same decision rule, cap = `--max-rounds`.
 5. On PASS: bump the header to `Plan-status: ACCEPTED round=<n+amend>
@@ -406,8 +422,9 @@ plan doesn't supply) or a user-directed scope change. Delta, not re-plan:
   authority; architect prose about coverage is ignored.
 - **The judge panel never sees an unchecked plan.** Phase 3 gates Phase 4,
   every round.
-- **Fresh spawns for every revision round** — never resume an architect or
-  judge; hand off in writing (findings list + required output shape).
+- **Fresh spawns for every round, the first included**: never resume an
+  architect or judge; hand off in writing through one handoff file per
+  dispatch (facts or findings list + required output shape).
 - **Rulings are law.** A finding contradicting §5 without new evidence is
   void; record every user decision made during this run as a new §5 line.
 - **This skill writes no code and creates no branches/worktrees.** Its sole
