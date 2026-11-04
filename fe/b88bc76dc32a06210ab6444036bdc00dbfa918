@@ -1,0 +1,43 @@
+.claude-plugin/plugin.json
+  s_d58fee94cc00b9::t_10888eba966187 3
+README.md
+  s_d58fee94cc00b9::t_1e9b1e6fae381e 13
+agents/design-judge-astra.md
+  s_d58fee94cc00b9::t_f6ea26d5c5118d 1-20
+agents/design-judge-fable.md
+  s_d58fee94cc00b9::t_7764181d6b04df 1-20
+agents/design-judge-grok.md
+  s_d58fee94cc00b9::t_e29826ac9eaf01 1-20
+skills/design-loop/SKILL.md
+  s_d58fee94cc00b9::t_e66ac3d606c91f 1-146
+skills/design-loop/design-loop.workflow.js
+  s_d58fee94cc00b9::t_fc00459b5a7948 1-189
+skills/design-loop/evals/evals.json
+  s_d58fee94cc00b9::t_38254a12fce2aa 1-23
+skills/design-loop/judge-output.schema.json
+  s_d58fee94cc00b9::t_5cdba431224052 1-93
+skills/design-loop/references/critic-contract.md
+  s_d58fee94cc00b9::t_12d1df6a6ca42c 1-62
+skills/design-loop/references/setup.md
+  s_d58fee94cc00b9::t_abe4438b426acc 1-178
+skills/design-loop/scripts/prepare.py
+  s_d58fee94cc00b9::t_8f5c9f81ce91ad 1-255
+tests/test_design_loop.py
+  s_d58fee94cc00b9::t_51e4c3a69b1c44 1-419
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "feb88bc76dc32a06210ab6444036bdc00dbfa918",
+  "prompts": {},
+  "sessions": {
+    "s_d58fee94cc00b9": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c9c4c08a-a77f-46df-997a-622c900c959a",
+        "model": "unknown"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
