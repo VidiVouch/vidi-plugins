@@ -1,0 +1,23 @@
+{
+  "skill_name": "design-loop",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Review these two support-inbox variants for staff assigning urgent tickets. Keep the useful density and blue accent. I want at least 9 overall before calling it finished, but do not tell the judges that target. Review only; do not change the app.",
+      "expected_output": "A readiness check and one frozen three-seat visual review. Public judge packets contain task constraints but no target, authorship, previous score or iteration. The final local HTML includes grounded findings, comparison, runtime limits and a coordinator decision rather than automatic approval from scores.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Improve the checkout page's confusing action hierarchy without changing the purchase flow. Use the current page as a fixed reference. Limit this to three reviewed snapshots, and keep the strongest valid version if later changes get worse.",
+      "expected_output": "A bounded single-writer design cycle, matching screenshots and revision-specific runtime checks. Fresh independent judges use unchanged reference evidence. The coordinator preserves useful strengths, checks blockers and stops at the limit without leaving an unreviewed final repair described as accepted.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Compare the light and dark settings-page redesigns against their matching references. The Grok image route has not been tested, and the browser capture tool may be unavailable. Do not substitute a different model or run indefinitely to get a favorable score.",
+      "expected_output": "The skill distinguishes source availability from tested vision/routing, proposes a scoped benign smoke test and stops if capture or a required judge is unavailable. It does not invent screenshots, hide a missing seat, treat light/dark capture differences as design quality or retry a valid low score.",
+      "files": []
+    }
+  ]
+}

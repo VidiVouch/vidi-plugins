@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "packet_id", "observed_evidence_ids", "limitations", "candidates", "comparison"],
+  "properties": {
+    "status": {"enum": ["reviewed", "insufficient_evidence", "contaminated"]},
+    "packet_id": {"type": "string", "minLength": 1},
+    "observed_evidence_ids": {"$ref": "#/$defs/ids"},
+    "limitations": {"type": "array", "items": {"$ref": "#/$defs/text"}},
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "perceived_primary_action", "ratings", "overall", "strengths", "findings", "unknowns"],
+        "properties": {
+          "id": {"$ref": "#/$defs/text"},
+          "perceived_primary_action": {"$ref": "#/$defs/text"},
+          "ratings": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["typography", "hierarchy", "spacing_density", "color_contrast", "iconography", "consistency_polish", "clarity"],
+            "properties": {
+              "typography": {"$ref": "#/$defs/rating"},
+              "hierarchy": {"$ref": "#/$defs/rating"},
+              "spacing_density": {"$ref": "#/$defs/rating"},
+              "color_contrast": {"$ref": "#/$defs/rating"},
+              "iconography": {"$ref": "#/$defs/rating"},
+              "consistency_polish": {"$ref": "#/$defs/rating"},
+              "clarity": {"$ref": "#/$defs/rating"}
+            }
+          },
+          "overall": {"$ref": "#/$defs/rating"},
+          "strengths": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["description", "evidence_ids"],
+              "properties": {
+                "description": {"$ref": "#/$defs/text"},
+                "evidence_ids": {"$ref": "#/$defs/citations"}
+              }
+            }
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["severity", "element", "consequence", "recommendation", "preserve", "evidence_ids"],
+              "properties": {
+                "severity": {"enum": ["blocker", "major", "minor"]},
+                "element": {"$ref": "#/$defs/text"},
+                "consequence": {"$ref": "#/$defs/text"},
+                "recommendation": {"$ref": "#/$defs/text"},
+                "preserve": {"$ref": "#/$defs/text"},
+                "evidence_ids": {"$ref": "#/$defs/citations"}
+              }
+            }
+          },
+          "unknowns": {"type": "array", "items": {"$ref": "#/$defs/text"}}
+        }
+      }
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preference", "reason", "evidence_ids"],
+      "properties": {
+        "preference": {"$ref": "#/$defs/text"},
+        "reason": {"$ref": "#/$defs/text"},
+        "evidence_ids": {"$ref": "#/$defs/ids"}
+      }
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "citations": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "rating": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "reason", "evidence_ids"],
+      "properties": {
+        "score": {"type": ["number", "null"], "minimum": 0, "maximum": 10},
+        "reason": {"$ref": "#/$defs/text"},
+        "evidence_ids": {"$ref": "#/$defs/ids"}
+      }
+    }
+  }
+}

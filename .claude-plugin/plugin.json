@@ -1,6 +1,6 @@
 {
   "name": "vidi-skills",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Vidi workflow skills for Claude Code and Codex.",
   "author": {
     "name": "Vidi",

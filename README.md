@@ -10,6 +10,7 @@ Lean plugin repo for Vidi's AI-driven development workflows across Claude Code a
 - `codex-review`
 - `deep-eval`
 - `deep-review`
+- `design-loop` (blind visual-review panel; Claude Code Workflow required)
 - `epoch-review`
 - `html-report`
 - `local-review`
