@@ -1,8 +1,8 @@
 ---
 name: rebuild-examine
 description: Examine one rebuilt epoch (or the whole branch with --final) — independent deterministic gate, deep-review workflow pass, rebuild-specific judge panel with a shared blocking rubric, ACCEPT/REVISE verdict written to the ledger. Claude-only outer layer over deep-review.
-argument-hint: "--ledger <path> --epoch <id> --worktree <path> --target <ref> [ --final ] [ --nofix ] [ --max-rounds <n> ] [ --boss <model[,model2]> ] [ --judges <model> ]"
-allowed-tools: Workflow, Agent, Read, Write, Edit, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Bash(git *), Bash(bash *), Bash(sh *), Bash(jq *), Bash(mkdir *), Bash(echo *), Bash(printf *), Bash(cat *), Bash(ls *), Bash(cp *), Bash(cut *), Bash(sed *), Bash(tr *), Bash(test *), Bash(command *), Bash(wc *), Bash(sort *), Bash(comm *), Bash(tail *), Bash(head *), Bash(node *), Bash(timeout *), Bash(codex *)
+argument-hint: "--ledger <path> --epoch <id> --worktree <path> --target <ref> [ --final ] [ --nofix ] [ --max-rounds <n> ] [ --boss <model> ] [ --judges <model> ]"
+allowed-tools: Workflow, Agent, Read, Write, Edit, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Bash(python3 *), Bash(git *), Bash(bash *), Bash(sh *), Bash(jq *), Bash(mkdir *), Bash(echo *), Bash(printf *), Bash(cat *), Bash(ls *), Bash(cp *), Bash(cut *), Bash(sed *), Bash(tr *), Bash(test *), Bash(command *), Bash(wc *), Bash(sort *), Bash(comm *), Bash(tail *), Bash(head *), Bash(node *), Bash(timeout *), Bash(codex *)
 ---
 
 # Rebuild Examine
@@ -21,22 +21,12 @@ existing `deep-review` workflow (`deep-review.workflow.js`) invoked in
 here. This skill owns only: the gate re-run, the workflow call, the fix
 commit, the rebuild-specific panel, and the ledger/safety-ref bookkeeping.
 
-## Deterministic context (auto-populated at load)
+## Deterministic context
 
-Resolved by the shell when this skill loads — do NOT re-probe with your own Bash:
-
-- codex CLI: !`command -v codex >/dev/null 2>&1 && echo yes || echo no`
-- cubic CLI: !`command -v cubic >/dev/null 2>&1 && echo yes || echo no`
-- coderabbit CLI: !`command -v coderabbit >/dev/null 2>&1 && echo yes || echo no`
-- grok CLI: !`command -v grok >/dev/null 2>&1 && echo yes || echo no`
-- codex companion: !`C=$(ls "$HOME/.claude/plugins/cache/openai-codex/codex/"*/scripts/codex-companion.mjs 2>/dev/null | sort -V | tail -1); if [ -z "$C" ]; then echo absent; elif ! node --check "$C" 2>/dev/null; then echo "unloadable $C"; else echo "ok $C"; fi`
-
-The tool map and `codexAdversarial`/`codexCompanion` semantics are identical to
-deep-review's: `codexAdversarial` is available iff codex CLI is `yes` AND the
-companion vet returned `ok <path>`; `unloadable` is surfaced loudly, not
-treated as absent. `codexCompanion` in the workflow args is the **path token
-after `ok `** — never the literal `ok …`/`absent`/`unloadable …` fact (`""` if
-not ok).
+Reviewer policy/capabilities come from deep-review's packaged preparation helper
+in Phase 3. Do not auto-enable services by probing their executables. Native
+Codex, the legacy companion, Cubic and CodeRabbit are explicit opt-ins; the direct
+Astra/Grok lanes use named plugin agents and proxy catalog checks.
 
 **Toolchain is NOT injected here** — load-time injection runs in the session
 cwd, but the code under examination lives in the arg-supplied `--worktree`.
@@ -61,8 +51,8 @@ Parse `$ARGUMENTS`:
   per-epoch examine↔revise cap: the orchestrator does NOT forward its
   `--max-rounds` here (that would make one flag cripple two independent loops);
   this defaults to 3 unless the operator sets it explicitly for a run.
-- `--boss <model[,model2]>` — passed through to the workflow (deep-review
-  semantics; codex-family ids route via `codex exec`, Claude-family in-process).
+- `--boss <model>` - passed through to the workflow (deep-review semantics, one
+  model only; codex-family ids route via `codex exec`, Claude-family in-process).
 - `--judges <model>` — opt-in third, non-Claude panel judge (e.g. `codex`,
   `gpt-5.6-terra`). Without it the panel is 2 Claude judges.
 
@@ -79,10 +69,11 @@ TC=$(if test -f "$WT/Cargo.toml"; then echo rust; elif test -f "$WT/pyproject.to
 
 Read the ledger. For the epoch under examination, extract:
 
-- **Range** `LO..HI`: `HI` from the bookkeeping row's `IMPLEMENTED@sha` — the
-  canonical state token `rebuild-epoch` writes for both a first build and a
-  `--fix` re-entry (there is no separate `REVISED@` ledger status; that verb is
-  only `rebuild-epoch`'s spoken return). `LO` = the previous epoch's
+- **Range** `LO..HI`: `HI` from the bookkeeping row's `IMPLEMENTED@sha`, or its
+  `REVISE@sha` when explicitly retrying an examination blocked by review-incomplete.
+  The latter retries review, not implementation, after resolving the recorded
+  capability failure and any retained uncommitted edits. There is no separate
+  `REVISED@` ledger status. `LO` = the previous epoch's
   `ACCEPTED@` boundary tip (or the rebuild base for the first epoch). Verify
   `HI == $(git -C "$WT" rev-parse HEAD)` — if not, **stop**: the worktree has
   drifted from the ledger and examining the wrong tip poisons everything
@@ -93,8 +84,10 @@ Read the ledger. For the epoch under examination, extract:
 - **Coverage matrix** + **dependency structure** — for the as-of-history check.
 - **Safety-ref registry** — any `safety/*` refs declared for this epoch.
 
-Ledger state must be `IMPLEMENTED@…` (or a re-examine after `REVISE`); update
-the row to `JUDGING(round n)` before proceeding (n = prior rounds + 1).
+Ledger state must be IMPLEMENTED or a permitted re-examine after REVISE. Unless
+`--nofix`, update the row to `JUDGING(round n)` before proceeding (n = prior rounds
++ 1). Every normal failure return must leave a supported resumable state, not a
+completed child stranded at JUDGING.
 
 ## Phase 1: Independent deterministic gate
 
@@ -151,6 +144,15 @@ git -C "$WT" config --worktree core.excludesFile "$WEXCL"
 
 ## Phase 3: The deep-review workflow call
 
+Before dispatch, run the plugin's `skills/deep-review/scripts/prepare_reviewers.py`
+with `python3`, `--repo "<WT>" --probe-proxy`. Use the worktree's
+`.claude/deep-review.json`, or add `--config "<absolute policy path>"` when the
+caller supplies an explicit policy file. Do not infer enablement from installed
+CLIs. Keep the output as `REVIEWER_SETUP`. On a nonzero exit, take the
+review-incomplete return path below, recording a preflight failure rather than
+inventing a workflow result. Do not dispatch reviewers. This is the same bounded,
+no-inference preflight documented in deep-review/references/reviewers.md.
+
 Exactly `epoch-review`'s Phase-3 pattern. No skill-level preflight (the gate
 already ran the full-tree toolchain checks). Render `focus` from the ledger row
 — this is what stops generic reviewers manufacturing "missing later work"
@@ -162,9 +164,7 @@ false positives:
 > anything the exclusions list as later work is out of scope and not a finding.
 
 ```
-Workflow({
-  scriptPath: "${CLAUDE_PLUGIN_ROOT}/skills/deep-review/deep-review.workflow.js",
-  args: {
+REQUEST_ARGS = {
     mode: "range", rangeA: "<LO>", rangeB: "<HI>",
     rangeBIsHead: true,            // verified in Phase 0 — externals run danceless/parallel
     focus: "<the rendered focus text>",
@@ -172,23 +172,68 @@ Workflow({
     toolchain: "python" | "rust" | "none",   // mapped from the Phase 0 probe
     fix: <true unless --nofix>,
     maxRounds: <--max-rounds or 3>,
-    boss: <--boss split on ',' or []>,
-    tools: { codex, codexAdversarial, cubic, coderabbit, grok, codexCompanion },  // from the injected facts
-  },
+    boss: <[--boss model] or []>,
+    specDir: "${CLAUDE_PLUGIN_ROOT}/skills/deep-review/reviewers",
+    reviewers: REVIEWER_SETUP.reviewers,
+    tools: REVIEWER_SETUP.tools,
+    namedAgents: REVIEWER_SETUP.namedAgents,
+    limits: { concurrency: 3, maxAgents: 30, minRemainingTokens: 0 },
+    gate: { commands: <registered current-tree checks as argv arrays>, timeoutSeconds: <bounded timeout> },
+}
+```
+
+Follow deep-review/references/run-lifecycle.md. Save REQUEST_ARGS outside WT,
+initialize and verify run_manifest.py, then load the entire generated args.json
+as RUN_ARGS. Manifest preparation failures use the review-incomplete return path.
+
+```
+Workflow({
+  scriptPath: "${CLAUDE_PLUGIN_ROOT}/skills/deep-review/deep-review.workflow.js",
+  args: RUN_ARGS,
 })
 ```
 
-Collect the result: `{mode, rounds, fixed, boss, attempted, degraded,
-confirmed}`. Every entry in `degraded` is carried by name into the final
-report — degraded is absence of data, never a clean pass.
+The workflow's fixers are the packaged `fixer` definition (`agents/fixer.md`,
+pinned to `claude-opus-5-5[1m]`, role `fixer-opus` in
+`skills/deep-review/model-roles.json`), selected by agent type with no
+per-call `model`: the workflow stops a unit that sets both and refuses to start
+while `namedAgents.blocked` says `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is on. Each
+fixer's entry under `admission.dispatches` in the saved result records its
+`agentType` and a null `model`; that entry is the fixer's run record for this
+examination. This skill dispatches no fixer of its own and never passes a
+model for one.
 
-The workflow's post-fix typecheck runs `cargo`/`basedpyright` in `repoRoot`
-(the worktree) in place. That is safe here: it typechecks the **current tip**
-against the worktree's own root manifest — the spurious-failure class the gate
-guards against is building a **past commit's** tree while the worktree files sit
-at a different commit, which only the gate's per-commit historical builds hit
-(and which the gate handles via clean `git archive` extraction). Current-tip
-in-place typechecking has no such mismatch.
+Collect the result, including `confirmed`, `degraded`, `successful`, `skipped`,
+`coverage`, `attempts`, `incomplete`, and `coverageComplete`. Carry skipped and
+failed lanes by name into the final report; neither is clean review evidence.
+If `incomplete`, stop before committing or convening an acceptance panel. Preserve
+any partial fixes and the worktree. Unless `--nofix`, write the complete workflow
+result to `$WT/.rebuild/review-incomplete-epoch-<id>-round-<n>.json`, write a findings
+file with **Class: review-incomplete** and recovery instructions, and set the ledger
+row to `REVISE@<HI>` with both artifact paths. HEAD has not moved because Phase 4
+has not run; verify that before writing the token. Do not leave JUDGING behind or
+represent unavailable review as a code defect. Return this blocked class to the
+dispatcher; it must pause instead of sending it to an implementer. Under `--nofix`,
+report the same outcome without ledger writes. After capability recovery, explicitly
+resolve any retained uncommitted edits without automatic discard/commit, then retry
+this examination against the recorded tip. Optional gaps (coverageComplete=false)
+remain explicit reduced coverage; the panel must not claim those reviewers succeeded.
+
+The workflow does not supply acceptance from a typecheck agent. Follow the shared
+run-lifecycle protocol: save full results outside WT; if requiresPostFixReview,
+create a new manifest and run a fresh fix:false review of the resulting snapshot.
+The workflow's gate unit executed run_gate.py run with the registered current-tree
+checks and recorded `result.gate`; execute run_gate.py finalize only.
+Only acceptance.json accepted=true allows Phase 4 or the acceptance panel. Gate
+failure uses review-incomplete. For valid remaining findings, verify HEAD still
+equals HI, set TIP=HI, and return class-scoped REVISE with the candidate snapshot
+and partial-patch evidence; do not pretend those uncommitted changes are in HI.
+The dispatcher must reconcile retained edits before another implementation attempt.
+Under --nofix, report these outcomes without changing the ledger.
+
+This current-tree gate is separate from rebuild-gate.sh's historical per-commit
+checks, which still run against clean git archive extractions. Do not substitute
+one for the other. Record both artifact paths and the exact epoch tip.
 
 ## Phase 4: Commit the fixes (if any)
 
@@ -225,7 +270,22 @@ examine step's verified fixes.)
 ## Phase 5: The rebuild judge panel
 
 Runs **in parallel** (one `Agent` call per judge, same message), covering what
-generic reviewers don't. Panel composition:
+generic reviewers don't. Every judge is a fresh instance for this one
+examination round, per `rebuild`'s fresh-spawn rule, one handoff file per
+judge: for each judge write `$WT/.rebuild/handoff-<epoch>-judge-<n>.md` first
+(`<n>` = one more than the number of `judge` rows the epoch already has in the
+registry, so a panel writes one file per judge with the same content and
+consecutive numbers, a watchdog respawn of one judge takes the next number
+alone, and no two judges ever share a file), open it with `You are a fresh
+instance with no prior conversation; this message and your agent definition
+are your whole brief.`, write that judge's registry row (`requestedModel` as
+the call below makes it: `session` for Judge 1, `fable` for Judge 2, `sonnet`
+for the Judge 3 wrapper, whose real judge is the `codex exec` model its label
+names; none of these selects a packaged definition), then spawn. A later
+round, a retry after review-incomplete, and the final examination (unit
+`final`, see Final mode) each convene a new panel from new files; a judge from
+an earlier round is never messaged or resumed, and nothing from its transcript
+enters a new file beyond what the ledger records. Panel composition:
 
 - **Judge 1** — the session model (`Agent`, no `model` override).
 - **Judge 2** — `fable` (`Agent`, `model: fable`).
@@ -387,7 +447,10 @@ Whole-branch examination before merge. Same phases with these substitutions:
   regenerated files) — unaccounted lines go to the panel as explicit questions.
 - **Phase 5 panel** additionally receives the ledger's **Final-examine
   checklist**, each item posed as an explicit judge question; an unmet
-  checklist item is B2 (semantic invariant).
+  checklist item is B2 (semantic invariant). Final mode has no epoch, so its
+  unit is `final`: each judge's registry row carries `final` in the epoch
+  column and its handoff file is `$WT/.rebuild/handoff-final-judge-<n>.md`,
+  numbered from the registry's `final` rows exactly as an epoch's are.
 - **On ACCEPT**: mark the rebuild `FINAL-ACCEPTED@<tip>` in the ledger and
   delete any remaining declared safety refs. **Never merge** — that is the
   user's call, via the orchestrator's report.
@@ -413,6 +476,9 @@ Whole-branch examination before merge. Same phases with these substitutions:
 - **Safety refs die only on ACCEPT**, and only the ones the ledger declares.
 - **Degraded ≠ clean.** Every degraded reviewer, skipped gate check, and
   degraded judge is named in the report.
+- **Fresh judges, each from its own written handoff file, every round.** No
+  judge is resumed, messaged after it returns, or reused across rounds or
+  epochs.
 - **Blocking needs a B-category; missing-work needs a matrix citation;
   ruled-on needs new evidence.** Everything else is a follow-up or void.
 - Approval gates. Fix commits and ACCEPT bookkeeping are the invoked contract.

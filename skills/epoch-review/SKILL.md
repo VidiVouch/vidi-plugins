@@ -1,8 +1,8 @@
 ---
 name: epoch-review
 description: Review a large commit stack epoch by epoch — per-epoch deep-review (range mode), fixes committed onto each epoch, later work rebased forward. Claude-only outer layer over deep-review.
-argument-hint: "--base <B> [ --epochs auto|<n>|<sha1,sha2,...> ] [ --nofix ] [ --max-rounds <n> ] [ --boss <model[,model2]> ] [ --focus <text> ] [ --include-uncommitted ]"
-allowed-tools: Workflow, Agent, Read, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Bash(git *), Bash(mkdir *), Bash(echo *), Bash(printf *), Bash(cat *), Bash(ls *), Bash(cp *), Bash(cut *), Bash(sed *), Bash(tr *), Bash(test *), Bash(command *), Bash(wc *), Bash(sort *), Bash(tail *), Bash(head *), Bash(node *)
+argument-hint: "--base <B> [ --epochs auto|<n>|<sha1,sha2,...> ] [ --nofix ] [ --max-rounds <n> ] [ --boss <model> ] [ --focus <text> ] [ --include-uncommitted ]"
+allowed-tools: Workflow, Agent, Read, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, Bash(python3 *), Bash(git *), Bash(mkdir *), Bash(echo *), Bash(printf *), Bash(cat *), Bash(ls *), Bash(cp *), Bash(cut *), Bash(sed *), Bash(tr *), Bash(test *), Bash(command *), Bash(wc *), Bash(sort *), Bash(tail *), Bash(head *), Bash(node *)
 ---
 
 # Epoch Review
@@ -30,18 +30,10 @@ Resolved by the shell when this skill loads — do NOT re-probe with your own Ba
 - HEAD (stack tip): !`git rev-parse HEAD`
 - Uncommitted changes: !`test -n "$(git status --porcelain 2>/dev/null)" && echo yes || echo no`
 - Toolchain: !`if test -f Cargo.toml; then echo rust; elif test -f pyproject.toml && { test -f uv.lock || grep -q '^\[tool\.uv\]' pyproject.toml 2>/dev/null; }; then echo uv-python; else echo none; fi`
-- codex CLI: !`command -v codex >/dev/null 2>&1 && echo yes || echo no`
-- coderabbit CLI: !`command -v coderabbit >/dev/null 2>&1 && echo yes || echo no`
-- grok CLI: !`command -v grok >/dev/null 2>&1 && echo yes || echo no`
-- codex companion: !`C=$(ls "$HOME/.claude/plugins/cache/openai-codex/codex/"*/scripts/codex-companion.mjs 2>/dev/null | sort -V | tail -1); if [ -z "$C" ]; then echo absent; elif ! node --check "$C" 2>/dev/null; then echo "unloadable $C"; else echo "ok $C"; fi`
 
-The tool map and `codexAdversarial`/`codexCompanion` semantics are identical to
-deep-review's: `codexAdversarial` is available iff codex CLI is `yes` AND the
-companion vet returned `ok <path>`; `unloadable` is surfaced loudly, not
-treated as absent. `codexCompanion` in the workflow args is the **path token
-after `ok `** — never the literal `ok …`/`absent`/`unloadable …` fact (`""` if
-not ok). Map the injected toolchain for the workflow: `rust`→`rust`,
-`uv-python`→`python`, `none`→`none`.
+Reviewer policy/capabilities are prepared in Phase 3 through deep-review's shared
+helper, not auto-enabled by installed CLIs. Map the injected toolchain for the
+workflow: rust to rust, uv-python to python, none to none.
 
 ## Arguments
 
@@ -57,8 +49,8 @@ Parse `$ARGUMENTS`:
   sequential per-epoch reports.
 - `--max-rounds <n>` — per-epoch review↔fix round cap, passed through to the
   workflow (default 3).
-- `--boss <model[,model2]>` — passed through to the workflow (same semantics
-  as deep-review; default inherits the session model).
+- `--boss <model>` - passed through to the workflow (same semantics as
+  deep-review, one model only; default inherits the session model).
 - `--focus <text>` — passed through to every epoch's reviewers.
 - `--include-uncommitted` — after the last epoch, carry the live checkout's
   uncommitted changes into the worktree and review them as a final
@@ -157,7 +149,15 @@ pathspecs below are belt-and-braces on top.
 
 ## Phase 3: The epoch loop
 
-Track progress with TaskCreate/TaskUpdate — one task per epoch. `CURSOR`
+Before the first workflow dispatch, run the plugin's
+`skills/deep-review/scripts/prepare_reviewers.py` with `python3`,
+`--repo "<PROJ>" --probe-proxy`. Use the live checkout's `.claude/deep-review.json`,
+or add `--config "<absolute policy path>"` if the caller supplies one. Keep its
+output as `REVIEWER_SETUP`; abort on a nonzero exit. Reuse the same policy across
+epochs. Disabled services are not probed; catalog/CLI presence is not proof of
+successful review. See deep-review/references/reviewers.md for the contract.
+
+Track progress with TaskCreate/TaskUpdate, one task per epoch. `CURSOR`
 starts at `$B`. For each epoch `k` with count `n_k`:
 
 **1. Derive the boundary and check out.** Counting forward from the cursor is
@@ -175,9 +175,7 @@ Wait for it to complete before touching git again (the loop is strictly
 sequential; never run two epochs' workflows concurrently — they share `$WT`).
 
 ```
-Workflow({
-  scriptPath: "${CLAUDE_PLUGIN_ROOT}/skills/deep-review/deep-review.workflow.js",
-  args: {
+REQUEST_ARGS = {
     mode: "range", rangeA: "<LO>", rangeB: "<HI>",
     rangeBIsHead: true,            // WT is checked out AT HI — externals run danceless/parallel
     focus: "<--focus text or ''>",
@@ -185,15 +183,47 @@ Workflow({
     toolchain: "python" | "rust" | "none",   // mapped from the injected fact
     fix: <true unless --nofix>,
     maxRounds: <--max-rounds or 3>,
-    boss: <--boss split on ',' or []>,
-    tools: { codex, codexAdversarial, coderabbit, grok, codexCompanion },  // from the injected facts
-  },
+    boss: <[--boss model] or []>,
+    specDir: "${CLAUDE_PLUGIN_ROOT}/skills/deep-review/reviewers",
+    reviewers: REVIEWER_SETUP.reviewers,
+    tools: REVIEWER_SETUP.tools,
+    namedAgents: REVIEWER_SETUP.namedAgents,
+    limits: { concurrency: 3, maxAgents: 30, minRemainingTokens: 0 },
+    gate: { commands: <registered project checks as argv arrays>, timeoutSeconds: <bounded timeout> },
+}
+```
+
+Follow deep-review/references/run-lifecycle.md: save REQUEST_ARGS outside WT,
+initialize and verify run_manifest.py for this exact epoch, and load the generated
+args.json as RUN_ARGS. Then call:
+
+```
+Workflow({
+  scriptPath: "${CLAUDE_PLUGIN_ROOT}/skills/deep-review/deep-review.workflow.js",
+  args: RUN_ARGS,
 })
 ```
 
-Collect the result (`confirmed`, `degraded`, `rounds`) per epoch for the final
-report. Under `--nofix`, set `CURSOR=$HI` and continue to the next epoch —
-steps 3–4 are skipped entirely.
+Collect `confirmed`, `degraded`, `rounds`, `successful`, `skipped`, `coverage`,
+`attempts`, `incomplete`, and `coverageComplete` per epoch. If incomplete, stop
+before commit/rebase/advancing the cursor; preserve the worktree and any partial
+fixes for recovery. Skipped or failed lanes are not successful review evidence.
+Optional gaps remain explicit reduced coverage in the final report. Otherwise,
+under `--nofix`, set `CURSOR=$HI` and continue; skip steps 3 and 4.
+
+Before any history mutation, follow the shared external verification protocol.
+Save full results outside WT. If requiresPostFixReview, initialize a fresh manifest
+with fix:false for the resulting tree and review it once. The workflow's gate unit
+has run run_gate.py run and recorded `result.gate`; run run_gate.py finalize only.
+Only acceptance.json accepted=true permits commit/rebase. A valid
+changes-required outcome under --nofix may be reported while continuing the read-only
+scan; it is not acceptance. A missing/failed gate or incomplete review stops progression.
+
+Record LO/HI, cursor, branch tip, run/acceptance paths and the pending operation in
+a durable checkpoint outside WT before each fix commit, rebase or cursor advance.
+Record the resulting tip after each operation. On restart, compare actual refs with
+both checkpoint endpoints before acting; if the outcome is ambiguous, pause instead
+of repeating a commit/rebase. Keep one epoch active at a time.
 
 **3. Commit the fixes onto the epoch (if any).**
 
@@ -251,8 +281,9 @@ If the apply fails (history rewrites can invalidate the patch), skip the pass
 with a **loud note** — do not review a half-applied tree. If it applies, also
 copy untracked files (`git -C "$PROJ" ls-files --others --exclude-standard`,
 `cp` each; on any copy failure, abort this pass loudly). Then run the workflow
-once more with `mode:"uncommitted"`, same `repoRoot`/`tools`/`fix` args. Fixes
-stay uncommitted in `$WT` — they ride along at adoption.
+once more with `mode:"uncommitted"`, same `repoRoot`/`reviewers`/`tools`/`specDir`/`fix`
+args. Apply the same incomplete-result stop rule. Fixes stay uncommitted in `$WT`
+and must be preserved for recovery if verification fails.
 
 ## Phase 5: Reconcile & present
 

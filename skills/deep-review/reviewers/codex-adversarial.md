@@ -1,6 +1,11 @@
 # Agent C: Codex adversarial review
 
-Skip entirely if the Phase 2 preamble reported `CODEX_ADVERSARIAL=no` — that covers both "`codex` CLI missing" and "codex CLI present but companion script missing", since Agent C needs both. Do NOT fall back to invoking the companion with an empty `CODEX_COMPANION` — that expands to `node "" adversarial-review ...` and fails noisily.
+Disabled by default. Run only when reviewer policy explicitly enables this legacy
+adapter and preparation finds both Codex and a loadable companion. Installation
+does not prove authentication, quota, or success. Never invoke
+an empty CODEX_COMPANION path. Direct astra-adversarial is a separate lane and
+does not need this adapter. Normalize the validated envelope into the workflow's
+findings/degraded/reason contract; preserve raw artifacts separately.
 
 ## Launch prompt
 
@@ -12,7 +17,7 @@ Launch a background general-purpose Agent with prompt:
 >
 > - `--base main` mode (default): `node "$CODEX_COMPANION" adversarial-review --cwd "<REPO_ROOT>" --json --base <base> <focus>`
 > - `--uncommitted` mode: `node "$CODEX_COMPANION" adversarial-review --cwd "<REPO_ROOT>" --json --scope working-tree <focus>`
-> - `--commit <sha>` mode: `node "$CODEX_COMPANION" adversarial-review --cwd "<REPO_ROOT>" --json --commit <sha> <focus>`
+> - `--commit <sha>` mode: return degraded for unsupported scope. Inspected companion 1.0.5 does not consume a commit target; do not invent a --commit invocation or silently substitute working-tree scope.
 > - `--range <a>..<b>` mode: the companion's `--base` flag reviews from that commit to HEAD, not to a specific upper bound. Perform the checkout dance inside the target worktree in a single chained Bash call: `cd "<REPO_ROOT>" && ORIG=$(git symbolic-ref --quiet --short HEAD 2>/dev/null || git rev-parse --verify HEAD) && git checkout <b> && (node "$CODEX_COMPANION" adversarial-review --cwd "<REPO_ROOT>" --json --base <a> <focus>); rc=$?; git checkout "$ORIG"; exit $rc`.
 >
 > Include `<focus>` text only if `--focus` was provided; omit otherwise. Return the raw JSON stdout verbatim — the companion's envelope with `result.findings` carrying the structured findings.
@@ -44,13 +49,13 @@ Normalise each finding as:
 
 - `file` ← `file` (already relative in practice)
 - `line_start` / `line_end` ← (already flat ints)
-- `severity` ← `severity` (already categorical — use directly, map `"high"` → `"warning"` and `"medium"`/`"low"` → `"nit"` for the final report if you want to match native severity levels)
+- `severity`: map critical/high to critical, medium to warning, low to nit. Include the original severity in description. Never demote medium/actionable issues to nits.
 - `description` ← `title` + `body`
 - `recommendation` ← `recommendation`
 - Tag with `source: "codex-adversarial"`.
 - Also pull `.result.summary` aside as the adversarial ship/no-ship narrative for Phase 4 commentary.
 - If `.parseError` is non-null **and** case-insensitively matches the same quota/rate-limit indicator set used for Agent B (including "rate limit", "quota", "too many requests", and "429"): this is a quota/rate-limit error, not a parse failure. Match with a case-insensitive regex or lowercase before comparing — observed casings vary. Mark Agent C as `degraded` (same as Agent B). Do NOT synthesise a warning finding from it — no review data exists to act on.
-- If `.parseError` is non-null but does NOT match the quota pattern: fall back to treating `.rawOutput` as a single opaque finding with severity `"warning"` and note the parse error text verbatim in the Phase 4 output.
+- Any other non-null `.parseError` is degraded, not a code finding. Return no findings and a sanitized parse-failure reason. Never convert opaque output into an actionable warning.
 
 ## Contract drift — complain loudly, never a silent pass
 

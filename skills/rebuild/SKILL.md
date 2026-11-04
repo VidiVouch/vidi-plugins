@@ -86,7 +86,11 @@ LEDGER="$WT/REBUILD-EPOCHS.md"
 4. **Live agents**: for every registry row with status `active`, check the
    task/agent is genuinely alive (`TaskOutput` non-blocking, or the
    background-task list). Alive → do NOT respawn; attach the watchdog and
-   wait. Dead/lost handle → treat per the watchdog's respawn rule.
+   wait. Dead/lost handle → treat per the watchdog's respawn rule. A row whose
+   agent has already returned is read through its output and the ledger
+   transition it wrote; the agent itself is never reopened, messaged, or handed
+   further work. Anything still owed is a new dispatch under the fresh-spawn
+   rule below.
 
 Route on the probe result:
 
@@ -152,12 +156,20 @@ ever *reads* the rest:
 handle is a ledger read, not a file-hunt:
 
 ```
-| epoch | role        | taskId/agentId | outputPath | spawnedAt | lastKnownCommit | lastProgressAt | status |
-| E3    | implementer | a1b2…          | <path>     | <iso8601> | <sha or ->      | <iso8601>      | active |
+| epoch | role        | requestedModel      | taskId/agentId | outputPath | spawnedAt | lastKnownCommit | lastProgressAt | status |
+| E3    | implementer | claude-opus-5-5[1m] | a1b2…          | <path>     | <iso8601> | <sha or ->      | <iso8601>      | active |
 ```
 
 `role` ∈ `architect | plan-judge | implementer | examiner | judge`. `status`
-∈ `active | done | stalled | stopped`. **The skill that spawns an agent writes
+∈ `active | done | stalled | stopped`. `requestedModel` is what the dispatch
+asked for, written with the row by the skill that spawns the agent: the ID the
+packaged definition pins when the dispatch selects one by agent type
+(`vidi-skills:implementer` pins `claude-opus-5-5[1m]`; `rebuild-epoch` reads
+it with `model_roles.py --dispatch implementer`), the alias the call passes
+otherwise (`fable`, `sonnet`), or `session` when the call pins nothing. It
+records the request, never what answered; what answered is the agent's own
+transcript (deep-review/references/models.md, "Run-record identity"), and a
+`session` or alias value marks a role that is not pinned. **The skill that spawns an agent writes
 that agent's row** (it is the one holding the fresh `agentId`/`taskId`) — so
 `rebuild-epoch` writes the implementer row, `rebuild-examine` its examiner/judge
 rows, and the orchestrator the rows for agents it spawns directly (the plan
@@ -199,7 +211,23 @@ child; don't forge the row. The `ACCEPTED` post-fix tip sha is the accepted
 boundary and becomes the next epoch's `lo` — read it from the ledger, never
 recompute it from `git log` guesswork.
 
-## Phase 2 — The epoch loop (strictly sequential)
+## Shared run evidence
+
+Use deep-review/references/run-lifecycle.md for review manifests, external gates,
+and result finalization. Child results must link their exact run/snapshot and
+acceptance artifact, not merely say the Workflow completed. Keep those artifacts
+outside disposable worktrees. Fresh workers receive the shared API/product contract
+and relevant dependencies, not previous workers' conversation histories; the
+contract shape is deep-review/references/work-unit.md, built by
+deep-review/scripts/work_unit.py.
+
+The dispatcher never manufactures a child-owned transition or treats a failed
+review/gate as approval. Record a pending operation before Git/ledger mutation and
+its result afterward. On restart, reconcile actual refs and saved artifacts before
+re-dispatch; ambiguous operations pause rather than repeat side effects. A live
+process or usage-limit recovery test is still required before unattended rollout.
+
+## Phase 2: The epoch loop (strictly sequential)
 
 **Concurrency invariant: at most one epoch's agents exist at a time.** Build
 and examine share the single worktree by design — examining the just-built
@@ -210,6 +238,10 @@ invent one.
 
 For each epoch, in ledger order, starting from the first non-ACCEPTED row
 (with `--epoch <id>`: just that one iteration, then stop):
+
+On restart, a REVISE row whose findings class is review-incomplete resumes the
+blocked-review handling in step 2, not implementation in step 1. Read its saved
+result/recovery artifacts before deciding whether examination can be retried.
 
 1. **Implement.** Dispatch `rebuild-epoch --ledger "$LEDGER" --epoch <id>
    --worktree "$WT" --target <target>` (it writes its own implementer registry
@@ -227,7 +259,17 @@ For each epoch, in ledger order, starting from the first non-ACCEPTED row
    workflow's internal fix loop; conflating them cripples one). Await its
    verdict:
    - `ACCEPTED@<lo..hi>` → mark the epoch's task completed; next epoch.
-   - `REVISE@<tip>` + class-scoped findings file → step 3.
+   - `REVISE@<tip>` with **Class: review-incomplete**: pause this epoch and
+     surface the review/preflight failure plus recovery artifacts. This is missing
+     review evidence, not an implementation defect; do not dispatch an implementer,
+     advance the next epoch, or waive the required lane. After capability recovery
+     and explicit resolution of any retained uncommitted edits, re-dispatch a fresh
+     rebuild-examine against the same recorded tip. The examiner owns the retry
+     transition to JUDGING; the dispatcher does not rewrite its ledger state.
+   - Other `REVISE@<tip>` + class-scoped findings file: step 3 only after
+     checking whether findings cite a retained uncommitted candidate. If they do,
+     preserve its patch/snapshot and reconcile it explicitly before dispatch;
+     never reinterpret those findings as if the candidate were committed in tip.
 3. **Revision loop.** Increment the epoch's round counter (tracked in the
    epoch's task metadata; the JUDGING row carries the round). If rounds ≤
    `--max-rounds`: dispatch `rebuild-epoch --fix <findings-file>` as a
@@ -262,15 +304,45 @@ forming an opinion on it.
 
 ## Fresh-spawn rule (dispatch-layer, non-negotiable)
 
-Every implementer dispatch — first attempt, `--fix` round, or
-watchdog-respawn — is a **fresh agent with a written handoff**, never a
-resumed one. Resumed long-context agents go idle-without-finishing; a fresh
-spawn with a short handoff note works. The handoff (a file next to the
-findings, path recorded in the registry) states: the epoch id + ledger path,
-the current candidate range (or "none"), the findings/classes to address,
-and the required output shape (`IMPLEMENTED@sha` transition + gate JSON). No
-"please continue where you left off" — the old agent's context is gone and
-that is the point.
+Every agent dispatch in a rebuild, whatever the role (`architect`,
+`plan-judge`, `implementer`, `examiner`, `judge`) and whatever the occasion
+(first attempt, gate-fix round, `--fix` round, re-judge, re-examination after
+review-incomplete, watchdog-respawn, re-dispatch after a controller restart),
+is a **fresh agent with a written handoff**, never a resumed one. Resumed
+long-context agents go idle-without-finishing; a fresh spawn with a short
+handoff note works. No "please continue where you left off": the old agent's
+context is gone and that is the point.
+
+The handoff is a file, written before the registry row, at
+`<ledger dir>/.rebuild/handoff-<unit>-<role>-<n>.md`, where `<unit>` is the
+epoch id (`plan` for the architect and plan judges, `final` for the final
+examination's judges; the registry row's `epoch` column carries the same
+value) and `<n>` counts that role's dispatches for that unit across every
+occasion above, one file per agent. A judge panel is one dispatch per judge, so
+a panel of two writes two files with the same content and consecutive numbers,
+and a single judge the watchdog respawns takes the next `<n>` alone. The k-th
+registry row of a role for a unit was briefed from file k, so a restarted
+controller finds every brief ever sent from the registry alone and no two
+dispatches share a file. The task message sent to the agent is the file's
+content and nothing more, so the file is the whole record of what the agent
+was told. It opens with the line deep-review's briefs open with, `You are a
+fresh instance with no prior conversation; this message and your agent
+definition are your whole brief.`, then states, in the section order of
+deep-review/references/work-unit.md: the unit (epoch id, ledger path, round),
+the exact input (the sha the agent starts from, the current candidate range or
+"none"), what to address (the ledger extracts, the class-scoped findings, or
+the failing gate checks' detail), and the required output shape
+(`IMPLEMENTED@sha` transition + gate JSON, a judge's JSON result, or the
+ledger with its `Plan-status`). It never contains an earlier worker's
+transcript or return value; what an earlier round produced reaches the new
+worker only as the findings file, the gate report, or the ledger.
+
+A completed agent is never messaged, reopened, or handed a second unit, and no
+dispatch is a fork of this conversation. The watchdog's single nudge is the
+one message a running agent ever receives, and it asks for status, never
+carries work. Resuming a rebuild (`--continue`, a restart) means re-reading
+the ledger, the registry, and the handoff files, then dispatching fresh where
+a unit is still owed; it never means reattaching to an old conversation.
 
 ## Watchdog (stall detection, while any registry row is `active`)
 
@@ -295,8 +367,9 @@ prevent; the *user* must never be the one who catches them.
   in the registry row.
 - **No progress (second consecutive interval, nudge already sent):**
   `TaskStop` the agent, set its registry row `status: stalled→stopped`, and
-  respawn **fresh** per the fresh-spawn rule, handoff note included. Do not
-  wait longer, do not nudge twice, do not resume.
+  respawn **fresh** per the fresh-spawn rule, from a new handoff file (next
+  `<n>`) with its own registry row. Do not wait longer, do not nudge twice, do
+  not resume.
 - Judges/examiners get the same treatment; a degraded judge slot is
   `rebuild-examine`'s documented 2-of-2 fallback, not a reason to block.
 - Disarm (delete crons, no further wakeups) whenever no registry row is
@@ -338,8 +411,9 @@ decides), or plan coverage (the coverage script decides).
 - **Child verdicts and deterministic reports are authoritative.** The
   orchestrator dispatches, bookkeeps, watches, escalates — it never reviews
   code, never re-scores findings, never accepts an epoch itself.
-- **Fresh spawn for every revision and respawn; written handoff; never
-  resume a stalled agent.**
+- **Fresh spawn for every dispatch of every role, first attempt included;
+  one written handoff file per dispatch; never resume a stalled agent or a
+  completed one.**
 - **Registry row before every dispatch.** A spawn that isn't in the ledger
   doesn't exist.
 - **The ledger is never committed.** Excluded at setup; not re-litigable.

@@ -1,0 +1,11 @@
+{
+  "claude-bugs": {"policy": "required"},
+  "claude-conventions": {"policy": "required"},
+  "astra-standard": {"policy": "optional"},
+  "astra-adversarial": {"policy": "optional"},
+  "grok": {"policy": "optional"},
+  "codex-native": {"policy": "disabled", "reason": "Native Codex harness is opt-in; not a fallback for Astra"},
+  "codex-adversarial": {"policy": "disabled", "reason": "Legacy companion adapter is opt-in pending public-exec migration"},
+  "cubic": {"policy": "disabled", "reason": "Subscription-backed reviewer requires explicit opt-in"},
+  "coderabbit": {"policy": "disabled", "reason": "Subscription-backed reviewer requires explicit opt-in"}
+}

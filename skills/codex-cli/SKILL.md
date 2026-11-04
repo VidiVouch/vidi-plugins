@@ -5,12 +5,14 @@ description: Shared mechanics for invoking the Codex CLI (gpt-5.6-terra, gpt-5.6
 
 # Codex CLI mechanics
 
-gpt-6 and gpt-5.6 are only reachable through the Codex CLI
-(`~/.codex/config.toml` sets `model = "gpt-6"`, i.e. gpt-6-astra). Pass
-`--model gpt-5.6-terra` for routine work, `--model gpt-5.6-sol` for bigger
-tasks, and keep gpt-6-astra for critical design work and decisions. There is
-no `gpt-6-terra` or `gpt-6-sol`; terra and sol only exist on the 5.6 line.
-Three invocation paths:
+This skill covers the Codex CLI harness, not every route to its underlying
+models. A configured compatible proxy can also serve Astra directly to a named
+Claude Code agent; that does not reproduce Codex's native review behavior. Do not
+assume the user's CLI default or proxy catalog. Pass an explicit supported model
+when the task requires one: gpt-5.6-terra for routine work, gpt-5.6-sol for larger
+tasks, and gpt-6-astra for critical decisions, subject to actual availability.
+The historical gpt-6-terra/gpt-6-sol names below were rejected, not aliases.
+Three CLI invocation paths:
 
 - `codex exec` — non-interactive agent run with a self-contained prompt
   (implementation, investigation, data analysis). Use `-s read-only` for
@@ -86,10 +88,15 @@ in the shared checkout. Read-only runs can share a checkout.
 
 ## Inside workflows and subagents
 
-The Agent/Workflow `model` parameter only takes Claude models, so codex runs
-inside workflows go through a thin Claude wrapper agent — see the "Using
-gpt-6 and gpt-5.6 inside workflows and subagents" section of CLAUDE.md for the wrapper
-pattern, labeling convention, and budget caveats.
+A named agent definition can select a full provider model ID through the
+configured proxy. Select its agent type and omit the per-call alias override.
+Deep-review uses this for its Astra standard/adversarial and Grok discovery lanes.
+Their structured results come from the workflow's schema contract, not Codex.
+
+A wrapper is still used when deliberately invoking the Codex CLI harness from a
+workflow. Keep that role mechanical, preserve the CLI's result and failure
+signals, and never substitute direct model review silently. Native Codex and the
+legacy companion are separate opt-in lanes in deep-review.
 
 ## Verified behaviors
 
