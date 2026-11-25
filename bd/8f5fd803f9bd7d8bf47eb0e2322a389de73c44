@@ -1,0 +1,45 @@
+agents/astra-adversarial-reviewer.md
+  s_e1946938344a50::t_e4292394ad2c75 4
+agents/astra-reviewer.md
+  s_e1946938344a50::t_05785afb2896d7 4
+agents/judge-astra.md
+  s_e1946938344a50::t_8f2e862e8aee98 4
+skills/codex-cli/SKILL.md
+  s_e1946938344a50::t_51ccc2403cb9ea 3,12-15,127-132
+skills/codex-computer-use/SKILL.md
+  s_e1946938344a50::t_201590411dda5d 3,21
+skills/codex-review/SKILL.md
+  s_e1946938344a50::t_524696a089f752 3
+skills/deep-review/model-roles.json
+  s_e1946938344a50::t_0682ba7e17a346 9,12,21,27
+skills/deep-review/references/judge-contract.md
+  s_e1946938344a50::t_cd6246ae850257 18
+skills/deep-review/references/models.md
+  s_e1946938344a50::t_9267f05827a358 17-23,27,29,82
+skills/deep-review/references/reviewers.md
+  s_e1946938344a50::t_fdd1949fbdafa5 9-10
+skills/deep-review/reviewers/codex-native.md
+  s_e1946938344a50::t_b00bf9c2144524 22
+tests/test_deep_review.py
+  s_e1946938344a50::t_bf2ab2a59254e3 102
+tests/test_judging_panel.py
+  s_e1946938344a50::t_07db6a43c96379 443,469,491
+tests/test_model_roles.py
+  s_e1946938344a50::t_974eac9eb90608 26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "bd8f5fd803f9bd7d8bf47eb0e2322a389de73c44",
+  "prompts": {},
+  "sessions": {
+    "s_e1946938344a50": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "22a753d7-05ee-49cc-8cfa-e12f499a8c25",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Tom Price <tom@tomprice.ca>"
+    }
+  }
+}
