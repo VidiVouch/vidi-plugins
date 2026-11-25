@@ -1,7 +1,7 @@
 ---
 name: judge-astra
 description: Adjudication judge for deep-review on GPT-6 Astra through a configured compatible proxy, selected by agent type with its full model ID pinned here. Follows the shared judge contract; not a finding-discovery reviewer.
-model: gpt-6-astra[1m]
+model: gpt-6.2-astra[1m]
 tools: Read, Grep, Glob, Bash(git -C * diff *), Bash(git -C * show *), Bash(git -C * ls-files *), Bash(git -C * log *), Bash(git -C * rev-parse *)
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: astra-adversarial-reviewer
 description: Independent adversarial reviewer for deep-review, using Astra directly through a configured compatible proxy. Does not run Codex CLI or its companion.
-model: gpt-6-astra
+model: gpt-6.2-astra
 tools: Read, Grep, Glob, Bash(git -C * diff *), Bash(git -C * show *), Bash(git -C * ls-files *), Bash(git -C * log *), Bash(git -C * rev-parse *)
 ---
 

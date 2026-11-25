@@ -99,7 +99,7 @@ def catalog(monkeypatch, payload):
 
 
 def test_direct_catalog_and_auth_are_not_upstream_proof(tmp_path, monkeypatch):
-    opener = catalog(monkeypatch, {"data": [{"id": "gpt-6-astra"}, {"id": "grok-4.7"}]})
+    opener = catalog(monkeypatch, {"data": [{"id": "gpt-6.2-astra"}, {"id": "grok-4.7"}]})
     result = prepare.prepare(
         tmp_path,
         probe_proxy=True,

@@ -15,7 +15,7 @@ account of itself.
 | Role | Agent definition | Requested model |
 | --- | --- | --- |
 | judge-fable | `agents/judge-fable.md` | claude-fable-5-1[1m] |
-| judge-astra | `agents/judge-astra.md` | gpt-6-astra[1m] |
+| judge-astra | `agents/judge-astra.md` | gpt-6.2-astra[1m] |
 | judge-grok | `agents/judge-grok.md` | grok-4.7 |
 
 The IDs come from `model-roles.json` and were verified against the proxy

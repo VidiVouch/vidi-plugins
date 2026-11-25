@@ -23,7 +23,7 @@ REQUESTED = {
     "fixer-opus",
     "permission-classifier",
 }
-CATALOG = ["claude-fable-5-1", "gpt-6-astra", "grok-4.7", "claude-opus-5-5", "claude-sonnet-5", "gpt-6.1-sol"]
+CATALOG = ["claude-fable-5-1", "gpt-6.2-astra", "grok-4.7", "claude-opus-5-5", "claude-sonnet-5", "gpt-6.1-sol"]
 
 
 @pytest.fixture(autouse=True)

@@ -6,8 +6,8 @@
 | --- | --- | --- |
 | claude-bugs | required | Existing opus-alias agent |
 | claude-conventions | required | Existing sonnet-alias agent |
-| astra-standard | optional | vidi-skills:astra-reviewer, model gpt-6-astra |
-| astra-adversarial | optional | vidi-skills:astra-adversarial-reviewer, model gpt-6-astra |
+| astra-standard | optional | vidi-skills:astra-reviewer, model gpt-6.2-astra |
+| astra-adversarial | optional | vidi-skills:astra-adversarial-reviewer, model gpt-6.2-astra |
 | grok | optional | vidi-skills:grok-reviewer, model grok-4.7 |
 | codex-native | disabled | Sonnet wrapper running the native Codex CLI reviewer |
 | codex-adversarial | disabled | Sonnet wrapper running the legacy Codex companion |

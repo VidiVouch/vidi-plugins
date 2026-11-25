@@ -6,10 +6,10 @@
     "use": "Adjudication panel judge on Claude Fable 5.1 with the 1M window; packaged agent definition"
   },
   "judge-astra": {
-    "model": "gpt-6-astra[1m]",
+    "model": "gpt-6.2-astra[1m]",
     "provider": "codex",
     "agent": "judge-astra",
-    "use": "Adjudication panel judge on GPT-6 Astra with the 1M window; packaged agent definition"
+    "use": "Adjudication panel judge on GPT-6.2 Astra with the 1M window; packaged agent definition"
   },
   "judge-grok": {
     "model": "grok-4.7",
@@ -18,13 +18,13 @@
     "use": "Adjudication panel judge on Grok 4.7; xAI rejects the [1m] suffix; packaged agent definition"
   },
   "astra-reviewer": {
-    "model": "gpt-6-astra",
+    "model": "gpt-6.2-astra",
     "provider": "codex",
     "agent": "astra-reviewer",
     "use": "Standard finding-discovery reviewer; packaged agent definition"
   },
   "astra-adversarial-reviewer": {
-    "model": "gpt-6-astra",
+    "model": "gpt-6.2-astra",
     "provider": "codex",
     "agent": "astra-adversarial-reviewer",
     "use": "Adversarial finding-discovery reviewer; packaged agent definition"

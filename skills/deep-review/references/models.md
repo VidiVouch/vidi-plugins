@@ -14,12 +14,19 @@ The catalog advertises an ID; it does not prove tools, structured output,
 entitlement, or which upstream model answers. Those stay `resolvedModel: null`
 and `upstreamModel: null` until a trusted harness or proxy record fills them.
 
+Astra rows moved from `gpt-6-astra` to `gpt-6.2-astra` on 2026-11-25. Evidence that day:
+`model_roles.py --probe-proxy --settings ~/.ccs/claude-judge.settings.json` reports the
+catalog advertising `gpt-6.2-astra` and `gpt-6.2-sol` (as well as the older
+`gpt-6-astra`, `gpt-6.1-sol` and `gpt-6.1-terra`; no `gpt-6.2-terra` is advertised), and
+codex-cli 0.167.0 completes a read-only `codex exec --model <id>` turn on `gpt-6.2-astra`,
+`gpt-6.2-sol` and `gpt-6.1-terra`. Execution through the proxy remains unverified, as above.
+
 | Role | Requested ID | Catalog ID advertised | Provider in catalog |
 | --- | --- | --- | --- |
 | judge-fable | claude-fable-5-1[1m] | claude-fable-5-1 | claude |
-| judge-astra | gpt-6-astra[1m] | gpt-6-astra | codex |
+| judge-astra | gpt-6.2-astra[1m] | gpt-6.2-astra | codex |
 | judge-grok | grok-4.7 | grok-4.7 | xai |
-| astra-reviewer, astra-adversarial-reviewer | gpt-6-astra | gpt-6-astra | codex |
+| astra-reviewer, astra-adversarial-reviewer | gpt-6.2-astra | gpt-6.2-astra | codex |
 | grok-reviewer | grok-4.7 | grok-4.7 | xai |
 | implementer-opus, fixer-opus | claude-opus-5-5[1m] | claude-opus-5-5 | claude |
 | permission-classifier | claude-sonnet-5 | claude-sonnet-5 | claude |
@@ -72,7 +79,7 @@ stops a unit that sets both.
 | Role | Definition | Model field |
 | --- | --- | --- |
 | judge-fable, judge-astra, judge-grok | `agents/judge-<name>.md`, one shared body (judge-contract.md) | as in the table above |
-| astra-reviewer, astra-adversarial-reviewer, grok-reviewer | `agents/<name>.md` | gpt-6-astra, grok-4.7 |
+| astra-reviewer, astra-adversarial-reviewer, grok-reviewer | `agents/<name>.md` | gpt-6.2-astra, grok-4.7 |
 | implementer-opus | `agents/implementer.md` | claude-opus-5-5[1m] |
 | fixer-opus | `agents/fixer.md` | claude-opus-5-5[1m] |
 | permission-classifier | none; the env key `CLAUDE_CODE_AUTO_MODE_MODEL` (MODEL-4) | claude-sonnet-5 |

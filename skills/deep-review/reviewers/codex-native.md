@@ -19,7 +19,7 @@ Use explicit `codex -C "<REPO_ROOT>"` targeting and read-only sandboxing:
 
 ```bash
 codex -C "<REPO_ROOT>" exec --sandbox read-only review \
-  --model gpt-6-astra --ephemeral --json \
+  --model gpt-6.2-astra --ephemeral --json \
   --output-schema "<absolute path to deep-review/review-output.schema.json>" \
   --output-last-message "<unique durable result path>" \
   <target flag> > "<unique durable JSONL events path>"

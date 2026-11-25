@@ -440,7 +440,7 @@ def test_a_panel_missing_a_judge_or_beside_a_boss_refuses_to_start(judges, boss,
 
 
 def test_prepare_reports_the_three_judges_against_the_bare_catalog_ids(tmp_path, monkeypatch):
-    opener = catalog(monkeypatch, {"data": [{"id": "claude-fable-5-1"}, {"id": "gpt-6-astra"}, {"id": "grok-4.7"}]})
+    opener = catalog(monkeypatch, {"data": [{"id": "claude-fable-5-1"}, {"id": "gpt-6.2-astra"}, {"id": "grok-4.7"}]})
     env = {"ANTHROPIC_BASE_URL": "http://127.0.0.1:8319", "ANTHROPIC_AUTH_TOKEN": "fixture-secret"}
     setup = prepare.prepare(tmp_path, probe_proxy=True, env=env, panel=True)
     opener.open.assert_called_once()
@@ -466,7 +466,7 @@ def test_prepare_reports_the_three_judges_against_the_bare_catalog_ids(tmp_path,
 
 
 def test_prepare_marks_an_unadvertised_judge_unavailable_and_the_workflow_refuses_that_panel(tmp_path, monkeypatch):
-    catalog(monkeypatch, {"data": [{"id": "gpt-6-astra"}, {"id": "grok-4.7"}]})
+    catalog(monkeypatch, {"data": [{"id": "gpt-6.2-astra"}, {"id": "grok-4.7"}]})
     setup = prepare.prepare(
         tmp_path, probe_proxy=True, env={"ANTHROPIC_BASE_URL": "http://localhost:8319/v1"}, panel=True
     )
@@ -488,7 +488,7 @@ def test_without_the_panel_request_judges_are_null_and_nothing_extra_is_probed(t
     probe.assert_not_called()
     # Requesting the panel is what makes the catalog worth asking, even with every direct lane disabled.
     monkeypatch.setattr(
-        prepare, "proxy_models", lambda env: ({"claude-fable-5-1", "gpt-6-astra", "grok-4.7"}, "advertised")
+        prepare, "proxy_models", lambda env: ({"claude-fable-5-1", "gpt-6.2-astra", "grok-4.7"}, "advertised")
     )
     with_panel = prepare.prepare(tmp_path, disabled, probe_proxy=True, env={}, panel=True)
     assert all(j["available"] for j in with_panel["judges"].values())
