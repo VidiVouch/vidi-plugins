@@ -64,7 +64,7 @@ Parse `$ARGUMENTS`:
 - `--boss <model[,model2]>` — passed through to the workflow (deep-review
   semantics; codex-family ids route via `codex exec`, Claude-family in-process).
 - `--judges <model>` — opt-in third, non-Claude panel judge (e.g. `codex`,
-  `gpt-5.6-terra`). Without it the panel is 2 Claude judges.
+  `gpt-6.1-terra`). Without it the panel is 2 Claude judges.
 
 Stop with usage if a required arg is missing. All git ops use
 `git -C "$WT"` — the Bash tool's cwd is not guaranteed.

@@ -1,15 +1,16 @@
 ---
 name: codex-cli
-description: Shared mechanics for invoking the Codex CLI (gpt-5.6-terra, gpt-5.6-sol, or gpt-6-astra for critical design work and decisions) reliably — repo targeting, JSONL output parsing, timeouts, sandboxing, and failure-vs-clean detection. Read this before running any `codex` command; the codex-review and codex-computer-use skills build on it.
+description: Shared mechanics for invoking the Codex CLI (gpt-6.1-terra, gpt-6.2-sol, or gpt-6.2-astra for critical design work and decisions) reliably — repo targeting, JSONL output parsing, timeouts, sandboxing, and failure-vs-clean detection. Read this before running any `codex` command; the codex-review and codex-computer-use skills build on it.
 ---
 
 # Codex CLI mechanics
 
-gpt-6 and gpt-5.6 are only reachable through the Codex CLI
-(`~/.codex/config.toml` sets `model = "gpt-6"`, i.e. gpt-6-astra). Pass
-`--model gpt-5.6-terra` for routine work, `--model gpt-5.6-sol` for bigger
-tasks, and keep gpt-6-astra for critical design work and decisions. There is
-no `gpt-6-terra` or `gpt-6-sol`; terra and sol only exist on the 5.6 line.
+The GPT models are only reachable through the Codex CLI (`~/.codex/config.toml`
+names the default, `gpt-6.2-sol` here on 2026-11-25). Pass `--model gpt-6.1-terra`
+for routine work, `--model gpt-6.2-sol` for bigger tasks, and keep
+`gpt-6.2-astra` for critical design work and decisions. There is no
+`gpt-6.2-terra`; the older `gpt-6-terra`/`gpt-6-sol` names were rejected on
+0.153.4 (below). The run header's `model:` line is the evidence of what ran.
 Three invocation paths:
 
 - `codex exec` — non-interactive agent run with a self-contained prompt
@@ -109,6 +110,11 @@ examples are how broken invocations creep in.
   exist. Both emit a "Model metadata for `<name>` not found" item and then fail
   with HTTP 400 "The '<name>' model is not supported when using Codex with a
   ChatGPT account". `gpt-6-astra` is the only gpt-6 name that resolves.
+- **codex-cli 0.167.0** (2026-11-25): `--model gpt-6.2-astra`, `--model gpt-6.2-sol` and
+  `--model gpt-6.1-terra` each complete a read-only `codex exec --json` turn
+  (`turn.completed`). The run header prints the model actually used
+  (`model: <id>`); a command without `--model` runs whatever
+  `~/.codex/config.toml` names, so a label alone is not proof of the model.
 - **Environment-dependent failure** (observed 2026-07-11 on another machine,
   NOT reproducible on this one at 0.144.1): `codex exec -m gpt-6-astra` can die
   with `failed to initialize in-process app-server client: Operation not

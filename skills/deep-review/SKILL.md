@@ -79,12 +79,12 @@ Parse the user's args (`$ARGUMENTS`) for:
 - `--max-rounds <n>` — cap on review↔fix rounds (default: 3)
 - `--boss <model[,model2]>` — the **arbiter** with final say over the panel (dedup →
   real-vs-noise → severity → verdict). Default: **inherit the session model** (the
-  runtime is Claude, always). `--boss codex` = gpt-5.x via `codex exec` — right for
+  runtime is Claude, always). `--boss codex` = a GPT model via `codex exec` — right for
   **logic**-shaped arbitration (correctness/repro; high intelligence, near-free).
-  `--boss fable` / `--boss opus` for **taste**-shaped (design/API/copy) — gpt-5.x's
+  `--boss fable` / `--boss opus` for **taste**-shaped (design/API/copy) — GPT's
   taste is weak, and a wrong-tiered boss is worse than none. Two comma-separated
   models = `logicBoss,tasteBoss` (domain-authoritative merge). Codex-family ids
-  (`codex`,`gpt-5.x`,`sol`,`terra`,`luna`) route to `codex exec -s read-only`;
+  (`codex`,`gpt-5.x`,`gpt-6.x`,`sol`,`terra`,`luna`,`astra`) route to `codex exec -s read-only`;
   Claude-family (`opus`/`fable`/`sonnet`) run in-process.
 - `--nofix-preflight` — opt out of auto-fixing pre-flight failures (default is to fix)
 - `--skip-preflight` — skip Phase 0 CI checks (use when you know they pass)

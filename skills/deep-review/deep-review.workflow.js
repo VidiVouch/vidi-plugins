@@ -36,7 +36,7 @@ export const meta = {
 //                 `teams` fix-strategy passes false and fixes via a main-agent team)
 //   maxRounds   : int   — hard cap on review↔fix rounds (default 3)
 //   boss        : string[] — arbiter model(s). [] = one boss inheriting the
-//                 session model. ['codex'] = gpt-5.x via codex exec. Two entries
+//                 session model. ['codex'] = the Codex CLI's model via codex exec. Two entries
 //                 = [logicBoss, tasteBoss], domain-authoritative merge.
 //   tools       : { codex, codexAdversarial, cubic, coderabbit, grok, codexCompanion }
 // ---------------------------------------------------------------------------
@@ -51,21 +51,25 @@ const MAX_ROUNDS = A.maxRounds || 3
 const FIXER_CAP = 5 // agent-teams sizing heuristic: 3-5 workers, ~5 tasks each
 const SPEC_DIR = `${A.repoRoot}/.claude/skills/deep-review/reviewers`
 // Codex-family boss ids route through `codex exec`; everything else is a native
-// in-process Claude agent. Adding gpt-5.6 (sol/terra/luna) needs no code change.
-const CODEX_FAMILY = /^(codex|gpt-?5|sol|terra|luna)/i
+// in-process Claude agent. A new GPT id (gpt-5.x, gpt-6.x; sol/terra/luna/astra)
+// needs no code change.
+const CODEX_FAMILY = /^(codex|gpt-?[56]|sol|terra|luna|astra)/i
+// The model every Codex reviewer passes as --model, so a run does not depend on
+// ~/.codex/config.toml and its label names the model that actually reviewed.
+const CODEX_MODEL = 'gpt-6.2-sol'
 
 // Data-driven registry — adding CodeRabbit et al. is one row here plus one
 // reviewers/<key>.md spec. `need` names the args.tools flag that gates it;
 // `serialInRange` marks reviewers whose checkout dance can't race in range mode.
 // model/effort follow the project rubric: opus for deep bug reasoning, sonnet
 // for pattern-matching, thin sonnet/low WRAPPERS for the external CLIs (the real
-// work is gpt-5.x via codex, or cubic's own service). `label` names the real worker.
+// work is CODEX_MODEL via codex, or cubic's own service). `label` names the real worker.
 const REGISTRY = [
   { key: 'claude-bugs',        always: true,             serialInRange: false, external: false, model: 'opus',   effort: 'high',   label: 'claude-bugs' },
   { key: 'claude-conventions', always: true,             serialInRange: false, external: false, model: 'sonnet', effort: 'medium', label: 'claude-conv' },
   { key: 'coderabbit',         need: 'coderabbit',       serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: 'coderabbit' },
-  { key: 'codex-native',       need: 'codex',            serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: 'gpt-5.6-sol:codex-native' },
-  { key: 'codex-adversarial',  need: 'codexAdversarial', serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: 'gpt-5.6-sol:codex-adv' },
+  { key: 'codex-native',       need: 'codex',            serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: `${CODEX_MODEL}:codex-native` },
+  { key: 'codex-adversarial',  need: 'codexAdversarial', serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: `${CODEX_MODEL}:codex-adv` },
   { key: 'cubic',              need: 'cubic',            serialInRange: true,  external: true,  model: 'sonnet', effort: 'low',    label: 'cubic' },
   // grok runs read-only-sandboxed with an explicit --cwd and diffs <a>..<b>
   // directly (worktree HEAD is already <b>), so it has no checkout dance to race.
@@ -207,7 +211,7 @@ function dedupeByOverlap(findings) {
 // ---- prompt builders -----------------------------------------------------
 function reviewPrompt(r) {
   const runLine = r.external
-    ? `This is an EXTERNAL-TOOL reviewer. Run the tool exactly as the spec's "Launch prompt" directs (REPO_ROOT=${A.repoRoot}${r.key === 'codex-adversarial' ? `, CODEX_COMPANION=${A.tools?.codexCompanion || ''}` : ''}), then parse its output into the findings schema per the spec's "Parsing & degradation" section. If the tool crashed, rate-limited, or was misconfigured, set degraded=true with the reason and findings=[] — a degraded run is NOT a clean pass.`
+    ? `This is an EXTERNAL-TOOL reviewer. Run the tool exactly as the spec's "Launch prompt" directs (REPO_ROOT=${A.repoRoot}${r.key === 'codex-adversarial' ? `, CODEX_COMPANION=${A.tools?.codexCompanion || ''}` : ''}), then parse its output into the findings schema per the spec's "Parsing & degradation" section. If the tool crashed, rate-limited, or was misconfigured, set degraded=true with the reason and findings=[] — a degraded run is NOT a clean pass.${r.key.startsWith('codex') ? ` Pass \`--model ${CODEX_MODEL}\` to every codex and codex-companion command (both accept it), and quote the model line codex prints in the reason.` : ''}`
     : `Perform the review directly as the spec describes and return the findings.`
   return [
     `Read the reviewer spec at ${SPEC_DIR}/${r.key}.md and follow its "Launch prompt" section exactly for this diff target: ${modeLine()}.`,
@@ -277,12 +281,12 @@ async function runBoss(findings, model, roundNo) {
   const slot = model || 'inherit'
   if (CODEX_FAMILY.test(model || '')) {
     const wrapper = [
-      `You are a thin wrapper — do not judge yourself. Read ${A.repoRoot}/.claude/skills/codex-cli/SKILL.md for Codex CLI mechanics, then run gpt-5.x as the review ARBITER, READ-ONLY, targeting ${A.repoRoot}.`,
+      `You are a thin wrapper — do not judge yourself. Read ${A.repoRoot}/.claude/skills/codex-cli/SKILL.md for Codex CLI mechanics, then run the Codex model as the review ARBITER, READ-ONLY, targeting ${A.repoRoot}.`,
       `Invoke Codex read-only: \`codex exec -s read-only\`${model === 'codex' ? ' (CLI default model)' : ` --model ${model}`}, targeting ${A.repoRoot}, passing the judging prompt below; parse the JSONL final message.`,
       `JUDGING PROMPT >>>\n${bossPrompt(findings)}\n<<<`,
       `Return ONLY the arbiter's JSON verbatim: {"rulings":[...], "summary":"..."}.`,
     ].join('\n\n')
-    return agent(wrapper, { label: `gpt-5.6:boss:${slot}#${roundNo}`, phase: 'Judge', schema: BOSS_OUT, model: 'sonnet', effort: 'low' }).catch(() => null)
+    return agent(wrapper, { label: `codex:boss:${slot}#${roundNo}`, phase: 'Judge', schema: BOSS_OUT, model: 'sonnet', effort: 'low' }).catch(() => null)
   }
   const opts = { label: `boss:${slot}#${roundNo}`, phase: 'Judge', schema: BOSS_OUT }
   if (model) opts.model = model // else inherit the session model
